@@ -73,7 +73,11 @@ export function HomePage() {
 
         <HomeQuickLinks />
 
-        <MonthSummarySection month={month} sheetName={sheetName} />
+        <MonthSummarySection
+          month={month}
+          sheetName={sheetName}
+          budgetType={budgetType}
+        />
 
         <AccountsSection />
 

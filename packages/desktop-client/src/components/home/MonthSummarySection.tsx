@@ -8,34 +8,58 @@ import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 
 import { useLocale } from '#hooks/useLocale';
+import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import { HomeAmount } from './HomeAmount';
 import { HomeCard } from './HomeCard';
 import { HomeSection } from './HomeSection';
 import { homeAmountColor, homeLabelStyle } from './homeStyles';
+import type { HomeBudgetType } from './useHomeMonth';
 import { useHomeSheetCell } from './useHomeSheetCell';
 
 type MonthSummarySectionProps = {
   month: string;
   sheetName: string;
+  budgetType: HomeBudgetType;
 };
+
+/**
+ * Mirrors the `real-saved` cell that tracking budgets publish. Envelope budgets
+ * define no net income-minus-spending cell, so the same formula is applied here
+ * rather than inventing a different one.
+ */
+function netOf(income: number | null, spent: number | null) {
+  if (income === null || spent === null) {
+    return null;
+  }
+  return income + spent;
+}
 
 export function MonthSummarySection({
   month,
   sheetName,
+  budgetType,
 }: MonthSummarySectionProps) {
   const locale = useLocale();
+  const isTracking = budgetType === 'tracking';
 
-  // `total-income` and `total-spent` exist under the same names for both the
-  // envelope and tracking budgets, so no branching is needed here.
-  const totalIncome = useHomeSheetCell(sheetName, 'total-income');
-  const totalSpent = useHomeSheetCell(sheetName, 'total-spent');
+  const totalIncome = useHomeSheetCell(
+    sheetName,
+    isTracking ? trackingBudget.totalIncome : envelopeBudget.totalIncome,
+  );
+  const totalSpent = useHomeSheetCell(
+    sheetName,
+    isTracking ? trackingBudget.totalSpent : envelopeBudget.totalSpent,
+  );
 
-  // Outflows are stored negative, so the period result is a plain sum.
-  const result =
-    totalIncome === null || totalSpent === null
-      ? null
-      : totalIncome + totalSpent;
+  // Only tracking budgets expose the net as its own cell, so the read is
+  // skipped for envelope budgets.
+  const trackingSaved = useHomeSheetCell(
+    sheetName,
+    isTracking ? trackingBudget.totalSaved : null,
+  );
+
+  const result = isTracking ? trackingSaved : netOf(totalIncome, totalSpent);
 
   return (
     <HomeSection
