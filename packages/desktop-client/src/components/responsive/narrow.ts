@@ -1,3 +1,5 @@
+export { HomePage as Home } from '#components/home/HomePage';
+
 export { BudgetPage as Budget } from '#components/mobile/budget/BudgetPage';
 
 export { AccountsPage as Accounts } from '#components/mobile/accounts/AccountsPage';

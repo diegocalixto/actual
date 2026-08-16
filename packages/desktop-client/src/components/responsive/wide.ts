@@ -1,3 +1,5 @@
+export { HomePage as Home } from '#components/home/HomePage';
+
 export { Budget } from '#components/budget';
 
 export { Schedules } from '#components/schedules';

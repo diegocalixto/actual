@@ -253,6 +253,18 @@ export function FinancesApp() {
                       element={<Navigate to="/budget" replace />}
                     />
 
+                    <Route
+                      path="/home"
+                      element={
+                        <ErrorBoundary
+                          FallbackComponent={FeatureErrorFallback}
+                          resetKeys={[location.pathname]}
+                        >
+                          <NarrowAlternate name="Home" />
+                        </ErrorBoundary>
+                      }
+                    />
+
                     <Route path="/reports/*" element={<Reports />} />
 
                     <Route
