@@ -107,11 +107,11 @@ function ToBudget({ toBudget, onPress, show3Columns }: ToBudgetProps) {
                     key={value}
                     as={Text}
                     minFontSizePx={6}
-                    maxFontSizePx={12}
+                    maxFontSizePx={13}
                     mode="oneline"
                     style={{
                       ...styles.tnum,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: '700',
                       color:
                         amount < 0
@@ -206,12 +206,12 @@ function Saved({ projected, onPress, show3Columns }: SavedProps) {
                     key={value}
                     as={Text}
                     minFontSizePx={6}
-                    maxFontSizePx={12}
+                    maxFontSizePx={13}
                     mode="oneline"
                     style={{
                       ...styles.tnum,
                       textAlign: 'left',
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: '700',
                       color: projected
                         ? theme.warningText
@@ -382,9 +382,8 @@ export function BudgetTable({
           data-testid="budget-table"
           style={{
             backgroundColor: theme.pageBackground,
-            // Fills the scroll viewport so the background always covers it,
-            // without inventing scrollable height beyond the content. The
-            // padding keeps the last row clear of the bottom nav bar.
+            // The bottom nav bar is fixed and overlays the page, so the last
+            // row needs padding to stay clear of it.
             paddingBottom: MOBILE_NAV_HEIGHT,
           }}
         >
@@ -437,7 +436,7 @@ function BudgetTableHeader({
     ...styles.tnum,
     color: theme.budgetNumberNeutral,
     textAlign: 'right',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   };
 
@@ -536,7 +535,7 @@ function BudgetTableHeader({
                         key={value}
                         as={Text}
                         minFontSizePx={6}
-                        maxFontSizePx={12}
+                        maxFontSizePx={13}
                         mode="oneline"
                         style={{
                           ...amountStyle,
@@ -604,7 +603,7 @@ function BudgetTableHeader({
                         key={value}
                         as={Text}
                         minFontSizePx={6}
-                        maxFontSizePx={12}
+                        maxFontSizePx={13}
                         mode="oneline"
                         style={{
                           ...amountStyle,
@@ -647,7 +646,7 @@ function BudgetTableHeader({
                       key={value}
                       as={Text}
                       minFontSizePx={6}
-                      maxFontSizePx={12}
+                      maxFontSizePx={13}
                       mode="oneline"
                       style={amountStyle}
                     >

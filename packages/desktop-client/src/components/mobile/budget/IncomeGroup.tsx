@@ -273,7 +273,7 @@ function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
                   key={value}
                   as={Text}
                   minFontSizePx={6}
-                  maxFontSizePx={12}
+                  maxFontSizePx={13}
                   mode="oneline"
                   style={{
                     ...styles.tnum,
@@ -282,7 +282,7 @@ function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
                     alignItems: 'flex-end',
                     paddingLeft: 5,
                     textAlign: 'right',
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: '500',
                   }}
                 >
@@ -304,7 +304,7 @@ function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
                 key={value}
                 as={Text}
                 minFontSizePx={6}
-                maxFontSizePx={12}
+                maxFontSizePx={13}
                 mode="oneline"
                 style={{
                   ...styles.tnum,
@@ -313,7 +313,7 @@ function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
                   alignItems: 'flex-end',
                   paddingLeft: 5,
                   textAlign: 'right',
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: '500',
                 }}
               >
