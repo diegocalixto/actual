@@ -989,9 +989,12 @@ function MonthSelector({
   const prevEnabled = month > monthBounds.start;
   const nextEnabled = month < monthUtils.subMonths(monthBounds.end, 1);
 
+  // Taller than the icon so the arrows reach the iOS minimum tappable height
+  // without eating into the width the month name needs.
   const arrowButtonStyle = {
-    padding: 10,
-    margin: 2,
+    width: 36,
+    height: 44,
+    padding: 0,
   };
 
   return (
@@ -1015,16 +1018,26 @@ function MonthSelector({
       <Button
         variant="bare"
         style={{
+          flex: 1,
+          height: 44,
+          padding: '0 2px',
           textAlign: 'center',
-          fontSize: 16,
-          fontWeight: 500,
+          fontSize: 17,
+          fontWeight: 600,
         }}
         onPress={() => {
           onOpenMonthMenu?.(month);
         }}
         data-month={month}
       >
-        <Text style={styles.underlinedText}>
+        <Text
+          style={{
+            ...styles.underlinedText,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {monthUtils.format(month, "MMMM ''yy", locale)}
         </Text>
       </Button>
