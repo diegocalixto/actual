@@ -203,13 +203,13 @@ export function BudgetCell<
                 key={value}
                 as={Text}
                 minFontSizePx={6}
-                maxFontSizePx={12}
+                maxFontSizePx={13}
                 mode="oneline"
                 style={{
                   ...styles.tnum,
                   maxWidth: columnWidth,
                   textAlign: 'right',
-                  fontSize: 12,
+                  fontSize: 13,
                 }}
               >
                 {format(value, type)}

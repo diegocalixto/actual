@@ -34,7 +34,9 @@ import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 import { ExpenseGroupList } from './ExpenseGroupList';
 import { IncomeGroup } from './IncomeGroup';
 
-export const ROW_HEIGHT = 50;
+// Comfortably above the 44px iOS minimum tappable height, since every row
+// packs a name plus up to three tappable amounts.
+export const ROW_HEIGHT = 56;
 
 export const PILL_STYLE: CSSProperties = {
   borderRadius: 16,
@@ -380,7 +382,9 @@ export function BudgetTable({
           data-testid="budget-table"
           style={{
             backgroundColor: theme.pageBackground,
-            minHeight: '100vh',
+            // Fills the scroll viewport so the background always covers it,
+            // without inventing scrollable height beyond the content. The
+            // padding keeps the last row clear of the bottom nav bar.
             paddingBottom: MOBILE_NAV_HEIGHT,
           }}
         >

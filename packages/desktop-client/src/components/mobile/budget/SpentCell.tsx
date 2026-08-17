@@ -73,14 +73,14 @@ export function SpentCell({
                 key={value}
                 as={Text}
                 minFontSizePx={6}
-                maxFontSizePx={12}
+                maxFontSizePx={13}
                 mode="oneline"
                 style={{
                   ...styles.tnum,
                   ...makeAmountGrey(value),
                   maxWidth: columnWidth,
                   textAlign: 'right',
-                  fontSize: 12,
+                  fontSize: 13,
                 }}
               >
                 {format(value, type)}

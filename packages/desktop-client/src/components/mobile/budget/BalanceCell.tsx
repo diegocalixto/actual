@@ -94,7 +94,7 @@ export function BalanceCell({
               key={value}
               as={Text}
               minFontSizePx={6}
-              maxFontSizePx={12}
+              maxFontSizePx={13}
               mode="oneline"
               className={cx(
                 defaultClassName,
@@ -102,7 +102,7 @@ export function BalanceCell({
                   ...styles.tnum,
                   maxWidth: columnWidth,
                   textAlign: 'right',
-                  fontSize: 12,
+                  fontSize: 13,
                 }),
               )}
             >

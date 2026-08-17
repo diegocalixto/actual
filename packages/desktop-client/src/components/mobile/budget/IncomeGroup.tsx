@@ -72,7 +72,7 @@ export function IncomeGroup({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'flex-end',
-          marginTop: 50,
+          marginTop: 8,
           marginBottom: 5,
           marginRight: 15,
         }}
