@@ -23,7 +23,7 @@ export function CategorySpendingSection({
   sheetName,
   budgetType,
 }: CategorySpendingSectionProps) {
-  const { categories, totalSpent } = useHomeCategorySpending({
+  const { categories, totalSpent, isLoading } = useHomeCategorySpending({
     sheetName,
     budgetType,
   });
@@ -47,7 +47,11 @@ export function CategorySpendingSection({
         {categories.length === 0 ? (
           <View style={{ padding: 24, alignItems: 'center' }}>
             <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
-              <Trans>Nenhum gasto registrado neste mês.</Trans>
+              {isLoading ? (
+                <Trans>Carregando gastos…</Trans>
+              ) : (
+                <Trans>Nenhum gasto registrado neste mês.</Trans>
+              )}
             </Text>
           </View>
         ) : (

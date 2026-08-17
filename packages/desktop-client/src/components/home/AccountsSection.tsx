@@ -21,8 +21,16 @@ import { HomeSection } from './HomeSection';
 import { homeAmountColor, homeLabelStyle, homeLayout } from './homeStyles';
 
 export function AccountsSection() {
-  const { data: onBudgetAccounts = [] } = useOnBudgetAccounts();
-  const { data: offBudgetAccounts = [] } = useOffBudgetAccounts();
+  // Both queries carry `placeholderData`, so they report success immediately
+  // and `isLoading` is never true; `isPlaceholderData` is the real signal.
+  const { data: onBudgetAccounts = [], isPlaceholderData: isOnBudgetPending } =
+    useOnBudgetAccounts();
+  const {
+    data: offBudgetAccounts = [],
+    isPlaceholderData: isOffBudgetPending,
+  } = useOffBudgetAccounts();
+
+  const isLoading = isOnBudgetPending || isOffBudgetPending;
 
   const accounts = [
     ...onBudgetAccounts.map(account => ({ account, isOffBudget: false })),
@@ -34,14 +42,22 @@ export function AccountsSection() {
       <HomeCard>
         {accounts.length === 0 ? (
           <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 15, fontWeight: 600 }}>
-              <Trans>Nenhuma conta ainda</Trans>
-            </Text>
-            <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
-              <Trans>
-                Adicione uma conta para começar a acompanhar seu dinheiro.
-              </Trans>
-            </Text>
+            {isLoading ? (
+              <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
+                <Trans>Carregando contas…</Trans>
+              </Text>
+            ) : (
+              <>
+                <Text style={{ fontSize: 15, fontWeight: 600 }}>
+                  <Trans>Nenhuma conta ainda</Trans>
+                </Text>
+                <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
+                  <Trans>
+                    Adicione uma conta para começar a acompanhar seu dinheiro.
+                  </Trans>
+                </Text>
+              </>
+            )}
           </View>
         ) : (
           accounts.map(({ account, isOffBudget }, index) => (

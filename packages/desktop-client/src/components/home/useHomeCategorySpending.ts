@@ -32,6 +32,11 @@ type UseHomeCategorySpendingResult = {
    * Actual's own total keeps.
    */
   totalSpent: number | null;
+  /**
+   * True while the categories query or any per-category cell is still
+   * unresolved, so callers can tell that apart from a month with no spending.
+   */
+  isLoading: boolean;
 };
 
 /**
@@ -50,6 +55,7 @@ export function useHomeCategorySpending({
       list: [],
       grouped: [],
     },
+    isPlaceholderData: areCategoriesPending,
   } = useCategories();
 
   const categoryGroupsById = useMemo(
@@ -128,5 +134,14 @@ export function useHomeCategorySpending({
     [spendingCategories, amountsByCategory, limit],
   );
 
-  return { categories: topCategories, totalSpent };
+  // The categories query carries `placeholderData`, which makes it report
+  // success immediately, so `isLoading` there is never true — `isPlaceholderData`
+  // is the real signal. For the cells, a binding counts as resolved once it has
+  // called back, which is why this checks for key presence rather than a
+  // non-zero amount: 0 is a legitimate monthly total.
+  const isLoading =
+    areCategoriesPending ||
+    spendingCategories.some(category => !(category.id in amountsByCategory));
+
+  return { categories: topCategories, totalSpent, isLoading };
 }
