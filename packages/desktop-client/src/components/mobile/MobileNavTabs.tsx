@@ -22,7 +22,6 @@ import { View } from '@actual-app/components/view';
 import { useDrag } from '@use-gesture/react';
 
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
-import { useScrollListener } from '#hooks/useScrollListener';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 
 const COLUMN_COUNT = 3;
@@ -31,7 +30,6 @@ const ROW_HEIGHT = 70;
 const TOTAL_HEIGHT = ROW_HEIGHT * COLUMN_COUNT;
 const OPEN_FULL_Y = 1;
 const OPEN_DEFAULT_Y = TOTAL_HEIGHT - ROW_HEIGHT;
-const HIDDEN_Y = TOTAL_HEIGHT;
 
 export const MOBILE_NAV_HEIGHT = ROW_HEIGHT + PILL_HEIGHT;
 
@@ -41,9 +39,7 @@ export function MobileNavTabs() {
   const syncServerStatus = useSyncServerStatus();
   const isTestEnv = useIsTestEnv();
   const isUsingServer = syncServerStatus !== 'no-server' || isTestEnv;
-  const [navbarState, setNavbarState] = useState<'default' | 'open' | 'hidden'>(
-    'default',
-  );
+  const [navbarState, setNavbarState] = useState<'default' | 'open'>('default');
 
   const navTabStyle = {
     flex: `1 1 ${100 / COLUMN_COUNT}%`,
@@ -73,18 +69,6 @@ export function MobileNavTabs() {
       setNavbarState('default');
       void api.start({
         to: { y: OPEN_DEFAULT_Y },
-        immediate: isTestEnv,
-        config: { ...config.stiff, velocity },
-      });
-    },
-    [api, isTestEnv],
-  );
-
-  const hide = useCallback(
-    (velocity = 0) => {
-      setNavbarState('hidden');
-      void api.start({
-        to: { y: HIDDEN_Y },
         immediate: isTestEnv,
         config: { ...config.stiff, velocity },
       });
@@ -159,19 +143,6 @@ export function MobileNavTabs() {
   const bufferTabs = Array.from({ length: bufferTabsCount }).map((_, idx) => (
     <div key={idx} style={navTabStyle} />
   ));
-
-  useScrollListener(
-    useCallback(
-      ({ isScrolling, hasScrolledToEnd }) => {
-        if (isScrolling('down') && !hasScrolledToEnd('up')) {
-          hide();
-        } else if (isScrolling('up') && !hasScrolledToEnd('down')) {
-          openDefault();
-        }
-      },
-      [hide, openDefault],
-    ),
-  );
 
   const bind = useDrag(
     ({
