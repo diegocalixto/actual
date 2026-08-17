@@ -49,6 +49,7 @@ export function HomePage() {
           width: '100%',
           maxWidth: homeLayout.maxContentWidth,
           alignSelf: 'center',
+          flexShrink: 0,
           padding: `${isNarrowWidth ? 16 : 24}px ${homeLayout.gutter}px 48px`,
           gap: homeLayout.sectionGap,
         }}
