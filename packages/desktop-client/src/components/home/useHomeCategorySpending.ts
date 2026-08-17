@@ -8,6 +8,7 @@ import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import type { HomeBudgetType } from './useHomeMonth';
+import { useHomeSheetCell } from './useHomeSheetCell';
 
 export type HomeCategorySpending = {
   category: CategoryEntity;
@@ -24,8 +25,13 @@ type UseHomeCategorySpendingProps = {
 type UseHomeCategorySpendingResult = {
   /** Highest-spending categories first, capped at `limit`. */
   categories: HomeCategorySpending[];
-  /** Total outflow across every spending category, not just the listed ones. */
-  totalSpent: number;
+  /**
+   * The month's official `total-spent` cell, i.e. the same value the "Saídas"
+   * tile reads, or `null` while it loads. Deliberately not derived from the
+   * listed categories: those drop refunded (net positive) categories, which
+   * Actual's own total keeps.
+   */
+  totalSpent: number | null;
 };
 
 /**
@@ -99,19 +105,28 @@ export function useHomeCategorySpending({
     return () => unbinds.forEach(unbind => unbind());
   }, [bindings, sheetName, spreadsheet]);
 
-  return useMemo(() => {
-    const spent = spendingCategories
-      .map(category => ({
-        category,
-        amount: amountsByCategory[category.id] ?? 0,
-      }))
-      .filter(entry => entry.amount < 0)
-      // Most negative first, i.e. largest outflow.
-      .sort((a, b) => a.amount - b.amount);
+  const totalSpent = useHomeSheetCell(
+    sheetName,
+    budgetType === 'tracking'
+      ? trackingBudget.totalSpent
+      : envelopeBudget.totalSpent,
+  );
 
-    return {
-      categories: spent.slice(0, limit),
-      totalSpent: spent.reduce((total, entry) => total + entry.amount, 0),
-    };
-  }, [spendingCategories, amountsByCategory, limit]);
+  const topCategories = useMemo(
+    () =>
+      spendingCategories
+        .map(category => ({
+          category,
+          amount: amountsByCategory[category.id] ?? 0,
+        }))
+        // Refunded categories are left out of the list so no row can render a
+        // negative-width bar; they still count towards `totalSpent`.
+        .filter(entry => entry.amount < 0)
+        // Most negative first, i.e. largest outflow.
+        .sort((a, b) => a.amount - b.amount)
+        .slice(0, limit),
+    [spendingCategories, amountsByCategory, limit],
+  );
+
+  return { categories: topCategories, totalSpent };
 }
