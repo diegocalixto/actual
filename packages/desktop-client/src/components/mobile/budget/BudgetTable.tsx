@@ -435,7 +435,11 @@ function BudgetTableHeader({
   const format = useFormat();
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
   const buttonStyle = {
-    padding: 0,
+    // Vertical padding only: it grows the tappable box from the 33px text
+    // block up to the 43px the sibling `To Budget` button already occupies,
+    // filling slack the header row leaves empty. Header height, column
+    // widths and the centred text all stay exactly where they were.
+    padding: '5px 0',
     backgroundColor: 'transparent',
     borderRadius: 'unset',
   };
