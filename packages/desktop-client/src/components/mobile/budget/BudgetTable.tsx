@@ -385,7 +385,13 @@ export function BudgetTable({
         <View
           data-testid="budget-table"
           style={{
-            backgroundColor: theme.pageBackground,
+            // No background of its own: like every other mobile list
+            // (accounts, rules, payees, schedules) the group cards float on
+            // the surface `Page` already paints, so whatever viewport is left
+            // over below a short month reads as page rather than as an empty
+            // container. `theme.pageBackground` here painted the desktop
+            // surface over part of a mobile page and split it in two.
+            //
             // The bottom nav bar is fixed and overlays the page, so the last
             // row needs padding to stay clear of it.
             paddingBottom: MOBILE_NAV_HEIGHT,
