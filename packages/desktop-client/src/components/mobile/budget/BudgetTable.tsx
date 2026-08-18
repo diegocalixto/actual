@@ -10,6 +10,7 @@ import { Label } from '@actual-app/components/label';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
+import { breakpoints } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
@@ -348,7 +349,10 @@ export function BudgetTable({
   onEditCategory,
 }: BudgetTableProps) {
   const { width } = useResponsive();
-  const show3Columns = width >= 300;
+  // Three value columns only fit once we are past the narrow layout, where the
+  // desktop table takes over anyway. Below that the Budgeted/Spent toggle gives
+  // each remaining column enough room to render amounts at full size.
+  const show3Columns = width >= breakpoints.small;
 
   // let editMode = false; // neuter editMode -- sorry, not rewriting drag-n-drop right now
 
