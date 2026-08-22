@@ -353,7 +353,7 @@ export function ConfigServer() {
       properties: ['openFile'],
       filters: [
         {
-          name: 'Self Signed Certificate',
+          name: t('Self Signed Certificate'),
           extensions: ['crt', 'pem'],
         },
       ],
