@@ -180,5 +180,32 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       'Não foi possível concluir a autorização.',
     'You can close this window and try again.':
       'Você pode fechar esta janela e tentar novamente.',
+
+    // Tags — the catalog keeps the English loanword "tag(s)" throughout, which
+    // clashes with the fork's frozen term. The bare `Tags` key was already
+    // overridden in 7.1, so the page title read "Etiquetas" while its body read
+    // "tags"; these align the rest of the surface.
+    Tag: 'Etiqueta',
+    'Create tag': 'Criar etiqueta',
+    'New tag': 'Nova etiqueta',
+    'Tag description': 'Descrição da etiqueta',
+    'No Tags': 'Sem etiquetas',
+    'Discover new tags': 'Descobrir novas etiquetas',
+    'Filter tags...': 'Filtrar etiquetas...',
+    "Don't show hidden tags": 'Não mostrar etiquetas ocultas',
+    'User defined tags with color and description.':
+      'Etiquetas com cor e descrição definidas pelo usuário.',
+
+    // Tags — missing from the catalog.
+    'Add tag': 'Adicionar etiqueta',
+    'Show hidden tags': 'Mostrar etiquetas ocultas',
+    'Tag List': 'Lista de etiquetas',
+    Unhide: 'Reexibir',
+
+    // Tags — key introduced by replacing a hardcoded `${c} Tags` template in
+    // SelectedTagsButton; follows the sibling `{{count}} transactions` pattern.
+    '{{count}} tags_one': '{{count}} etiqueta',
+    '{{count}} tags_many': '{{count}} etiquetas',
+    '{{count}} tags_other': '{{count}} etiquetas',
   },
 };
