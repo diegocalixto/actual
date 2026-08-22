@@ -306,5 +306,52 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // The notification title for this message is "Sessão expirada".
     'Login expired, please log in again.':
       'Sessão expirada, faça login novamente.',
+
+    // Command bar — the tour entry has no catalog translation.
+    'Take a tour of {{appName}}': 'Fazer um tour pelo {{appName}}',
+    // Sibling of `On Budget` ("No orçamento"); the two are rendered as
+    // adjacent rows here and as the paired group labels in the report
+    // account selector, so the capitalization has to match. The catalog's own
+    // `Off budget` key already reads "Fora do orçamento".
+    'Off Budget': 'Fora do orçamento',
+    // Every other "Custom …" key in the catalog uses "personalizado";
+    // this heading lists the very reports that `New custom report` calls
+    // "relatório personalizado".
+    'Custom Reports': 'Relatórios personalizados',
+    // Searches *inside* the budget. The catalog already renders this pattern
+    // as "Buscar em …" (`Search All Accounts`, `Search On Budget Accounts`);
+    // "Procurar {{budgetName}}" reads as searching *for* the budget.
+    'Search {{budgetName}}...': 'Buscar em {{budgetName}}…',
+
+    // Fatal error — backend worker failure, missing from the catalog.
+    "Actual couldn't load a critical backend worker. Reload the page to try again; if the problem persists, do a hard refresh to clear any stale cached assets.":
+      'O Actual não conseguiu carregar um worker essencial do backend. Recarregue a página para tentar de novo; se o problema continuar, faça uma atualização forçada para limpar arquivos em cache desatualizados.',
+
+    // Import / download errors (util/error.ts) — none of these reached the
+    // catalog. "archive" is rendered "arquivo compactado" so it stays distinct
+    // from the "file" it contains, and the tail follows the wording the
+    // catalog already uses for its siblings.
+    'This file is larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.':
+      'Este arquivo é maior que o tamanho máximo suportado de {{maxSizeMB}} MB, desculpe! Visite https://actualbudget.org/contact/ para obter ajuda.',
+    'The file "{{entryName}}" in this archive is larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.':
+      'O arquivo "{{entryName}}" dentro deste arquivo compactado é maior que o tamanho máximo suportado de {{maxSizeMB}} MB, desculpe! Visite https://actualbudget.org/contact/ para obter ajuda.',
+    'The uncompressed contents of this archive are larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.':
+      'O conteúdo descompactado deste arquivo compactado é maior que o tamanho máximo suportado de {{maxSizeMB}} MB, desculpe! Visite https://actualbudget.org/contact/ para obter ajuda.',
+    'This archive contains an entry with an unsafe file name: "{{entryName}}".':
+      'Este arquivo compactado contém um item com nome de arquivo inseguro: "{{entryName}}".',
+    'This archive contains more than one entry named "{{entryName}}".':
+      'Este arquivo compactado contém mais de um item chamado "{{entryName}}".',
+    'This file could not be imported, sorry! Visit https://actualbudget.org/contact/ for support.':
+      'Não foi possível importar este arquivo, desculpe! Visite https://actualbudget.org/contact/ para obter ajuda.',
+    'This file is too large to import, sorry! Visit https://actualbudget.org/contact/ for support.':
+      'Este arquivo é grande demais para ser importado, desculpe! Visite https://actualbudget.org/contact/ para obter ajuda.',
+    'This budget could not be loaded because it uses a newer database schema than this version of Actual supports. Make sure you are using the latest version, then try again.':
+      'Este orçamento não pôde ser carregado porque usa um esquema de banco de dados mais recente do que esta versão do Actual suporta. Verifique se você está usando a versão mais recente e tente novamente.',
+    'Unable to decrypt file {{fileName}}. To change your key, first download this file with the proper password.':
+      'Não foi possível descriptografar o arquivo {{fileName}}. Para alterar sua chave, baixe primeiro este arquivo com a senha correta.',
+    // Fallback for {{fileName}} above. `i18next-parser` never sees this key —
+    // it sits inside the options object of the surrounding t() call — so it
+    // is absent from the English catalog too and would render as "(unknown)".
+    '(unknown)': '(desconhecido)',
   },
 };
