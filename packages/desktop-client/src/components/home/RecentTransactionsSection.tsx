@@ -43,15 +43,15 @@ export function RecentTransactionsSection() {
     .slice(0, TRANSACTION_COUNT);
 
   return (
-    <HomeSection title={<Trans>Movimentações recentes</Trans>}>
+    <HomeSection title={<Trans>Recent transactions</Trans>}>
       <HomeCard>
         {recentTransactions.length === 0 ? (
           <View style={{ padding: 24, alignItems: 'center' }}>
             <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
               {isLoading ? (
-                <Trans>Carregando movimentações…</Trans>
+                <Trans>Loading transactions…</Trans>
               ) : (
-                <Trans>Nenhuma movimentação registrada ainda.</Trans>
+                <Trans>No transactions recorded yet.</Trans>
               )}
             </Text>
           </View>
@@ -91,7 +91,7 @@ function TransactionRow({ transaction, isLast }: TransactionRowProps) {
 
   const title =
     getPrettyPayee({ t, transaction, payee, transferAccount }) ||
-    t('(Sem beneficiário)');
+    t('(No payee)');
 
   const category = transaction.category
     ? categoriesById?.list[transaction.category]
@@ -114,7 +114,7 @@ function TransactionRow({ transaction, isLast }: TransactionRowProps) {
   return (
     <Button
       variant="bare"
-      aria-label={t('Abrir movimentação {{title}}', { title })}
+      aria-label={t('Open transaction {{title}}', { title })}
       onPress={onPress}
       style={{
         width: '100%',

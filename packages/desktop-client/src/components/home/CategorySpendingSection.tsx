@@ -33,7 +33,7 @@ export function CategorySpendingSection({
 
   return (
     <HomeSection
-      title={<Trans>Gastos por categoria</Trans>}
+      title={<Trans>Spending by category</Trans>}
       action={
         categories.length > 0 ? (
           <HomeAmount
@@ -48,9 +48,9 @@ export function CategorySpendingSection({
           <View style={{ padding: 24, alignItems: 'center' }}>
             <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
               {isLoading ? (
-                <Trans>Carregando gastos…</Trans>
+                <Trans>Loading spending…</Trans>
               ) : (
-                <Trans>Nenhum gasto registrado neste mês.</Trans>
+                <Trans>No spending recorded this month.</Trans>
               )}
             </Text>
           </View>

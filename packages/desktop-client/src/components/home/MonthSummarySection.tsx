@@ -63,7 +63,7 @@ export function MonthSummarySection({
 
   return (
     <HomeSection
-      title={<Trans>Este mês</Trans>}
+      title={<Trans>This month</Trans>}
       action={
         <Text style={{ ...homeLabelStyle, fontSize: 12 }}>
           {monthUtils.format(month, "MMMM ''yy", locale)}
@@ -78,10 +78,10 @@ export function MonthSummarySection({
           gap: 16,
         }}
       >
-        <SummaryTile label={<Trans>Entradas</Trans>} value={totalIncome} />
-        <SummaryTile label={<Trans>Saídas</Trans>} value={totalSpent} />
+        <SummaryTile label={<Trans>Money in</Trans>} value={totalIncome} />
+        <SummaryTile label={<Trans>Money out</Trans>} value={totalSpent} />
         <SummaryTile
-          label={<Trans>Resultado</Trans>}
+          label={<Trans>Monthly net</Trans>}
           value={result}
           emphasize
         />

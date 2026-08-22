@@ -49,7 +49,7 @@ export function AvailableCard({ sheetName, budgetType }: AvailableCardProps) {
         }}
       >
         <Text style={homeLabelStyle}>
-          <Trans>Disponível</Trans>
+          <Trans>Available</Trans>
         </Text>
 
         <View
@@ -84,7 +84,7 @@ export function AvailableCard({ sheetName, budgetType }: AvailableCardProps) {
             marginTop: 2,
           }}
         >
-          <Trans>Somatório das contas no orçamento</Trans>
+          <Trans>Sum of on-budget accounts</Trans>
         </Text>
       </View>
 
@@ -110,13 +110,10 @@ export function AvailableCard({ sheetName, budgetType }: AvailableCardProps) {
         }}
       >
         {budgetType === 'envelope' && (
-          <HeroStat label={<Trans>A orçar</Trans>} value={toBudget} />
+          <HeroStat label={<Trans>To Budget</Trans>} value={toBudget} />
         )}
-        <HeroStat
-          label={<Trans>Fora do orçamento</Trans>}
-          value={offBudgetBalance}
-        />
-        <HeroStat label={<Trans>Saldo total</Trans>} value={totalBalance} />
+        <HeroStat label={<Trans>Off budget</Trans>} value={offBudgetBalance} />
+        <HeroStat label={<Trans>Total balance</Trans>} value={totalBalance} />
       </View>
     </HomeCard>
   );

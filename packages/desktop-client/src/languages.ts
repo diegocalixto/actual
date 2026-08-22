@@ -1,4 +1,3 @@
-export const languages = import.meta.glob([
-  '/locale/*.json',
-  '!/locale/*_old.json',
-]);
+export const languages = import.meta.glob<{
+  default: Record<string, string>;
+}>(['/locale/*.json', '!/locale/*_old.json']);

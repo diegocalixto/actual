@@ -23,12 +23,12 @@ function useGreeting() {
   const hour = new Date().getHours();
 
   if (hour < 12) {
-    return t('Bom dia');
+    return t('Good morning');
   }
   if (hour < 18) {
-    return t('Boa tarde');
+    return t('Good afternoon');
   }
-  return t('Boa noite');
+  return t('Good evening');
 }
 
 export function HomePage() {
@@ -40,7 +40,7 @@ export function HomePage() {
     <Page
       header={
         isNarrowWidth ? (
-          <MobilePageHeader title={<Trans>Visão geral</Trans>} />
+          <MobilePageHeader title={<Trans>Overview</Trans>} />
         ) : null
       }
       padding={0}
@@ -70,7 +70,7 @@ export function HomePage() {
                 color: theme.pageText,
               }}
             >
-              <Trans>Visão geral</Trans>
+              <Trans>Overview</Trans>
             </Text>
           )}
         </View>

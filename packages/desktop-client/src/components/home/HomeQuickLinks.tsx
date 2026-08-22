@@ -26,9 +26,9 @@ export function HomeQuickLinks() {
   const { t } = useTranslation();
 
   const links: Array<{ label: string; to: string; Icon: QuickLinkIcon }> = [
-    { label: t('Orçamento'), to: '/budget', Icon: SvgWallet },
-    { label: t('Contas'), to: '/accounts', Icon: SvgPiggyBank },
-    { label: t('Relatórios'), to: '/reports', Icon: SvgReports },
+    { label: t('Budget'), to: '/budget', Icon: SvgWallet },
+    { label: t('Accounts'), to: '/accounts', Icon: SvgPiggyBank },
+    { label: t('Reports'), to: '/reports', Icon: SvgReports },
   ];
 
   return (

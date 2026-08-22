@@ -38,23 +38,21 @@ export function AccountsSection() {
   ];
 
   return (
-    <HomeSection title={<Trans>Contas</Trans>}>
+    <HomeSection title={<Trans>Accounts</Trans>}>
       <HomeCard>
         {accounts.length === 0 ? (
           <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
             {isLoading ? (
               <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
-                <Trans>Carregando contas…</Trans>
+                <Trans>Loading accounts…</Trans>
               </Text>
             ) : (
               <>
                 <Text style={{ fontSize: 15, fontWeight: 600 }}>
-                  <Trans>Nenhuma conta ainda</Trans>
+                  <Trans>No accounts yet</Trans>
                 </Text>
                 <Text style={{ ...homeLabelStyle, textAlign: 'center' }}>
-                  <Trans>
-                    Adicione uma conta para começar a acompanhar seu dinheiro.
-                  </Trans>
+                  <Trans>Add an account to start tracking your money.</Trans>
                 </Text>
               </>
             )}
@@ -101,13 +99,13 @@ function AccountRow({ account, isOffBudget, isLast }: AccountRowProps) {
     details.length > 0
       ? details.join(' · ')
       : isOffBudget
-        ? t('Fora do orçamento')
-        : t('No orçamento');
+        ? t('Off budget')
+        : t('On budget');
 
   return (
     <Button
       variant="bare"
-      aria-label={t('Ver transações de {{name}}', { name: account.name })}
+      aria-label={t('View transactions for {{name}}', { name: account.name })}
       onPress={() => void navigate(`/accounts/${account.id}`)}
       style={{
         width: '100%',

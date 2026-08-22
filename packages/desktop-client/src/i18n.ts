@@ -5,6 +5,7 @@ import i18n from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 
 import { languages } from './languages';
+import { localeOverrides } from './locale-overrides';
 
 export const availableLanguages = Platform.isPlaywright
   ? []
@@ -13,11 +14,15 @@ export const availableLanguages = Platform.isPlaywright
 const isLanguageAvailable = (language: string) =>
   Object.hasOwn(languages, `/locale/${language}.json`);
 
-const loadLanguage = (language: string) => {
+const loadLanguage = async (language: string) => {
   if (!isLanguageAvailable(language)) {
     throw new Error(`Unknown locale ${language}`);
   }
-  return languages[`/locale/${language}.json`]();
+
+  const { default: resources } = await languages[`/locale/${language}.json`]();
+
+  const overrides = localeOverrides[language];
+  return overrides ? { ...resources, ...overrides } : resources;
 };
 
 void i18n
