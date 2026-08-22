@@ -123,5 +123,62 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // The catalog has "vinculadas à agendamentos"; crase is wrong here.
     'Some rules were not deleted because they are linked to schedules.':
       'Algumas regras não foram removidas, pois estão vinculadas a agendamentos.',
+
+    // Bank Sync — the catalog reads "Actual" as the adjective "atual"; here it
+    // is the product name, paired with "Bank field". The narrow-column fallback
+    // in FieldMapping.tsx renders the literal 'Actual', confirming this.
+    'Actual field': 'Campo do Actual',
+    // Untranslated in the catalog (value identical to the English key).
+    'Completing authorization...': 'Concluindo autorização...',
+    '{{provider}} menu': 'Menu do {{provider}}',
+
+    // Bank Sync — providers panel.
+    Providers: 'Provedores',
+    'Set up a bank sync provider, then link new accounts or connect an existing Actual account.':
+      'Configure um provedor de sincronização bancária e depois conecte novas contas ou vincule uma conta existente do Actual.',
+    'this budget only': 'somente este orçamento',
+    'Not configured': 'Não configurado',
+    'Set up': 'Configurar',
+    'Link bank account': 'Conectar conta bancária',
+    'Reset {{provider}} credentials': 'Redefinir credenciais do {{provider}}',
+    'Reset credentials before setting credentials for this budget file.':
+      'Redefina as credenciais antes de definir credenciais para este arquivo de orçamento.',
+    "You don't have the required permissions to configure all bank sync providers. You can set up Pluggy.ai because you are the owner of this budget file.":
+      'Você não tem as permissões necessárias para configurar todos os provedores de sincronização bancária. Você pode configurar o Pluggy.ai porque é o proprietário deste arquivo de orçamento.',
+    "You don't have the required permissions to configure bank sync providers. Please contact an Admin.":
+      'Você não tem as permissões necessárias para configurar provedores de sincronização bancária. Entre em contato com um administrador.',
+
+    // Bank Sync — provider descriptions and errors.
+    'Failed to reset {{provider}}': 'Falha ao redefinir o {{provider}}',
+    'Budget file ID is required.':
+      'O ID do arquivo de orçamento é obrigatório.',
+    'Error when trying to contact SimpleFIN':
+      'Erro ao tentar contatar o SimpleFIN',
+    'Error when trying to contact Enable Banking':
+      'Erro ao tentar contatar o Enable Banking',
+    'Error when trying to contact Akahu': 'Erro ao tentar contatar o Akahu',
+    'Link a European bank account to automatically download transactions.':
+      'Conecte uma conta bancária europeia para baixar transações automaticamente.',
+    'Link a North American bank account to automatically download transactions.':
+      'Conecte uma conta bancária norte-americana para baixar transações automaticamente.',
+    'Link a Brazilian bank account to automatically download transactions.':
+      'Conecte uma conta bancária brasileira para baixar transações automaticamente.',
+    'Link a New Zealand bank account to automatically download transactions.':
+      'Conecte uma conta bancária neozelandesa para baixar transações automaticamente.',
+    'Link a European bank account via Enable Banking, a free alternative to GoCardless for PSD2-supported banks.':
+      'Conecte uma conta bancária europeia via Enable Banking, uma alternativa gratuita ao GoCardless para bancos com suporte a PSD2.',
+
+    // Bank Sync — empty states.
+    'No accounts yet. Once a provider is set up, use <2>Link bank account</2> to connect your bank and create your accounts automatically. You can also add accounts manually and connect them here later.':
+      'Nenhuma conta ainda. Depois de configurar um provedor, use <2>Conectar conta bancária</2> para conectar seu banco e criar suas contas automaticamente. Você também pode adicionar contas manualmente e conectá-las aqui depois.',
+    'Linked accounts will appear here. Use a provider above to link your bank, or create an account from the Accounts tab and connect it here later.':
+      'As contas conectadas aparecerão aqui. Use um provedor acima para conectar seu banco, ou crie uma conta na aba Contas e conecte-a aqui depois.',
+
+    // Bank Sync — Enable Banking OAuth callback.
+    'Missing authorization parameters.': 'Parâmetros de autorização ausentes.',
+    'Failed to complete authorization.':
+      'Não foi possível concluir a autorização.',
+    'You can close this window and try again.':
+      'Você pode fechar esta janela e tentar novamente.',
   },
 };
