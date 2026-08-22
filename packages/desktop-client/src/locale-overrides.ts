@@ -42,5 +42,33 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Loading transactions…': 'Carregando movimentações…',
     'No transactions recorded yet.': 'Nenhuma movimentação registrada ainda.',
     'Open transaction {{title}}': 'Abrir movimentação {{title}}',
+
+    // Reports — date-range header and range presets.
+    'Select by': 'Selecionar por',
+    'Quick select': 'Seleção rápida',
+    Previous: 'Anterior',
+    Next: 'Próximo',
+    'Date range': 'Período',
+    'Next 3 months': 'Próximos 3 meses',
+    'Next 6 months': 'Próximos 6 meses',
+    'Next year': 'Próximo ano',
+    'Current quarter': 'Trimestre atual',
+    'Previous quarter': 'Trimestre anterior',
+    'Last 30 days': 'Últimos 30 dias',
+    'Show trend lines': 'Mostrar linhas de tendência',
+
+    // Reports — Spending report average range.
+    'Last {{count}} months_one': 'Último {{count}} mês',
+    'Last {{count}} months_other': 'Últimos {{count}} meses',
+    YTD: 'Acumulado no ano',
+    'Spent Average ({{rangeLabel}}):': 'Média de gastos ({{rangeLabel}}):',
+    'Spent Average MTD ({{rangeLabel}}):':
+      'Média de gastos no mês até o momento ({{rangeLabel}}):',
+
+    // Schedules — edit form.
+    'Upcoming length': 'Antecedência',
+    'Use global default': 'Usar padrão global',
+    'How far in advance this schedule appears as upcoming':
+      'Com quanta antecedência este agendamento aparece como próximo',
   },
 };
