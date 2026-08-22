@@ -90,5 +90,14 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       '{{count}} transferências foram corrigidas.',
     'Fixed {{count}} transfers._other':
       '{{count}} transferências foram corrigidas.',
+
+    // Payees — "Transfer:" labels a transfer payee, so it is the noun
+    // "Transferência", not the verb. The catalog already renders the bare
+    // `Transfer` key as "Transferência"; only these two prefixed forms
+    // disagree. The account name is concatenated separately and untouched.
+    'Transfer: ': 'Transferência: ',
+    'Transfer: {{name}}': 'Transferência: {{name}}',
+    // The catalog drops the article: "Exibir todos beneficiários".
+    'Show all payees': 'Exibir todos os beneficiários',
   },
 };
