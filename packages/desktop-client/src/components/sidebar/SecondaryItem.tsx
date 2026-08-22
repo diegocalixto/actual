@@ -12,6 +12,11 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { accountNameStyle } from './Account';
+import {
+  sidebarItemInset,
+  sidebarItemRadius,
+  sidebarItemSelectedStyle,
+} from './Item';
 import { ItemContent } from './ItemContent';
 
 const fontWeight = 600;
@@ -55,21 +60,33 @@ export function SecondaryItem({
   );
 
   return (
-    <View data-testid={dataTestId} style={{ flexShrink: 0, ...style }}>
+    <View
+      data-testid={dataTestId}
+      style={{
+        flexShrink: 0,
+        margin: `0 ${sidebarItemInset}px 2px`,
+        '& > a:focus-visible, & > button:focus-visible': {
+          outline: `2px solid ${theme.sidebarItemAccentSelected}`,
+          outlineOffset: -2,
+        },
+        ...style,
+      }}
+    >
       <ItemContent
         style={{
           ...accountNameStyle,
+          marginTop: 0,
+          marginBottom: 0,
           color: theme.sidebarItemText,
-          paddingLeft: 14 + indent,
+          paddingLeft: 14 - sidebarItemInset + indent,
+          borderRadius: sidebarItemRadius,
           fontWeight: bold ? fontWeight : null,
           ':hover': { backgroundColor: theme.sidebarItemBackgroundHover },
         }}
         to={to}
         onClick={onClick}
         activeStyle={{
-          borderLeft: '4px solid ' + theme.sidebarItemTextSelected,
-          paddingLeft: 14 - 4 + indent,
-          color: theme.sidebarItemTextSelected,
+          ...sidebarItemSelectedStyle,
           fontWeight: bold ? fontWeight : null,
         }}
       >

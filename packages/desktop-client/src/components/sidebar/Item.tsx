@@ -15,6 +15,19 @@ import { View } from '@actual-app/components/view';
 
 import { ItemContent } from './ItemContent';
 
+/** Horizontal inset of the row surface from the sidebar edges. */
+export const sidebarItemInset = 8;
+export const sidebarItemRadius = 6;
+
+/**
+ * Selection is a tinted surface instead of a left bar, so the box model is
+ * identical in normal, hover and active states.
+ */
+export const sidebarItemSelectedStyle: CSSProperties = {
+  backgroundColor: `color-mix(in srgb, ${theme.sidebarItemAccentSelected} 18%, ${theme.sidebarItemBackgroundHover})`,
+  color: theme.sidebarItemTextSelected,
+};
+
 type ItemProps = {
   title: string;
   Icon:
@@ -59,25 +72,35 @@ export function Item({
   );
 
   return (
-    <View style={{ flexShrink: 0, ...style }}>
+    <View
+      style={{
+        flexShrink: 0,
+        margin: `0 ${sidebarItemInset}px 2px`,
+        // Hover lives here rather than on the row so it reaches the <Button>
+        // branch too, whose styles are applied inline and cannot carry a
+        // pseudo-class. Skipping the active row keeps its selected surface.
+        '&:hover > a:not([aria-current="page"]), &:hover > button': hoverStyle,
+        '& > a:focus-visible, & > button:focus-visible': {
+          outline: `2px solid ${theme.sidebarItemAccentSelected}`,
+          outlineOffset: -2,
+        },
+        ...style,
+      }}
+    >
       <ItemContent
         style={{
           ...styles.mediumText,
           paddingTop: 9,
           paddingBottom: 9,
-          paddingLeft: 19 + indent,
+          paddingLeft: 19 - sidebarItemInset + indent,
           paddingRight: 10,
+          borderRadius: sidebarItemRadius,
           textDecoration: 'none',
           color: theme.sidebarItemText,
           ...(forceHover ? hoverStyle : {}),
-          ':hover': hoverStyle,
         }}
         forceActive={forceActive}
-        activeStyle={{
-          borderLeft: '4px solid ' + theme.sidebarItemTextSelected,
-          paddingLeft: 19 + indent - 4,
-          color: theme.sidebarItemTextSelected,
-        }}
+        activeStyle={sidebarItemSelectedStyle}
         to={to}
         onClick={onClick}
       >
