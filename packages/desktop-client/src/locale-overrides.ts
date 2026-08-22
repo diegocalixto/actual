@@ -99,5 +99,29 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Transfer: {{name}}': 'Transferência: {{name}}',
     // The catalog drops the article: "Exibir todos beneficiários".
     'Show all payees': 'Exibir todos os beneficiários',
+
+    // Rules — tag operators, missing from the catalog.
+    'has all tags': 'tem todas as etiquetas',
+    'has any tag': 'tem alguma etiqueta',
+    // Rules — shown for rules that already have a persisted `options.template`,
+    // so it appears even with the templating flag off.
+    'Templating is deprecated and will be removed in a future release. Switch this action to a formula instead.':
+      'O uso de modelos está obsoleto e será removido em uma versão futura. Troque esta ação por uma fórmula.',
+
+    // Rules — the catalog reads these as the wrong part of speech.
+    // "Filter rules" is the mobile search placeholder (a verb); the catalog
+    // renders it as the noun phrase "Regras de filtro". The desktop sibling
+    // key "Filter rules..." is already correct.
+    'Filter rules…': 'Filtrar regras…',
+    // Fills "Se {{allOrAny}} dessas condições corresponderem:"; "tudo" does not
+    // agree with "condições".
+    all: 'todas',
+    // Operator label followed by an arbitrary value, so no crase.
+    matches: 'corresponde a',
+    // Labels split number N, so the noun "Divisão", not the verb "Dividir".
+    'Split {{num}}': 'Divisão {{num}}',
+    // The catalog has "vinculadas à agendamentos"; crase is wrong here.
+    'Some rules were not deleted because they are linked to schedules.':
+      'Algumas regras não foram removidas, pois estão vinculadas a agendamentos.',
   },
 };
