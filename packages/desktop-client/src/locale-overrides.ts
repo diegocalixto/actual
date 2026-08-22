@@ -70,5 +70,25 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Use global default': 'Usar padrão global',
     'How far in advance this schedule appears as upcoming':
       'Com quanta antecedência este agendamento aparece como próximo',
+
+    // Settings — theme custom CSS indicator.
+    'Custom CSS is active': 'CSS personalizado ativo',
+    'Custom CSS override active — click to edit':
+      'CSS personalizado ativo — clique para editar',
+
+    // Settings — export size warnings.
+    'This export is larger than Actual can safely re-import. You may not be able to restore this backup.':
+      'Esta exportação é maior do que o Actual consegue reimportar com segurança. Talvez você não consiga restaurar esta cópia.',
+    'This export is larger than the memory available on this device. Restoring it here may fail.':
+      'Esta exportação é maior que a memória disponível neste dispositivo. Restaurá-la aqui pode falhar.',
+
+    // Settings — repair transactions. The catalog reads "Fixed" as the
+    // adjective ("Transferências fixas de {{count}}"); every sibling message in
+    // this family correctly reads it as the verb "corrigidas".
+    'Fixed {{count}} transfers._one': '{{count}} transferência foi corrigida.',
+    'Fixed {{count}} transfers._many':
+      '{{count}} transferências foram corrigidas.',
+    'Fixed {{count}} transfers._other':
+      '{{count}} transferências foram corrigidas.',
   },
 };
