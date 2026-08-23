@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import { getLocale } from '@actual-app/core/shared/locale';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import type {
@@ -6,6 +7,7 @@ import type {
   RuleConditionEntity,
 } from '@actual-app/core/types/models';
 import * as d from 'date-fns';
+import i18n from 'i18next';
 
 import { runAll } from '#components/reports/util';
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
@@ -178,14 +180,18 @@ export function formatPeriodLabel(
   periodKey: string,
   granularity: AgeOfMoneyGranularity,
 ): string {
+  // Not a component, so the locale comes from the resolved i18next language
+  // rather than `useLocale()`; without it date-fns falls back to en-US.
+  const locale = getLocale(i18n.language);
+
   switch (granularity) {
     case 'daily':
-      return d.format(d.parseISO(periodKey), 'MMM d, yyyy');
+      return d.format(d.parseISO(periodKey), 'MMM d, yyyy', { locale });
     case 'weekly':
-      return d.format(d.parseISO(periodKey), 'MMM d, yyyy');
+      return d.format(d.parseISO(periodKey), 'MMM d, yyyy', { locale });
     case 'monthly':
     default:
-      return d.format(d.parseISO(periodKey + '-01'), 'MMM yyyy');
+      return d.format(d.parseISO(periodKey + '-01'), 'MMM yyyy', { locale });
   }
 }
 

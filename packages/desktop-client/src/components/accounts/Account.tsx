@@ -772,7 +772,7 @@ class AccountInternal extends PureComponent<
         addNotification({
           notification: {
             type: 'error',
-            message: 'Failed to apply rules to transactions',
+            message: t('Failed to apply rules to transactions'),
           },
         }),
       );

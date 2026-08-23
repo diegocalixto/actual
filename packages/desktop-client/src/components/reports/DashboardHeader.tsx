@@ -11,6 +11,8 @@ import type { DashboardPageEntity } from '@actual-app/core/types/models';
 
 import { useRenameDashboardPageMutation } from '#reports/mutations';
 
+import { localizeDefaultDashboardPageName } from './defaultDashboardText';
+
 type DashboardHeaderProps = {
   dashboard: DashboardPageEntity;
 };
@@ -21,9 +23,18 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
 
   const renameDashboardPageMutation = useRenameDashboardPageMutation();
 
+  const displayName = localizeDefaultDashboardPageName(dashboard.name, t);
+
   const handleSaveName = async (newName: string) => {
     const trimmedName = newName.trim();
-    if (!trimmedName || trimmedName === dashboard.name) {
+    // `displayName` is also treated as "no change": the field is seeded with
+    // the translated name so the editor is not in English, and coming back
+    // unchanged must not persist that translation as a user-chosen name.
+    if (
+      !trimmedName ||
+      trimmedName === dashboard.name ||
+      trimmedName === displayName
+    ) {
       setEditingName(false);
       return;
     }
@@ -75,7 +86,7 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
       {editingName ? (
         <InitialFocus>
           <Input
-            defaultValue={dashboard.name}
+            defaultValue={displayName}
             onEnter={handleSaveName}
             onUpdate={handleSaveName}
             onEscape={() => setEditingName(false)}
@@ -105,7 +116,7 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
               minWidth: 0,
             }}
           >
-            {dashboard.name}
+            {displayName}
           </View>
           <Button
             variant="bare"

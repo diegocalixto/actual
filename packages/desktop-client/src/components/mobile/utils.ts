@@ -24,10 +24,11 @@ export function getPrettyPayee({
   }
 
   if (transferAccount) {
-    return t('Transfer {{direction}} {{accountName}}', {
-      direction: transaction?.amount > 0 ? t('from') : t('to'),
-      accountName: transferAccount.name,
-    });
+    return transaction?.amount > 0
+      ? t('Transfer from {{accountName}}', {
+          accountName: transferAccount.name,
+        })
+      : t('Transfer to {{accountName}}', { accountName: transferAccount.name });
   } else if (transaction.is_parent) {
     return t('Split');
   } else if (payee) {

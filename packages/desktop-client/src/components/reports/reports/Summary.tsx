@@ -31,6 +31,7 @@ import { Checkbox } from '#components/forms';
 import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { calculateTimeRange } from '#components/reports/reportRanges';
@@ -227,7 +228,9 @@ function SummaryInner({ widget }: SummaryInnerProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
-  const title = widget?.meta?.name || t('Summary');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'summary-card', t) ||
+    t('Summary');
 
   const updateDashboardWidgetMutation = useUpdateDashboardWidgetMutation();
 

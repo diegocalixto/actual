@@ -37,6 +37,7 @@ import { TransactionList as TransactionListMobile } from '#components/mobile/tra
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { CalendarGraph } from '#components/reports/graphs/CalendarGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -319,7 +320,9 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
-  const title = widget?.meta?.name || t('Calendar');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'calendar-card', t) ||
+    t('Calendar');
   const table = useRef<TableHandleRef<TransactionEntity>>(null);
   const dateFormat = useDateFormat();
   const updateDashboardWidgetMutation = useUpdateDashboardWidgetMutation();
@@ -802,6 +805,7 @@ function CalendarWithHeader({
   conditionsOp,
   format,
 }: CalendarWithHeaderProps) {
+  const locale = useLocale();
   const { t } = useTranslation();
 
   return (
@@ -858,7 +862,7 @@ function CalendarWithHeader({
             });
           }}
         >
-          {formatDate(calendar.start, 'MMMM yyyy')}
+          {formatDate(calendar.start, 'MMMM yyyy', { locale })}
         </Button>
         <View
           style={{ display: 'grid', gridTemplateColumns: '16px 1fr', gap: 2 }}

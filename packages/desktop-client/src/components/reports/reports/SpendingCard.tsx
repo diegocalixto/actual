@@ -104,6 +104,7 @@ export function SpendingCard({
           <View style={{ flex: 1 }}>
             <ReportCardName
               name={meta?.name || t('Monthly Spending')}
+              widgetType="spending-card"
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

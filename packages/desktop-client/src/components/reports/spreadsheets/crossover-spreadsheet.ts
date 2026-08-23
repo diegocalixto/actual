@@ -1,7 +1,9 @@
+import { getLocale } from '@actual-app/core/shared/locale';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import * as d from 'date-fns';
+import i18n from 'i18next';
 
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { aqlQuery } from '#queries/aqlQuery';
@@ -284,7 +286,9 @@ function recalculate(
     const monthlyIncome = balance * monthlySWR;
     const spend = expenseMap.get(month) || 0;
     data.push({
-      x: d.format(d.parseISO(month + '-01'), 'MMM yyyy'),
+      x: d.format(d.parseISO(month + '-01'), 'MMM yyyy', {
+        locale: getLocale(i18n.language),
+      }),
       investmentIncome: Math.round(monthlyIncome),
       expenses: spend,
       nestEgg: balance,
@@ -386,7 +390,9 @@ function recalculate(
       const adjustedProjectedExpenses = projectedExpenses * adjustmentFactor;
 
       data.push({
-        x: d.format(monthCursor, 'MMM yyyy'),
+        x: d.format(monthCursor, 'MMM yyyy', {
+          locale: getLocale(i18n.language),
+        }),
         investmentIncome: Math.round(projectedIncome),
         expenses: Math.round(projectedExpenses),
         nestEgg: Math.round(projectedBalance),

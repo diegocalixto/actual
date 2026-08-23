@@ -99,6 +99,7 @@ export function SummaryCard({
         <View style={{ flexGrow: 0, flexShrink: 0, padding: 20 }}>
           <ReportCardName
             name={meta?.name || t('Summary')}
+            widgetType="summary-card"
             isEditing={nameMenuOpen}
             onChange={newName => {
               onMetaChange({

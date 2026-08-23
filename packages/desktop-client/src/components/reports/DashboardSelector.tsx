@@ -12,6 +12,8 @@ import type { DashboardPageEntity } from '@actual-app/core/types/models';
 import { useNavigate } from '#hooks/useNavigate';
 import { useCreateDashboardPageMutation } from '#reports/mutations';
 
+import { localizeDefaultDashboardPageName } from './defaultDashboardText';
+
 type DashboardSelectorProps = {
   dashboards: readonly DashboardPageEntity[];
   currentDashboard: DashboardPageEntity;
@@ -70,7 +72,7 @@ export function DashboardSelector({
             textAlign: 'center',
           }}
         >
-          {currentDashboard.name}
+          {localizeDefaultDashboardPageName(currentDashboard.name, t)}
         </View>
         <SvgExpandArrow
           width={7}
@@ -105,7 +107,7 @@ export function DashboardSelector({
               items={[
                 ...dashboards.map(dashboard => ({
                   name: dashboard.id,
-                  text: dashboard.name,
+                  text: localizeDefaultDashboardPageName(dashboard.name, t),
                 })),
                 Menu.line,
                 {

@@ -14,7 +14,7 @@ import { Popover } from '@actual-app/components/popover';
 import { Tooltip } from '@actual-app/components/tooltip';
 import type { Theme } from '@actual-app/core/types/prefs';
 
-import { themeOptions, useTheme } from '#style';
+import { themeOptions, translateThemeName, useTheme } from '#style';
 
 type ThemeSelectorProps = {
   style?: CSSProperties;
@@ -74,7 +74,10 @@ export function ThemeSelector({ style }: ThemeSelectorProps) {
       >
         <Menu
           onMenuSelect={onMenuSelect}
-          items={themeOptions.map(([name, text]) => ({ name, text }))}
+          items={themeOptions.map(([name, text]) => ({
+            name,
+            text: translateThemeName(name, text, t),
+          }))}
         />
       </Popover>
     </>

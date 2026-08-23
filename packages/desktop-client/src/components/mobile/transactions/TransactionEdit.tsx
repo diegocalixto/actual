@@ -1532,6 +1532,7 @@ function NoteTagAutocomplete({
 }: {
   inputRef: RefObject<HTMLInputElement | null>;
 }) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   // Yes, there is a lot of ref usages in this component. Here's the motivation
   // 1. This component purely modifies HTML Input state, app state is handled elsewhere
@@ -1575,7 +1576,7 @@ function NoteTagAutocomplete({
         addNotification({
           notification: {
             type: 'error',
-            message: 'Failed to add tag, check logs',
+            message: t('Failed to add tag, check logs'),
           },
         }),
       );

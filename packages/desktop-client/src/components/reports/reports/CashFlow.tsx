@@ -25,6 +25,7 @@ import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { CashFlowGraph } from '#components/reports/graphs/CashFlowGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -223,7 +224,9 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     );
   }
 
-  const title = widget?.meta?.name || t('Cash Flow');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'cash-flow-card', t) ||
+    t('Cash Flow');
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');

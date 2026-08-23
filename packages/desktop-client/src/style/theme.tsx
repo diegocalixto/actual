@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { useTranslation } from 'react-i18next';
 
 import darkThemeCss from '@actual-app/components/themes/dark.css?inline';
 import lightThemeCss from '@actual-app/components/themes/light.css?inline';
@@ -23,6 +24,30 @@ const themes = {
 } as const;
 
 type ThemeKey = keyof typeof themes;
+
+/**
+ * The names above are module constants, so they cannot be translated where they
+ * are declared. Translate by the theme's stable key at render time; anything
+ * else (a custom theme) keeps the name its author gave it.
+ */
+export function translateThemeName(
+  theme: string,
+  name: string,
+  t: ReturnType<typeof useTranslation>['t'],
+) {
+  switch (theme) {
+    case 'light':
+      return t('Light');
+    case 'dark':
+      return t('Dark');
+    case 'midnight':
+      return t('Midnight');
+    case 'auto':
+      return t('System default');
+    default:
+      return name;
+  }
+}
 
 export const themeOptions = Object.entries(themes).map(
   ([key, { name }]) => [key, name] as [Theme, string],

@@ -353,5 +353,199 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // it sits inside the options object of the surrounding t() call — so it
     // is absent from the English catalog too and would render as "(unknown)".
     '(unknown)': '(desconhecido)',
+
+    // ---- Etapa 7.10 — varredura final da V1 ----
+
+    // Guided tour. The whole feature reached the app after the last catalog
+    // sync, so none of its strings had a pt-BR translation.
+    'Welcome to {{appName}}!': 'Bem-vindo(a) ao {{appName}}!',
+    '{{appName}} is a budgeting app that helps you understand exactly where your money goes. This short tour walks you through the basics. It only takes a couple of minutes, and you can leave at any time and replay it later from the Help menu.':
+      'O {{appName}} é um app de orçamento que ajuda você a entender exatamente para onde vai o seu dinheiro. Este tour rápido apresenta o básico. Leva poucos minutos, e você pode sair quando quiser e repeti-lo depois pelo menu Ajuda.',
+    'Your Budget': 'Seu orçamento',
+    'Categories in {{appName}} work like virtual envelopes: you assign the money you already have to them, then spend from each envelope. This approach is called <4>envelope budgeting</4>. If you prefer, you can switch to <7>tracking budgeting</7> in the settings.':
+      'No {{appName}}, as categorias funcionam como envelopes virtuais: você distribui entre elas o dinheiro que já tem e gasta de cada envelope. Essa abordagem se chama <4>orçamento por envelopes</4>. Se preferir, você pode mudar para o <7>orçamento de acompanhamento</7> nas configurações.',
+    'In a tracking budget, the amounts you budget are targets for your income and spending rather than envelopes of money. This approach is called <2>tracking budgeting</2>. If you prefer, you can switch to <5>envelope budgeting</5> in the settings.':
+      'No orçamento de acompanhamento, os valores que você orça são metas de receita e de gasto, e não envelopes de dinheiro. Essa abordagem se chama <2>orçamento de acompanhamento</2>. Se preferir, você pode mudar para o <5>orçamento por envelopes</5> nas configurações.',
+    'Saved This Month': 'Economizado neste mês',
+    'This summary compares your income and expenses to show how much you saved this month. Rather than rolling funds over, a tracking budget plans each month on its own.':
+      'Este resumo compara suas receitas e despesas para mostrar quanto você economizou neste mês. Em vez de transportar saldos, o orçamento de acompanhamento planeja cada mês separadamente.',
+    'The <1>To Budget</1> amount shows the money you have not assigned to a category yet. Aim to bring it to zero, so that all of your money has a job.':
+      'O valor <1>A orçar</1> mostra o dinheiro que você ainda não destinou a nenhuma categoria. Procure zerá-lo, para que todo o seu dinheiro tenha uma função.',
+    Categories: 'Categorias',
+    'Each row in the budget is a category. Click the <2>Budgeted</2> amount to assign money to a category, and keep an eye on the <4>Balance</4> column to see how much is left to spend.':
+      'Cada linha do orçamento é uma categoria. Clique no valor <2>Orçado</2> para destinar dinheiro a uma categoria e acompanhe a coluna <4>Saldo</4> para ver quanto ainda há para gastar.',
+    'Month by Month': 'Mês a mês',
+    'Every month gets its own budget. Use the month picker to move between months, and the calendar icons on the left to choose how many months are shown side by side.':
+      'Cada mês tem o seu próprio orçamento. Use o seletor de mês para navegar entre os meses e os ícones de calendário à esquerda para escolher quantos meses aparecem lado a lado.',
+    'Getting Around': 'Navegando pelo app',
+    'The sidebar takes you to your budget, reports, and scheduled transactions. You can find payees, rules, and the settings under <2>More</2>.':
+      'A barra lateral leva você ao seu orçamento, aos relatórios e às transações agendadas. Beneficiários, regras e configurações ficam em <2>Mais</2>.',
+    'Add Your Accounts': 'Adicione suas contas',
+    'Transactions live in accounts, so adding your first account is the best way to get started with {{appName}}. Click here to add one. You can enter transactions yourself, or <4>link the account to your bank</4> to import them automatically.':
+      'As transações ficam nas contas, então adicionar sua primeira conta é a melhor forma de começar no {{appName}}. Clique aqui para adicionar uma. Você pode lançar as transações manualmente ou <4>conectar a conta ao seu banco</4> para importá-las automaticamente.',
+    'Getting Help': 'Onde buscar ajuda',
+    'The Help menu is always here when you need it. Use it to replay this tour, browse the documentation, or ask the community on Discord.':
+      'O menu Ajuda está sempre aqui quando você precisar. Use-o para repetir este tour, consultar a documentação ou perguntar à comunidade no Discord.',
+    'New to {{appName}}? Take a short tour to learn how budgeting works and find your way around.':
+      'Novo no {{appName}}? Faça um tour rápido para aprender como funciona o orçamento e se localizar no app.',
+    'Take the tour': 'Fazer o tour',
+    'Take a tour': 'Fazer um tour',
+    'Skip tour': 'Pular tour',
+    Finish: 'Concluir',
+    '{{current}} of {{total}}': '{{current}} de {{total}}',
+
+    // Titlebar — sync status tooltips.
+    'Sync error — click to retry':
+      'Erro de sincronização — clique para tentar novamente',
+    'Offline — will sync when reconnected':
+      'Offline — será sincronizado ao reconectar',
+    'Local file, not connected to a server':
+      'Arquivo local, não conectado a um servidor',
+    'Syncing disabled for this file':
+      'Sincronização desativada para este arquivo',
+    'Sync with your server to back up this file and access it on other devices':
+      'Sincronize com seu servidor para fazer backup deste arquivo e acessá-lo em outros dispositivos',
+
+    // Transactions table — status-icon legend. "Confirmado" / "Não
+    // confirmado" / "Reconciliado" are the words the catalog already uses for
+    // the badges themselves.
+    'Transaction status': 'Status da transação',
+    'Cleared: verified against your account':
+      'Confirmado: conferido com sua conta',
+    'Uncleared: not yet verified': 'Não confirmado: ainda não conferido',
+    'Reconciled: locked after reconciliation':
+      'Reconciliado: bloqueado após a reconciliação',
+    'Upcoming scheduled transaction': 'Próxima transação agendada',
+    'Due scheduled transaction': 'Transação agendada a vencer',
+    'Missed scheduled transaction': 'Transação agendada atrasada',
+
+    // Transaction table column manager.
+    'Manage table columns': 'Gerenciar colunas da tabela',
+    'Transaction table columns': 'Colunas da tabela de transações',
+    'Table columns': 'Colunas da tabela',
+    'Choose which columns appear in the transaction table and drag them into the order you prefer.':
+      'Escolha quais colunas aparecem na tabela de transações e arraste-as para a ordem que preferir.',
+    'Apply to all transaction tables':
+      'Aplicar a todas as tabelas de transações',
+    'Use this layout everywhere, not just in the current view.':
+      'Usar este layout em todos os lugares, não apenas na visualização atual.',
+    'Always shown': 'Sempre visível',
+    'Reorder {{ columnName }} column': 'Reordenar a coluna {{ columnName }}',
+    'Running balance': 'Saldo acumulado',
+
+    // Mobile — transaction edit and list.
+    'Who did you pay?': 'Para quem você pagou?',
+    'Who paid you?': 'Quem pagou você?',
+    'Select an account': 'Selecione uma conta',
+    'Select a category': 'Selecione uma categoria',
+    'Request Location': 'Solicitar localização',
+    'Clear transaction': 'Confirmar transação',
+    'Unclear transaction': 'Desfazer confirmação da transação',
+    'Unlock reconciled transaction': 'Desbloquear transação reconciliada',
+    // Transfer payee label (mobile list/edit and the home dashboard). The
+    // source used to compose this from the generic `to`/`from` keys, which
+    // cannot carry the preposition each direction needs in Portuguese; these
+    // two whole-phrase keys replace that composition. "de"/"para" is the pair
+    // the catalog already uses in `Transferred {{amount}} from … to …`.
+    'Transfer from {{accountName}}': 'Transferência de {{accountName}}',
+    'Transfer to {{accountName}}': 'Transferência para {{accountName}}',
+    // Still shared by the two date-range connectors in Reports ("Jan a Mar"),
+    // where the catalog's "com" was wrong. No longer used by the transfer
+    // label. `from` has no active use left, so it carries no override.
+    to: 'a',
+
+    // Empty states for accounts.
+    "<0>Let's add your first account.</0> Accounts hold your transactions, like everyday spending, savings, credit cards, or cash. You can connect to your bank to import transactions automatically, or add them yourself.":
+      '<0>Vamos adicionar sua primeira conta.</0> As contas guardam suas transações, como gastos do dia a dia, poupança, cartões de crédito ou dinheiro. Você pode conectar seu banco para importar transações automaticamente, ou lançá-las você mesmo.',
+    'You can add more accounts at any time from the sidebar.':
+      'Você pode adicionar mais contas a qualquer momento pela barra lateral.',
+    'Accounts hold your transactions, like everyday spending, savings, credit cards, or cash. Add one to start tracking your money.':
+      'As contas guardam suas transações, como gastos do dia a dia, poupança, cartões de crédito ou dinheiro. Adicione uma para começar a acompanhar seu dinheiro.',
+    'Add your first account': 'Adicionar sua primeira conta',
+
+    // Local account modal, category sidebar, date select and misc.
+    'e.g. Bank, Savings, Credit Card, Cash':
+      'ex.: Banco, Poupança, Cartão de Crédito, Dinheiro',
+    'Off-budget accounts (like investments, loans, or your house) are tracked but not part of your spending budget.':
+      'Contas fora do orçamento (como investimentos, empréstimos ou seu imóvel) são acompanhadas, mas não fazem parte do seu orçamento de gastos.',
+    'Sort A to Z': 'Ordenar de A a Z',
+    'Sort Z to A': 'Ordenar de Z a A',
+    'Select month': 'Selecionar mês',
+    'Sync both transfer dates': 'Sincronizar as datas das duas transferências',
+    'View Schedule': 'Ver agendamento',
+    Goal: 'Meta',
+    'Make a transfer from the two selected transactions':
+      'Criar uma transferência a partir das duas transações selecionadas',
+    'For this budget only': 'Somente para este orçamento',
+    Warning: 'Aviso',
+    'Your environment does not support SharedArrayBuffer. You may experience data loss or degraded functionality. Click to learn more.':
+      'Seu ambiente não oferece suporte a SharedArrayBuffer. Você pode sofrer perda de dados ou funcionamento degradado. Clique para saber mais.',
+    'There was an error hiding the tags. Please try again.':
+      'Ocorreu um erro ao ocultar as etiquetas. Tente novamente.',
+    'There was an error sorting the categories. Please try again.':
+      'Ocorreu um erro ao ordenar as categorias. Tente novamente.',
+
+    // Settings — Experimental features page (the page itself is always shown,
+    // even though every flag it toggles is off by default).
+    'Akahu Bank Sync (NZ banks)':
+      'Sincronização bancária Akahu (bancos da Nova Zelândia)',
+    'Enable Banking sync (EU banks)':
+      'Sincronização Enable Banking (bancos da UE)',
+    'Mobile calculator': 'Calculadora no celular',
+    'Monte Carlo Analysis Report': 'Relatório de análise de Monte Carlo',
+    'Deprecated: this feature will be removed in a future release. Use Excel formula mode (Rule formulae) instead.':
+      'Obsoleto: este recurso será removido em uma versão futura. Use o modo de fórmulas do Excel (fórmulas de regra) no lugar.',
+
+    // Keys introduced by moving hardcoded English onto the i18n path in this
+    // stage (Account, TagMultiAutocomplete, SidebarGroup, TransactionEdit,
+    // ImportTransactionsModal, global-events, sync-events).
+    'Failed to apply rules to transactions':
+      'Falha ao aplicar as regras às transações',
+    'Choose tags': 'Escolher etiquetas',
+    'Group:': 'Grupo:',
+    'Failed to add tag, check logs':
+      'Falha ao adicionar a etiqueta, verifique os logs',
+    'Financial Files': 'Arquivos financeiros',
+    'Unable to save changes': 'Não foi possível salvar as alterações',
+    'This browser only supports using the app in one tab at a time, and another tab has opened the app. No changes will be saved from this tab; please close it and continue working in the other one.':
+      'Este navegador só permite usar o app em uma aba por vez, e outra aba abriu o app. Nenhuma alteração será salva a partir desta aba; feche-a e continue trabalhando na outra.',
+    'Unable to authenticate with server':
+      'Não foi possível autenticar no servidor',
+
+    // ---- Etapa 7.11 — localização visual total ----
+
+    // Dashboard defaults. These are written to the database by the dashboard
+    // migrations, but they are text the system chose, not text the user
+    // typed, so they are translated on display (see
+    // `components/reports/defaultDashboardText.ts`).
+    Main: 'Principal',
+    'Total Income (YTD)': 'Receita total (no ano)',
+    'Total Expenses (YTD)': 'Despesa total (no ano)',
+    'Avg Per Month': 'Média por mês',
+    'Avg Per Transaction': 'Média por transação',
+    'This Month': 'Este mês',
+    'Budget Overview': 'Visão geral do orçamento',
+    '3-Month Average': 'Média de 3 meses',
+    'Transaction Calendar': 'Calendário de transações',
+    'Recent Net Worth Change': 'Variação recente do patrimônio',
+
+    // The markdown widget shipped with the default dashboard.
+    '## Dashboard Tips\n\nYou can add new widgets or edit existing widgets by using the buttons at the top of the page. Choose a widget type and customize it to fit your needs.\n\n**Moving cards:** Drag any card by its header to reposition it.\n\n**Deleting cards:** Click the three-dot menu on any card and select "Remove".':
+      '## Dicas do painel\n\nVocê pode adicionar novos cartões ou editar os existentes pelos botões no topo da página. Escolha um tipo de cartão e personalize-o como preferir.\n\n**Mover cartões:** arraste qualquer cartão pelo cabeçalho para reposicioná-lo.\n\n**Excluir cartões:** clique no menu de três pontos do cartão e escolha "Remover".',
+
+    // Bank sync credential scope. Spelled the same in both languages; declared
+    // explicitly so it is a decision rather than a missing entry. Its sibling
+    // is `this budget only` -> "somente este orçamento".
+    global: 'global',
+
+    // Name generated for a schedule created from a future transaction.
+    'Auto-created future transaction ({{formattedDate}}) - {{timestamp}}':
+      'Transação futura criada automaticamente ({{formattedDate}}) - {{timestamp}}',
+
+    // Theme names. The catalog reads `Light` as "Modo Claro", which does not
+    // match its siblings in the same menu.
+    Light: 'Claro',
+    Dark: 'Escuro',
+    Midnight: 'Meia-noite',
   },
 };
