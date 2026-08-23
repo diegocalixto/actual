@@ -1,5 +1,5 @@
 :root {
-  --color-pageBackground: var(--palette-gray900);
+  --color-pageBackground: #0a0e13;
   --color-pageBackgroundModalActive: var(--palette-gray800);
   --color-pageBackgroundTopLeft: var(--palette-navy800);
   --color-pageBackgroundBottomRight: var(--palette-gray700);
@@ -14,13 +14,13 @@
   --color-pageTextLink: var(--palette-purple400);
   --color-pageTextLinkLight: var(--palette-purple200);
 
-  --color-cardBackground: var(--palette-gray800);
+  --color-cardBackground: #191f2a;
   --color-cardBorder: var(--palette-purple400);
   --color-cardShadow: var(--palette-navy700);
 
-  --color-tableBackground: var(--palette-navy800);
+  --color-tableBackground: #191f2a;
   --color-tableRowBackgroundAlternate: var(--color-tableBackground);
-  --color-tableRowBackgroundHover: var(--palette-navy700);
+  --color-tableRowBackgroundHover: #212936;
   --color-tableText: var(--palette-navy150);
   --color-tableTextItemAdded: var(--color-tableText);
   --color-tableTextLight: var(--color-tableText);
@@ -29,14 +29,14 @@
   --color-tableTextHover: var(--palette-navy400);
   --color-tableTextInactive: var(--palette-navy500);
   --color-tableHeaderText: var(--palette-navy300);
-  --color-tableHeaderBackground: var(--palette-navy700);
+  --color-tableHeaderBackground: #212936;
   --color-tableBorder: var(--palette-navy600);
   --color-tableBorderSelected: var(--palette-purple400);
   --color-tableBorderHover: var(--palette-purple300);
   --color-tableBorderSeparator: var(--palette-navy400);
   --color-tableRowBackgroundHighlight: var(--palette-purple800);
   --color-tableRowBackgroundHighlightText: var(--palette-navy150);
-  --color-tableRowHeaderBackground: var(--palette-navy700);
+  --color-tableRowHeaderBackground: #212936;
   --color-tableRowHeaderText: var(--palette-navy150);
 
   --color-numberPositive: var(--palette-green300);
@@ -52,7 +52,7 @@
   --color-toBudgetZero: var(--color-numberPositive);
   --color-toBudgetNegative: var(--color-budgetNumberNegative);
 
-  --color-sidebarBackground: var(--palette-navy900);
+  --color-sidebarBackground: #101419;
   --color-sidebarItemBackgroundPending: var(--palette-orange200);
   --color-sidebarItemBackgroundPositive: var(--palette-green500);
   --color-sidebarItemBackgroundFailed: var(--palette-red300);
@@ -79,14 +79,14 @@
   --color-menuAutoCompleteTextHeader: var(--palette-purple200);
   --color-menuAutoCompleteItemText: var(--color-menuItemText);
 
-  --color-modalBackground: var(--palette-gray800);
+  --color-modalBackground: #191f2a;
   --color-modalBorder: var(--palette-navy600);
   --color-mobileHeaderBackground: var(--palette-purple800);
   --color-mobileHeaderText: var(--palette-navy150);
   --color-mobileHeaderTextSubdued: var(--palette-gray200);
   --color-mobileHeaderTextHover: rgba(200, 200, 200, 0.15);
-  --color-mobilePageBackground: var(--palette-navy700);
-  --color-mobileNavBackground: var(--palette-navy800);
+  --color-mobilePageBackground: #0a0e13;
+  --color-mobileNavBackground: #191f2a;
   --color-mobileNavItem: var(--palette-navy150);
   --color-mobileNavItemSelected: var(--palette-purple400);
   --color-mobileAccountShadow: var(--color-cardShadow);
