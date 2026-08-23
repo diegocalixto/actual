@@ -13,9 +13,11 @@ import { View } from '@actual-app/components/view';
 
 import { accountNameStyle } from './Account';
 import {
+  sidebarItemHoverStyle,
   sidebarItemInset,
   sidebarItemRadius,
   sidebarItemSelectedStyle,
+  sidebarItemTextResting,
 } from './Item';
 import { ItemContent } from './ItemContent';
 
@@ -77,18 +79,15 @@ export function SecondaryItem({
           ...accountNameStyle,
           marginTop: 0,
           marginBottom: 0,
-          color: theme.sidebarItemText,
+          color: sidebarItemTextResting,
           paddingLeft: 14 - sidebarItemInset + indent,
           borderRadius: sidebarItemRadius,
           fontWeight: bold ? fontWeight : null,
-          ':hover': { backgroundColor: theme.sidebarItemBackgroundHover },
+          ':hover': sidebarItemHoverStyle,
         }}
         to={to}
         onClick={onClick}
-        activeStyle={{
-          ...sidebarItemSelectedStyle,
-          fontWeight: bold ? fontWeight : null,
-        }}
+        activeStyle={sidebarItemSelectedStyle}
       >
         {content}
       </ItemContent>

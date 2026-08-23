@@ -20,12 +20,45 @@ export const sidebarItemInset = 8;
 export const sidebarItemRadius = 6;
 
 /**
- * Selection is a tinted surface instead of a left bar, so the box model is
- * identical in normal, hover and active states.
+ * Sidebar values are blended against the sidebar's own background rather
+ * than hardcoded, so every theme gets a step of the same weight: Light's
+ * sidebar is navy, not near-black, and a value tuned for Dark lands darker
+ * than the surface it is meant to lift.
+ */
+const blend = (percent: number) =>
+  `color-mix(in srgb, ${theme.sidebarItemText} ${percent}%, ${theme.sidebarBackground})`;
+
+/**
+ * The sidebar's only rules: the accounts divider and the on/off-budget
+ * underline. A hairline separates the groups without competing with them.
+ */
+export const sidebarHairline = blend(16);
+
+/**
+ * Navigation rests dimmed and comes to full strength on hover and when
+ * selected. That contrast step — not the surface alone — is what makes the
+ * active row read as selected, and it lets the chrome recede behind the
+ * account balances below it.
+ */
+export const sidebarItemTextResting = blend(62);
+
+export const sidebarItemHoverStyle: CSSProperties = {
+  backgroundColor: theme.sidebarItemBackgroundHover,
+  color: theme.sidebarItemText,
+};
+
+/**
+ * Selection is a tinted surface plus an accent rule drawn as an inset
+ * shadow, so the box model stays identical in normal, hover and active
+ * states. The label goes bright rather than accent-coloured: on a tinted
+ * surface the accent is the *least* legible text in the sidebar, which left
+ * the selected row weaker than every row around it.
  */
 export const sidebarItemSelectedStyle: CSSProperties = {
-  backgroundColor: `color-mix(in srgb, ${theme.sidebarItemAccentSelected} 18%, ${theme.sidebarItemBackgroundHover})`,
-  color: theme.sidebarItemTextSelected,
+  backgroundColor: `color-mix(in srgb, ${theme.sidebarItemAccentSelected} 14%, ${theme.sidebarItemBackgroundHover})`,
+  color: theme.sidebarItemText,
+  fontWeight: 600,
+  boxShadow: `inset 3px 0 0 ${theme.sidebarItemAccentSelected}`,
 };
 
 type ItemProps = {
@@ -53,9 +86,7 @@ export function Item({
   forceHover = false,
   forceActive = false,
 }: ItemProps) {
-  const hoverStyle = {
-    backgroundColor: theme.sidebarItemBackgroundHover,
-  };
+  const hoverStyle = sidebarItemHoverStyle;
 
   const content = (
     <View
@@ -96,7 +127,7 @@ export function Item({
           paddingRight: 10,
           borderRadius: sidebarItemRadius,
           textDecoration: 'none',
-          color: theme.sidebarItemText,
+          color: sidebarItemTextResting,
           ...(forceHover ? hoverStyle : {}),
         }}
         forceActive={forceActive}

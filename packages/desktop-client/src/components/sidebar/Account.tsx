@@ -36,12 +36,16 @@ import { openAccountCloseModal } from '#modals/modalsSlice';
 import { useDispatch, useSelector } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
 
+import { sidebarHairline, sidebarItemInset, sidebarItemRadius } from './Item';
+
 export const accountNameStyle: CSSProperties = {
   marginTop: -2,
   marginBottom: 2,
   paddingTop: 4,
   paddingBottom: 4,
-  paddingRight: 15,
+  // Lines the balance column up with the right edge of the nav rows above,
+  // and gives back width the row inset costs in a 240px sidebar.
+  paddingRight: 10,
   paddingLeft: 10,
   textDecoration: 'none',
   color: theme.sidebarItemText,
@@ -172,6 +176,14 @@ export function Account<FieldName extends SheetFields<'account'>>({
               ...accountNameStyle,
               ...style,
               position: 'relative',
+              // Match the nav rows above: the hover and selected surfaces
+              // are inset pills rather than full-bleed rectangles, so the
+              // sidebar reads as one list instead of two. The dot and the
+              // accent bar are positioned against this element, so they
+              // move with it.
+              marginLeft: sidebarItemInset,
+              marginRight: sidebarItemInset,
+              borderRadius: sidebarItemRadius,
               borderLeft: '4px solid transparent',
               ...(updated && {
                 fontWeight: 700,
@@ -227,7 +239,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
             <AlignedText
               style={
                 titleAccount && {
-                  borderBottom: `1.5px solid rgba(255,255,255,0.4)`,
+                  borderBottom: `1px solid ${sidebarHairline}`,
                   paddingBottom: '3px',
                 }
               }
