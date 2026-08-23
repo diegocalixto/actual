@@ -18,6 +18,32 @@ import { MonthSummarySection } from './MonthSummarySection';
 import { RecentTransactionsSection } from './RecentTransactionsSection';
 import { useHomeMonth } from './useHomeMonth';
 
+/**
+ * Signature of this fork. A person's name, so it is never translated and never
+ * an interactive element — it only marks who this build belongs to.
+ */
+const SIGNATURE = 'Diego Calixto';
+
+/**
+ * No script face is bundled with the app — the only webfonts it ships are Inter
+ * and Redacted Script, and the latter draws blocks instead of letters. So the
+ * signature leans on the script faces the operating system already installs,
+ * ordered macOS first, then Windows, then the ghostscript ones on Linux, with
+ * the generic `cursive` keyword as the last resort. Nothing here is downloaded.
+ */
+const SIGNATURE_FONT_STACK = [
+  'Snell Roundhand',
+  'Apple Chancery',
+  'Segoe Script',
+  'Brush Script MT',
+  'Lucida Handwriting',
+  'URW Chancery L',
+  'Z003',
+  'cursive',
+]
+  .map(family => (family === 'cursive' ? family : `'${family}'`))
+  .join(', ');
+
 function useGreeting() {
   const { t } = useTranslation();
   const hour = new Date().getHours();
@@ -93,6 +119,30 @@ export function HomePage() {
         />
 
         <RecentTransactionsSection />
+
+        <Text
+          style={{
+            fontFamily: SIGNATURE_FONT_STACK,
+            // Script faces carry a much smaller x-height than Inter, so 12px
+            // renders the strokes as a smudge. 18px is the point where the
+            // cursive shape reads without competing with the cards above.
+            fontSize: 18,
+            fontWeight: 400,
+            // Room for the ascenders and descenders a cursive face throws
+            // well past its em box.
+            lineHeight: 1.5,
+            // pageText is the near-white tone in the dark themes and the dark
+            // ink tone in the light one, so the signature keeps its contrast
+            // either way. The hairlines of a script face need that headroom;
+            // the opacity is what pulls it back to something discreet.
+            color: theme.pageText,
+            opacity: 0.75,
+            textAlign: 'right',
+            paddingRight: 4,
+          }}
+        >
+          {SIGNATURE}
+        </Text>
       </View>
     </Page>
   );
