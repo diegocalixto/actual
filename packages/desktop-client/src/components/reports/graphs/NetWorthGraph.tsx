@@ -30,6 +30,7 @@ import type { UseFormatResult } from '#hooks/useFormat';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { computePadding } from './util/computePadding';
+import { hasPlottableValues } from './util/hasPlottableValues';
 
 type NetWorthDataPoint = {
   x: string;
@@ -287,6 +288,13 @@ export function NetWorthGraph({
   const off = gradientOffset();
   const gradientId = `splitColor-${id}`;
 
+  // With no accounts — or none carrying a balance in this range — every
+  // point is zero and the trend stroke flattens onto the baseline, showing
+  // up as a green rule along the bottom of the card. Stacked mode needs no
+  // such guard: it renders one area per account, so an empty book renders
+  // nothing already.
+  const hasTrendData = hasPlottableValues(graphData.data.map(point => point.y));
+
   // Stacked Mode Logic
   // Sort accounts by total value (smallest to largest)
   const sortedAccounts = useMemo(() => {
@@ -432,18 +440,20 @@ export function NetWorthGraph({
               </defs>
 
               {mode === 'trend' ? (
-                <Area
-                  type={interpolationType}
-                  dot={false}
-                  activeDot={false}
-                  {...animationProps}
-                  dataKey="y"
-                  stroke={theme.reportsChartFill}
-                  strokeWidth={2}
-                  fill={`url(#${gradientId})`}
-                  fillOpacity={1}
-                  connectNulls
-                />
+                hasTrendData ? (
+                  <Area
+                    type={interpolationType}
+                    dot={false}
+                    activeDot={false}
+                    {...animationProps}
+                    dataKey="y"
+                    stroke={theme.reportsChartFill}
+                    strokeWidth={2}
+                    fill={`url(#${gradientId})`}
+                    fillOpacity={1}
+                    connectNulls
+                  />
+                ) : null
               ) : (
                 sortedAccounts.map(account => (
                   <Area

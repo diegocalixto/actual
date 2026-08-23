@@ -25,6 +25,7 @@ import type { FormatType } from '#hooks/useFormat';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { computePadding } from './util/computePadding';
+import { hasPlottableValues } from './util/hasPlottableValues';
 
 type PayloadItem = {
   value: number;
@@ -221,6 +222,18 @@ export function SpendingGraph({
     return Number(obj.day) >= 28 ? '28+' : obj.day;
   };
 
+  // A month with nothing spent yields an all-zero series, and its stroke
+  // flattens onto the baseline as a rule along the bottom of the card — a
+  // dashed one for the comparison series. Each series is judged on its own,
+  // so a month with spending still draws even when the period it is being
+  // compared against is empty.
+  const hasCompareData = hasPlottableValues(
+    data.intervalData.map(interval => getVal(interval, compare)),
+  );
+  const hasSelectionData = hasPlottableValues(
+    data.intervalData.map(interval => getVal(interval, selection)),
+  );
+
   return (
     <Container
       style={{
@@ -310,33 +323,37 @@ export function SpendingGraph({
                 </linearGradient>
               </defs>
 
-              <Area
-                type="linear"
-                dot={false}
-                activeDot={{
-                  fill: theme.reportsChartFill,
-                  fillOpacity: 1,
-                  r: 10,
-                }}
-                {...animationProps}
-                dataKey={val => getVal(val, compare)}
-                stroke={`url(#stroke${balanceTypeOp})`}
-                strokeWidth={3}
-                fill={`url(#fill${balanceTypeOp})`}
-                fillOpacity={1}
-              />
-              <Area
-                type="linear"
-                dot={false}
-                activeDot={false}
-                {...animationProps}
-                dataKey={val => getVal(val, selection)}
-                stroke={theme.reportsGray}
-                strokeDasharray="10 10"
-                strokeWidth={3}
-                fill={theme.reportsGray}
-                fillOpacity={0.2}
-              />
+              {hasCompareData ? (
+                <Area
+                  type="linear"
+                  dot={false}
+                  activeDot={{
+                    fill: theme.reportsChartFill,
+                    fillOpacity: 1,
+                    r: 10,
+                  }}
+                  {...animationProps}
+                  dataKey={val => getVal(val, compare)}
+                  stroke={`url(#stroke${balanceTypeOp})`}
+                  strokeWidth={3}
+                  fill={`url(#fill${balanceTypeOp})`}
+                  fillOpacity={1}
+                />
+              ) : null}
+              {hasSelectionData ? (
+                <Area
+                  type="linear"
+                  dot={false}
+                  activeDot={false}
+                  {...animationProps}
+                  dataKey={val => getVal(val, selection)}
+                  stroke={theme.reportsGray}
+                  strokeDasharray="10 10"
+                  strokeWidth={3}
+                  fill={theme.reportsGray}
+                  fillOpacity={0.2}
+                />
+              ) : null}
             </AreaChart>
           </div>
         )
