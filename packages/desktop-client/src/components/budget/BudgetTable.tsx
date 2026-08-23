@@ -248,6 +248,12 @@ export function BudgetTable(props: BudgetTableProps) {
   return (
     <View
       data-testid="budget-table"
+      // Every table Cell/Field paints `theme.tableBorder` on its top and
+      // bottom edge, so at the Budget's density the global value (tuned for
+      // the transaction table) reads as a spreadsheet grid. Scope a softer
+      // one to this subtree: descendants inherit it, while portalled popovers
+      // and every other screen keep the global token.
+      nativeStyle={{ '--color-tableBorder': '#2a3240' }}
       style={{
         flex: 1,
         ...(styles.lightScrollbar && {

@@ -22,6 +22,16 @@ import { SidebarCategory } from './SidebarCategory';
 import { SidebarGroup } from './SidebarGroup';
 import { separateGroups } from './util';
 
+/**
+ * Surface for group rows. Groups sit one step *below* the category surface
+ * so the band reads as a gap between sections instead of competing with the
+ * numbers, and so it can never be confused with the category hover, which
+ * lifts one step above. Scoped through the custom properties every group
+ * element already resolves, so `dark.css` and every other screen are
+ * untouched.
+ */
+const GROUP_SURFACE = '#11161d';
+
 type BudgetItem =
   | { type: 'new-group' }
   | { type: 'new-category' }
@@ -379,6 +389,14 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
           const pos =
             idx === 0 ? 'first' : idx === items.length - 1 ? 'last' : null;
 
+          const isCategoryRow =
+            item.type === 'expense-category' || item.type === 'income-category';
+
+          const isGroupRow =
+            item.type === 'expense-group' ||
+            item.type === 'income-group' ||
+            item.type === 'new-group';
+
           return (
             <DropHighlightPosContext.Provider
               key={
@@ -392,11 +410,35 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
             >
               <View
                 style={
-                  dragState
-                    ? {}
-                    : {
-                        ':hover': { backgroundColor: theme.budgetCurrentMonth },
+                  isGroupRow
+                    ? {
+                        // The Row, the sidebar cell and every month cell all
+                        // paint `budgetHeader*`, so redefining the pair here
+                        // repaints the whole band in one step. Both months
+                        // get the same value: a section rail reads as one
+                        // continuous surface, while the data rows keep their
+                        // current-month cue. Not gated on `dragState` — this
+                        // is a resting surface, not a hover state.
+                        '--color-budgetHeaderCurrentMonth': GROUP_SURFACE,
+                        '--color-budgetHeaderOtherMonth': GROUP_SURFACE,
                       }
+                    : dragState || !isCategoryRow
+                      ? {}
+                      : {
+                          // A background here is never visible:
+                          // ExpenseCategory's Row and every month cell paint
+                          // an opaque one on top. Override the custom
+                          // properties those descendants resolve instead,
+                          // since they inherit: the sidebar and every month
+                          // column then lift together as one band. Groups
+                          // paint `budgetHeader*` and stay untouched.
+                          ':hover': {
+                            '--color-budgetCurrentMonth':
+                              theme.tableRowBackgroundHover,
+                            '--color-budgetOtherMonth':
+                              theme.tableRowBackgroundHover,
+                          },
+                        }
                 }
               >
                 {content}
