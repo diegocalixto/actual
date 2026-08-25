@@ -80,7 +80,7 @@ export function ScheduledTransactionMenuModal({
               <Trans>Scheduled date</Trans>
             </Text>
             <Text style={{ fontSize: 17, fontWeight: 700 }}>
-              {format(schedule?.next_date || '', 'MMMM dd, yyyy', locale)}
+              {format(schedule?.next_date || '', 'PPP', locale)}
             </Text>
           </View>
           <ScheduledTransactionMenu

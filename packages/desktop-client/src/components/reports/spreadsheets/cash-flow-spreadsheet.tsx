@@ -214,7 +214,7 @@ function recalculate(
         <div>
           <div style={{ marginBottom: 10 }}>
             <strong>
-              {d.format(x, isConcise ? 'MMMM yyyy' : 'MMMM d, yyyy', {
+              {d.format(x, isConcise ? 'MMMM yyyy' : 'PPP', {
                 locale,
               })}
             </strong>

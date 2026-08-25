@@ -1496,7 +1496,14 @@ function NoteInsertHashButton({
     <Button
       variant="bare"
       aria-label={t('Add tag')}
-      style={{ color: 'inherit', padding: 1 }}
+      // Sits at the trailing edge of the notes field; the glyph stays 17px and
+      // only the box around it grows to something a thumb can hit.
+      style={{
+        color: 'inherit',
+        padding: 1,
+        minWidth: 40,
+        minHeight: 40,
+      }}
       onPointerDown={e => e.preventDefault()}
       onClick={() => {
         if (!noteRef.current) return;

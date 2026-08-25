@@ -20,7 +20,7 @@ import type {
 } from '@actual-app/core/types/models';
 import { AutoTextSize } from 'auto-text-size';
 
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
+import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
 import { PullToRefresh } from '#components/mobile/PullToRefresh';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { CellValue } from '#components/spreadsheet/CellValue';
@@ -39,10 +39,23 @@ import { IncomeGroup } from './IncomeGroup';
 // packs a name plus up to three tappable amounts.
 export const ROW_HEIGHT = 56;
 
+/**
+ * Reference size for a comfortable touch target. Used for hit area only —
+ * ROW_HEIGHT, and so the density of the table, does not change.
+ */
+export const TOUCH_TARGET_SIZE = 44;
+
 export const PILL_STYLE: CSSProperties = {
   borderRadius: 16,
   color: theme.pillText,
   backgroundColor: theme.pillBackgroundLight,
+  // The pill is the tap target for editing a budget or opening a balance
+  // menu, and at its intrinsic height it was a ~26px band inside a 56px row —
+  // most of the row looked tappable but was not. Give it a comfortable target;
+  // the row height, and so the density of the table, is unchanged.
+  minHeight: TOUCH_TARGET_SIZE - 4,
+  paddingLeft: 8,
+  paddingRight: 8,
 };
 
 export function getColumnWidth({
@@ -394,7 +407,7 @@ export function BudgetTable({
             //
             // The bottom nav bar is fixed and overlays the page, so the last
             // row needs padding to stay clear of it.
-            paddingBottom: MOBILE_NAV_HEIGHT,
+            paddingBottom: MOBILE_NAV_SPACER,
           }}
         >
           <SchedulesProvider query={schedulesQuery}>

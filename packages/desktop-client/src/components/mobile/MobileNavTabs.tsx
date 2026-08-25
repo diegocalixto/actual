@@ -9,6 +9,7 @@ import {
   SvgAdd,
   SvgCog,
   SvgCreditCard,
+  SvgHome,
   SvgPiggyBank,
   SvgReports,
   SvgStoreFront,
@@ -27,11 +28,27 @@ import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 const COLUMN_COUNT = 3;
 const PILL_HEIGHT = 15;
 const ROW_HEIGHT = 70;
-const TOTAL_HEIGHT = ROW_HEIGHT * COLUMN_COUNT;
 const OPEN_FULL_Y = 1;
-const OPEN_DEFAULT_Y = TOTAL_HEIGHT - ROW_HEIGHT;
 
+/**
+ * The iOS home indicator occupies the bottom strip of the screen, and the app
+ * opts into `viewport-fit=cover`, so the sheet is laid out underneath it.
+ * Reserve the strip *below* the tab rows rather than inside them: the padding
+ * lifts the icons and labels clear of the indicator, and the matching extra
+ * height keeps each row exactly ROW_HEIGHT tall. Collapses to the current
+ * layout wherever the inset resolves to 0.
+ */
+const SAFE_AREA_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
+
+/** Height of the sheet at rest: the drag handle plus the first row of tabs. */
 export const MOBILE_NAV_HEIGHT = ROW_HEIGHT + PILL_HEIGHT;
+
+/**
+ * What a page has to leave free at its bottom to clear the resting nav. Pages
+ * reserve this instead of `MOBILE_NAV_HEIGHT` so their last row also clears
+ * the home indicator.
+ */
+export const MOBILE_NAV_SPACER = `calc(${MOBILE_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM})`;
 
 export function MobileNavTabs() {
   const { t } = useTranslation();
@@ -48,35 +65,7 @@ export function MobileNavTabs() {
     maxWidth: `${100 / COLUMN_COUNT}%`,
   };
 
-  const [{ y }, api] = useSpring(() => ({ from: { y: OPEN_DEFAULT_Y } }), []);
-
-  const openFull = useCallback(
-    ({ canceled }: { canceled?: boolean }) => {
-      // when cancel is true, it means that the user passed the upwards threshold
-      // so we change the spring config to create a nice wobbly effect
-      setNavbarState('open');
-      void api.start({
-        to: { y: OPEN_FULL_Y },
-        immediate: isTestEnv,
-        config: canceled ? config.wobbly : config.stiff,
-      });
-    },
-    [api, isTestEnv],
-  );
-
-  const openDefault = useCallback(
-    (velocity = 0) => {
-      setNavbarState('default');
-      void api.start({
-        to: { y: OPEN_DEFAULT_Y },
-        immediate: isTestEnv,
-        config: { ...config.stiff, velocity },
-      });
-    },
-    [api, isTestEnv],
-  );
-
-  const navTabs = [
+  const tabs = [
     {
       name: t('Budget'),
       path: '/budget',
@@ -94,6 +83,12 @@ export function MobileNavTabs() {
       path: '/accounts',
       style: navTabStyle,
       Icon: SvgPiggyBank,
+    },
+    {
+      name: t('Overview'),
+      path: '/home',
+      style: navTabStyle,
+      Icon: SvgHome,
     },
     {
       name: t('Reports'),
@@ -135,11 +130,49 @@ export function MobileNavTabs() {
       style: navTabStyle,
       Icon: SvgCog,
     },
-  ].map(tab => (
+  ];
+
+  // Size the sheet to the rows it actually has. Assuming COLUMN_COUNT rows left
+  // the last row outside the sheet whenever the tab count crossed a multiple of
+  // the column count — which it does as soon as a sync server adds Bank Sync.
+  const rowCount = Math.ceil(tabs.length / COLUMN_COUNT);
+  const totalHeight = ROW_HEIGHT * rowCount;
+  const openDefaultY = totalHeight - ROW_HEIGHT;
+
+  const [{ y }, api] = useSpring(() => ({ from: { y: openDefaultY } }), []);
+
+  const openFull = useCallback(
+    ({ canceled }: { canceled?: boolean }) => {
+      // when cancel is true, it means that the user passed the upwards threshold
+      // so we change the spring config to create a nice wobbly effect
+      setNavbarState('open');
+      void api.start({
+        to: { y: OPEN_FULL_Y },
+        immediate: isTestEnv,
+        config: canceled ? config.wobbly : config.stiff,
+      });
+    },
+    [api, isTestEnv],
+  );
+
+  const openDefault = useCallback(
+    (velocity = 0) => {
+      setNavbarState('default');
+      void api.start({
+        to: { y: openDefaultY },
+        immediate: isTestEnv,
+        config: { ...config.stiff, velocity },
+      });
+    },
+    [api, isTestEnv, openDefaultY],
+  );
+
+  const navTabs = tabs.map(tab => (
     <NavTab key={tab.path} onClick={() => openDefault()} {...tab} />
   ));
 
-  const bufferTabsCount = COLUMN_COUNT - (navTabs.length % COLUMN_COUNT);
+  const bufferTabsCount =
+    (COLUMN_COUNT - (navTabs.length % COLUMN_COUNT)) % COLUMN_COUNT;
   const bufferTabs = Array.from({ length: bufferTabsCount }).map((_, idx) => (
     <div key={idx} style={navTabStyle} />
   ));
@@ -176,7 +209,7 @@ export function MobileNavTabs() {
     {
       from: () => [0, y.get()],
       filterTaps: true,
-      bounds: { top: -TOTAL_HEIGHT, bottom: TOTAL_HEIGHT - ROW_HEIGHT },
+      bounds: { top: -totalHeight, bottom: openDefaultY },
       axis: 'y',
       rubberband: true,
     },
@@ -192,7 +225,8 @@ export function MobileNavTabs() {
         backgroundColor: theme.mobileNavBackground,
         borderTop: `1px solid ${theme.menuBorder}`,
         ...styles.shadow,
-        height: TOTAL_HEIGHT + PILL_HEIGHT,
+        height: `calc(${totalHeight + PILL_HEIGHT}px + ${SAFE_AREA_BOTTOM})`,
+        paddingBottom: SAFE_AREA_BOTTOM,
         width: '100%',
         position: 'fixed',
         zIndex: 100,
@@ -202,22 +236,50 @@ export function MobileNavTabs() {
       data-navbar-state={navbarState}
     >
       <View>
-        <div
+        {/* The handle was decoration: the sheet could only be opened by
+            dragging it up, and on an iPhone that drag starts inside the strip
+            iOS reserves for its own home-indicator swipe. Making the handle a
+            button gives the same gesture a tap equivalent — the drag below is
+            untouched, and `filterTaps` already lets the click through. It
+            spans the full width so the 15px-tall strip is still easy to hit. */}
+        <button
+          type="button"
+          aria-label={
+            navbarState === 'open'
+              ? t('Collapse navigation')
+              : t('Expand navigation')
+          }
+          aria-expanded={navbarState === 'open'}
+          onClick={() =>
+            navbarState === 'open' ? openDefault() : openFull({})
+          }
           style={{
-            backgroundColor: theme.pillBorder,
-            borderRadius: 10,
-            width: 30,
-            marginTop: 5,
-            marginBottom: 5,
-            padding: 2,
-            alignSelf: 'center',
+            ...styles.noTapHighlight,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: PILL_HEIGHT,
+            padding: 0,
+            border: 0,
+            background: 'none',
+            cursor: 'pointer',
           }}
-        />
+        >
+          <div
+            style={{
+              backgroundColor: theme.pillBorder,
+              borderRadius: 10,
+              width: 30,
+              padding: 2,
+            }}
+          />
+        </button>
         <View
           style={{
             flexDirection: 'row',
             flexWrap: 'wrap',
-            height: TOTAL_HEIGHT,
+            height: totalHeight,
             width: '100%',
           }}
         >

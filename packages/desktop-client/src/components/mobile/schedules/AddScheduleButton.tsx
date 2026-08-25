@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v1';
 
+import { mobileHeaderIconButtonStyle } from '#components/Page';
 import { useNavigate } from '#hooks/useNavigate';
 
 export function AddScheduleButton() {
@@ -18,7 +19,7 @@ export function AddScheduleButton() {
     <Button
       variant="bare"
       aria-label={t('Add new schedule')}
-      style={{ margin: 10 }}
+      style={mobileHeaderIconButtonStyle}
       onPress={handleAddSchedule}
     >
       <SvgAdd width={20} height={20} />

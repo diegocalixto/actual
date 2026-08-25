@@ -102,7 +102,7 @@ function CustomTooltip({
           <strong>
             {monthUtils.format(
               data.date,
-              isConcise ? 'MMMM yyyy' : 'MMMM dd, yyyy',
+              isConcise ? 'MMMM yyyy' : 'PPP',
               locale,
             )}
           </strong>

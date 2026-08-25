@@ -10,6 +10,42 @@ import { View } from '@actual-app/components/view';
 
 const HEADER_HEIGHT = 50;
 
+// The app opts into `viewport-fit=cover` and ships `display: standalone`, so on
+// an iPhone the web content is laid out *under* the status bar and the Dynamic
+// Island. Reserve that strip above the header's useful height rather than
+// inside it: the padding pushes the title row down, and the matching extra
+// height keeps that row exactly HEADER_HEIGHT tall. Both terms collapse to the
+// current layout wherever the inset resolves to 0 (desktop, Android, a plain
+// Safari tab).
+const SAFE_AREA_TOP = 'env(safe-area-inset-top, 0px)';
+const HEADER_BOX_HEIGHT = `calc(${HEADER_HEIGHT}px + ${SAFE_AREA_TOP})`;
+
+// Header buttons drew a ~30px box, well under a comfortable touch target.
+// Growing the box to 44px while shrinking the margin by the same amount keeps
+// the icon's centre exactly where it was inside a HEADER_HEIGHT-tall header —
+// the hit area grows, nothing moves.
+const HEADER_BUTTON_SIZE = 44;
+const HEADER_BUTTON_MARGIN = (HEADER_HEIGHT - HEADER_BUTTON_SIZE) / 2;
+
+/** Icon-only header buttons: a square target, icon centre unchanged. */
+export const mobileHeaderIconButtonStyle: CSSProperties = {
+  margin: HEADER_BUTTON_MARGIN,
+  minWidth: HEADER_BUTTON_SIZE,
+  minHeight: HEADER_BUTTON_SIZE,
+};
+
+/**
+ * Header buttons that carry a label, or sit against the leading edge, keep
+ * their horizontal margin so the content does not shift; only the height grows.
+ */
+export const mobileHeaderLabelButtonStyle: CSSProperties = {
+  marginTop: HEADER_BUTTON_MARGIN,
+  marginBottom: HEADER_BUTTON_MARGIN,
+  marginLeft: 10,
+  marginRight: 10,
+  minHeight: HEADER_BUTTON_SIZE,
+};
+
 type PageHeaderProps = {
   title: ReactNode;
   style?: CSSProperties;
@@ -58,7 +94,8 @@ export function MobilePageHeader({
         alignItems: 'center',
         flexDirection: 'row',
         flexShrink: 0,
-        height: HEADER_HEIGHT,
+        height: HEADER_BOX_HEIGHT,
+        paddingTop: SAFE_AREA_TOP,
         backgroundColor: theme.mobileHeaderBackground,
         '& *': {
           color: theme.mobileHeaderText,
@@ -144,7 +181,7 @@ export function MobilePageHeaderSlot({ style }: MobilePageHeaderSlotProps) {
       ref={slotRef ?? undefined}
       style={{
         flexShrink: 0,
-        minHeight: HEADER_HEIGHT,
+        minHeight: HEADER_BOX_HEIGHT,
         backgroundColor: theme.mobileHeaderBackground,
         ...style,
       }}

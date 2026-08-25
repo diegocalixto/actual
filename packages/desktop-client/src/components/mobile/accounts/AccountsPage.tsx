@@ -27,9 +27,13 @@ import { css } from '@emotion/css';
 import { useMoveAccountMutation, useSyncAndDownloadMutation } from '#accounts';
 import { isAccountFailedSync } from '#accounts/syncStatus';
 import { makeAmountFullStyle } from '#components/budget/util';
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
+import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
 import { PullToRefresh } from '#components/mobile/PullToRefresh';
-import { MobilePageHeader, Page } from '#components/Page';
+import {
+  mobileHeaderIconButtonStyle,
+  MobilePageHeader,
+  Page,
+} from '#components/Page';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { useAccounts } from '#hooks/useAccounts';
 import { useLocalPref } from '#hooks/useLocalPref';
@@ -231,7 +235,7 @@ function EmptyMessage({ onAddAccount }: { onAddAccount: () => void }) {
   return (
     <View
       style={{
-        minHeight: `calc(100vh - ${MOBILE_NAV_HEIGHT}px - 140px)`,
+        minHeight: `calc(100vh - ${MOBILE_NAV_SPACER} - 140px)`,
         alignItems: 'center',
         justifyContent: 'center',
         padding: 30,
@@ -344,7 +348,7 @@ function AllAccountList({
             <Button
               variant="bare"
               aria-label={t('Add account')}
-              style={{ margin: 10 }}
+              style={mobileHeaderIconButtonStyle}
               onPress={onAddAccount}
             >
               <SvgAdd width={20} height={20} />
@@ -360,7 +364,7 @@ function AllAccountList({
         <PullToRefresh onRefresh={onSync}>
           <View
             aria-label={t('Account list')}
-            style={{ paddingBottom: MOBILE_NAV_HEIGHT }}
+            style={{ paddingBottom: MOBILE_NAV_SPACER }}
           >
             <AccountHeader
               id="all"

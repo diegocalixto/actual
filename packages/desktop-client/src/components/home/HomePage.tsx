@@ -6,7 +6,7 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
+import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
 import { MobilePageHeader, Page } from '#components/Page';
 
 import { AccountsSection } from './AccountsSection';
@@ -78,10 +78,10 @@ export function HomePage() {
           alignSelf: 'center',
           flexShrink: 0,
           // The mobile nav bar is fixed and overlays the page, so the bottom
-          // padding has to clear it. It is hidden on desktop.
-          padding: `${isNarrowWidth ? 16 : 24}px ${homeLayout.gutter}px ${
-            isNarrowWidth ? MOBILE_NAV_HEIGHT : 48
-          }px`,
+          // padding has to clear it — and, on an iPhone, the home indicator
+          // under it. It is hidden on desktop.
+          padding: `${isNarrowWidth ? 16 : 24}px ${homeLayout.gutter}px`,
+          paddingBottom: isNarrowWidth ? MOBILE_NAV_SPACER : 48,
           gap: homeLayout.sectionGap,
         }}
       >

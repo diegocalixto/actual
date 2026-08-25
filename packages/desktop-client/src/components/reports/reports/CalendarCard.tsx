@@ -95,18 +95,22 @@ export function CalendarCard({
     [start, end, meta?.conditions, meta?.conditionsOp, firstDayOfWeekIdx],
   );
 
-  const [cardOrientation, setCardOrientation] = useState<'row' | 'column'>(
-    'row',
-  );
+  const [measuredOrientation, setMeasuredOrientation] = useState<
+    'row' | 'column'
+  >('row');
   const { isNarrowWidth } = useResponsive();
 
   const cardRef = useResizeObserver(rect => {
-    if (rect.height > rect.width) {
-      setCardOrientation('column');
-    } else {
-      setCardOrientation('row');
-    }
+    setMeasuredOrientation(rect.height > rect.width ? 'column' : 'row');
   });
+
+  // On a narrow screen the card is a single full-width column and is routinely
+  // taller than it is wide, which flipped it to the stacked layout: every month
+  // in the range shared one fixed card height, leaving a few pixels per week
+  // row and day numbers too small to read. The row layout already has a
+  // narrow-width path that pages the months horizontally at full card size, so
+  // keep it there and only measure the orientation on wider screens.
+  const cardOrientation = isNarrowWidth ? 'row' : measuredOrientation;
 
   const data = useReport('calendar', params);
 

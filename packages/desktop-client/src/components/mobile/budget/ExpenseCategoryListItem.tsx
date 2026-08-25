@@ -26,7 +26,7 @@ import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import { BalanceCell } from './BalanceCell';
 import { BudgetCell } from './BudgetCell';
-import { getColumnWidth, ROW_HEIGHT } from './BudgetTable';
+import { getColumnWidth, ROW_HEIGHT, TOUCH_TARGET_SIZE } from './BudgetTable';
 import { SpentCell } from './SpentCell';
 
 type ExpenseCategoryNameProps = {
@@ -68,6 +68,10 @@ function ExpenseCategoryName({
         variant="bare"
         style={{
           maxWidth: sidebarColumnWidth,
+          // The label is the tap target for the category menu; without a
+          // minimum it collapsed to the height of the text inside a 56px row.
+          // Nothing is drawn behind it, so this is hit area only.
+          minHeight: TOUCH_TARGET_SIZE,
         }}
         onPress={() => onEditCategory?.(category.id)}
       >

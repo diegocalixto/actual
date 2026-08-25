@@ -256,7 +256,7 @@ function DayButton({ day, onPress, fontSize, resizeRef }: DayButtonProps) {
   return (
     <Button
       ref={resizeRef}
-      aria-label={formatDate(day.date, 'MMMM d, yyyy', { locale })}
+      aria-label={formatDate(day.date, 'PPP', { locale })}
       style={{
         borderColor: 'transparent',
         backgroundColor: theme.calendarCellBackground,

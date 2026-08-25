@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v1';
 
+import { mobileHeaderIconButtonStyle } from '#components/Page';
 import { useNavigate } from '#hooks/useNavigate';
 
 export function AddRuleButton() {
@@ -18,7 +19,7 @@ export function AddRuleButton() {
     <Button
       variant="bare"
       aria-label={t('Add new rule')}
-      style={{ margin: 10 }}
+      style={mobileHeaderIconButtonStyle}
       onPress={handleAddRule}
     >
       <SvgAdd width={20} height={20} />

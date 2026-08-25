@@ -81,7 +81,11 @@
 
   --color-modalBackground: #191f2a;
   --color-modalBorder: var(--palette-navy600);
-  --color-mobileHeaderBackground: var(--palette-purple800);
+  /* Chrome, not accent: the header is the top counterpart of the nav bar, so
+     it takes the same surface. Purple800 was the last saturated slab left over
+     from the pre-refresh identity, and against the near-black mobile page it
+     read as the only bright element on every screen. */
+  --color-mobileHeaderBackground: #191f2a;
   --color-mobileHeaderText: var(--palette-navy150);
   --color-mobileHeaderTextSubdued: var(--palette-gray200);
   --color-mobileHeaderTextHover: rgba(200, 200, 200, 0.15);

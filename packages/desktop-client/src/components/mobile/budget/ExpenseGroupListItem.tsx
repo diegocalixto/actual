@@ -25,7 +25,7 @@ import { useFormat } from '#hooks/useFormat';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
-import { getColumnWidth, ROW_HEIGHT } from './BudgetTable';
+import { getColumnWidth, ROW_HEIGHT, TOUCH_TARGET_SIZE } from './BudgetTable';
 import { ExpenseCategoryList } from './ExpenseCategoryList';
 
 type ExpenseGroupListItemProps = ComponentPropsWithoutRef<
@@ -218,6 +218,10 @@ function ExpenseGroupName({
             backgroundColor: 'transparent',
           },
           marginLeft: -5,
+          // The arrow itself stays 8px; only the box around it grows, so the
+          // collapse control is reachable without aiming.
+          minWidth: TOUCH_TARGET_SIZE,
+          minHeight: TOUCH_TARGET_SIZE,
         })}
         onPress={() => onToggleCollapse(group.id)}
       >
@@ -235,6 +239,10 @@ function ExpenseGroupName({
         variant="bare"
         style={{
           maxWidth: sidebarColumnWidth,
+          // The label is the tap target for the category menu; without a
+          // minimum it collapsed to the height of the text inside a 56px row.
+          // Nothing is drawn behind it, so this is hit area only.
+          minHeight: TOUCH_TARGET_SIZE,
         }}
         onPress={() => onEditCategoryGroup(group.id)}
       >

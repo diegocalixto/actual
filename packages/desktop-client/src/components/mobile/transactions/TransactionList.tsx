@@ -226,7 +226,11 @@ export function TransactionList({
                     zIndex: 10,
                   }}
                 >
-                  {monthUtils.format(section.date, 'MMMM dd, yyyy', locale)}
+                  {/* `PPP` is date-fns' localized long date. A literal
+                      pattern renders the month name in the active locale but
+                      keeps English word order, so pt-BR read
+                      "agosto 24, 2026" instead of "24 de agosto de 2026". */}
+                  {monthUtils.format(section.date, 'PPP', locale)}
                 </Header>
                 <Collection
                   items={section.transactions.filter(
