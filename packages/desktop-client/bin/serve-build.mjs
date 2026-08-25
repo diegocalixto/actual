@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', 'build');
 const INDEX_PATH = path.join(ROOT, 'index.html');
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) || 3002;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

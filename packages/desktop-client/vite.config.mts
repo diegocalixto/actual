@@ -318,7 +318,12 @@ export default defineConfig(async ({ mode, command }) => {
     server: {
       host: true,
       headers: devHeaders,
-      port: +env.PORT || 5173,
+      port: +env.PORT || 3002,
+      // Fail rather than silently moving to the next free port. Two
+      // worktrees run side by side on this machine — V1 on 3001, V2 on
+      // 3002 — and a silent fallback would let this server answer on a
+      // port someone believes belongs to the other one.
+      strictPort: true,
       open: env.BROWSER
         ? ['chrome', 'firefox', 'edge', 'browser', 'browserPrivate'].includes(
             env.BROWSER,
