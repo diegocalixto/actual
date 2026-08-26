@@ -45,6 +45,7 @@ import { TourProvider } from './tour/TourProvider';
 import { V2LabAccounts } from './v2lab/accounts/V2LabAccounts';
 import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
+import { V2LabReports } from './v2lab/reports/V2LabReports';
 import { V2LabOverview } from './v2lab/V2LabOverview';
 
 function NarrowNotSupported({
@@ -479,6 +480,17 @@ export function FinancesApp() {
                         resetKeys={[location.pathname]}
                       >
                         <V2LabAccounts />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/v2-lab/reports"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <V2LabReports />
                       </ErrorBoundary>
                     }
                   />
