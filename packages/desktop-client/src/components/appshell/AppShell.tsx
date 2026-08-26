@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { View } from '@actual-app/components/view';
@@ -27,6 +28,29 @@ type AppShellProps = {
  */
 export function AppShell({ children }: AppShellProps) {
   const { isNarrowWidth } = useResponsive();
+  const location = useLocation();
+
+  // One laboratory route carries its own full-height navigation, because the
+  // design it is being judged against has no rail and no header. It opts out of
+  // the frame rather than reshaping it, so every other route — Overview and
+  // Budget included — keeps the approved rail exactly as published.
+  const providesOwnFrame = location.pathname === '/v2-lab/accounts';
+
+  if (providesOwnFrame && !isNarrowWidth) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflow: 'hidden',
+          color: shellColors.textPrimary,
+          backgroundColor: shellColors.canvas,
+        }}
+      >
+        {children}
+      </View>
+    );
+  }
 
   return (
     <View

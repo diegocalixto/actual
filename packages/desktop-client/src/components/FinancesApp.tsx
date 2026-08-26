@@ -42,6 +42,7 @@ import { ManageTagsPage } from './tags/ManageTagsPage';
 import { Tour } from './tour/Tour';
 import { TourAutoOffer } from './tour/TourAutoOffer';
 import { TourProvider } from './tour/TourProvider';
+import { V2LabAccounts } from './v2lab/accounts/V2LabAccounts';
 import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
 import { V2LabOverview } from './v2lab/V2LabOverview';
@@ -467,6 +468,17 @@ export function FinancesApp() {
                         resetKeys={[location.pathname]}
                       >
                         <V2LabBudget />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/v2-lab/accounts"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <V2LabAccounts />
                       </ErrorBoundary>
                     }
                   />
