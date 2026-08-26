@@ -1,47 +1,78 @@
 :root {
-  --color-pageBackground: #0a0e13;
+  /* ------------------------------------------------------------------
+     Diego Finance V2 ramp.
+
+     Derived from the product's visual reference (referencias/moderna-dark.png):
+     a near-black neutral canvas, surfaces only a few levels above it — panels
+     read as separate through radius, hairlines and space rather than through a
+     lighter fill — and violet as the single structural accent, with green and
+     coral reserved for financial meaning.
+
+     Only this file changes: `light.css` and `midnight.css` are untouched, so
+     the other themes keep their previous appearance.
+     ------------------------------------------------------------------ */
+  --df-bg: #111217;
+  --df-surface: #16161d;
+  --df-surface-raised: #1c1c25;
+  --df-surface-input: #23232e;
+  --df-line: rgba(255, 255, 255, 0.07);
+  --df-line-strong: rgba(255, 255, 255, 0.13);
+
+  --df-text: #eceaf2;
+  --df-text-light: #a5a3b0;
+  --df-text-subdued: #7e7c8b;
+
+  --df-accent: #7c4dff;
+  --df-accent-bright: #9575ff;
+  --df-accent-strong: #6633f0;
+  --df-accent-soft: rgba(124, 77, 255, 0.16);
+
+  --df-positive: #57d98a;
+  --df-negative: #e8665c;
+
+  --color-pageBackground: var(--df-bg);
   --color-pageBackgroundModalActive: var(--palette-gray800);
   --color-pageBackgroundTopLeft: var(--palette-navy800);
   --color-pageBackgroundBottomRight: var(--palette-gray700);
   --color-pageBackgroundLineTop: var(--palette-purple400);
   --color-pageBackgroundLineMid: var(--palette-navy900);
   --color-pageBackgroundLineBottom: var(--palette-navy150);
-  --color-pageText: var(--palette-navy150);
-  --color-pageTextLight: var(--palette-navy300);
-  --color-pageTextSubdued: var(--palette-navy500);
-  --color-pageTextDark: var(--palette-navy100);
-  --color-pageTextPositive: var(--palette-purple200);
-  --color-pageTextLink: var(--palette-purple400);
-  --color-pageTextLinkLight: var(--palette-purple200);
+  --color-pageText: var(--df-text);
+  --color-pageTextLight: var(--df-text-light);
+  --color-pageTextSubdued: var(--df-text-subdued);
+  --color-pageTextDark: #f6f5f9;
+  --color-pageTextPositive: var(--df-accent-bright);
+  --color-pageTextLink: var(--df-accent-bright);
+  --color-pageTextLinkLight: var(--df-accent-bright);
 
-  --color-cardBackground: #191f2a;
-  --color-cardBorder: var(--palette-purple400);
-  --color-cardShadow: var(--palette-navy700);
+  --color-cardBackground: var(--df-surface);
+  --color-cardBorder: var(--df-accent);
+  --color-cardShadow: rgba(0, 0, 0, 0.6);
 
-  --color-tableBackground: #191f2a;
+  --color-tableBackground: var(--df-surface);
   --color-tableRowBackgroundAlternate: var(--color-tableBackground);
-  --color-tableRowBackgroundHover: #212936;
-  --color-tableText: var(--palette-navy150);
+  --color-tableRowBackgroundHover: var(--df-surface-raised);
+  --color-tableText: var(--df-text);
   --color-tableTextItemAdded: var(--color-tableText);
   --color-tableTextLight: var(--color-tableText);
-  --color-tableTextSubdued: var(--palette-navy500);
-  --color-tableTextSelected: var(--palette-navy150);
-  --color-tableTextHover: var(--palette-navy400);
-  --color-tableTextInactive: var(--palette-navy500);
-  --color-tableHeaderText: var(--palette-navy300);
-  --color-tableHeaderBackground: #212936;
-  --color-tableBorder: var(--palette-navy600);
-  --color-tableBorderSelected: var(--palette-purple400);
-  --color-tableBorderHover: var(--palette-purple300);
-  --color-tableBorderSeparator: var(--palette-navy400);
-  --color-tableRowBackgroundHighlight: var(--palette-purple800);
-  --color-tableRowBackgroundHighlightText: var(--palette-navy150);
-  --color-tableRowHeaderBackground: #212936;
-  --color-tableRowHeaderText: var(--palette-navy150);
+  --color-tableTextSubdued: var(--df-text-subdued);
+  --color-tableTextSelected: var(--df-text);
+  --color-tableTextHover: var(--df-text);
+  --color-tableTextInactive: var(--df-text-subdued);
+  --color-tableHeaderText: var(--df-text-subdued);
+  --color-tableHeaderBackground: var(--df-bg);
+  --color-tableBorder: var(--df-line);
+  --color-tableBorderSelected: var(--df-accent);
+  --color-tableBorderHover: var(--df-accent-bright);
+  --color-tableBorderSeparator: var(--df-line-strong);
+  --color-tableRowBackgroundHighlight: var(--df-accent-soft);
+  --color-tableRowBackgroundHighlightText: var(--df-text);
+  --color-tableRowHeaderBackground: var(--df-surface-raised);
+  --color-tableRowHeaderText: var(--df-text);
 
-  --color-numberPositive: var(--palette-green300);
-  --color-numberNegative: var(--palette-red200);
-  --color-numberNeutral: var(--palette-navy500);
+  --color-numberPositive: var(--df-positive);
+  --color-numberNegative: var(--df-negative);
+  --color-numberNeutral: var(--df-text-subdued);
   --color-budgetNumberNegative: var(--color-numberNegative);
   --color-budgetNumberZero: var(--color-tableTextSubdued);
   --color-budgetNumberNeutral: var(--color-tableText);
@@ -63,39 +94,39 @@
   --color-sidebarItemTextSelected: var(--palette-purple200);
   --color-sidebarBudgetName: var(--palette-navy300);
 
-  --color-menuBackground: var(--palette-navy800);
-  --color-menuItemBackground: var(--palette-navy800);
-  --color-menuItemBackgroundHover: var(--palette-navy500);
-  --color-menuItemText: var(--palette-navy100);
-  --color-menuItemTextHover: var(--palette-navy50);
-  --color-menuItemTextSelected: var(--palette-purple400);
-  --color-menuItemTextHeader: var(--palette-purple200);
-  --color-menuBorder: var(--palette-navy900);
-  --color-menuBorderHover: var(--palette-purple400);
-  --color-menuKeybindingText: var(--palette-purple200);
-  --color-menuAutoCompleteBackground: var(--palette-navy900);
-  --color-menuAutoCompleteBackgroundHover: var(--palette-navy600);
-  --color-menuAutoCompleteText: var(--palette-navy200);
-  --color-menuAutoCompleteTextHeader: var(--palette-purple200);
+  --color-menuBackground: var(--df-surface-raised);
+  --color-menuItemBackground: var(--df-surface-raised);
+  --color-menuItemBackgroundHover: var(--df-surface-input);
+  --color-menuItemText: var(--df-text);
+  --color-menuItemTextHover: #ffffff;
+  --color-menuItemTextSelected: var(--df-accent-bright);
+  --color-menuItemTextHeader: var(--df-text-subdued);
+  --color-menuBorder: var(--df-line-strong);
+  --color-menuBorderHover: var(--df-accent);
+  --color-menuKeybindingText: var(--df-text-subdued);
+  --color-menuAutoCompleteBackground: var(--df-surface-raised);
+  --color-menuAutoCompleteBackgroundHover: var(--df-surface-input);
+  --color-menuAutoCompleteText: var(--df-text);
+  --color-menuAutoCompleteTextHeader: var(--df-text-subdued);
   --color-menuAutoCompleteItemText: var(--color-menuItemText);
 
-  --color-modalBackground: #191f2a;
-  --color-modalBorder: var(--palette-navy600);
+  --color-modalBackground: var(--df-surface);
+  --color-modalBorder: var(--df-line-strong);
   /* Chrome, not accent: the header is the top counterpart of the nav bar, so
      it takes the same surface. Purple800 was the last saturated slab left over
      from the pre-refresh identity, and against the near-black mobile page it
      read as the only bright element on every screen. */
-  --color-mobileHeaderBackground: #191f2a;
-  --color-mobileHeaderText: var(--palette-navy150);
-  --color-mobileHeaderTextSubdued: var(--palette-gray200);
+  --color-mobileHeaderBackground: var(--df-bg);
+  --color-mobileHeaderText: var(--df-text);
+  --color-mobileHeaderTextSubdued: var(--df-text-light);
   --color-mobileHeaderTextHover: rgba(200, 200, 200, 0.15);
-  --color-mobilePageBackground: #0a0e13;
-  --color-mobileNavBackground: #191f2a;
-  --color-mobileNavItem: var(--palette-navy150);
-  --color-mobileNavItemSelected: var(--palette-purple400);
+  --color-mobilePageBackground: var(--df-bg);
+  --color-mobileNavBackground: var(--df-surface);
+  --color-mobileNavItem: var(--df-text-light);
+  --color-mobileNavItemSelected: var(--df-accent-bright);
   --color-mobileAccountShadow: var(--color-cardShadow);
   --color-mobileAccountText: var(--palette-blue800);
-  --color-mobileTransactionSelected: var(--palette-purple400);
+  --color-mobileTransactionSelected: var(--df-accent-bright);
 
   --color-mobileViewTheme: var(--color-mobileHeaderBackground);
   --color-mobileConfigServerViewTheme: var(--palette-purple500);
@@ -117,8 +148,8 @@
 
   --color-buttonPrimaryText: var(--palette-white);
   --color-buttonPrimaryTextHover: var(--color-buttonPrimaryText);
-  --color-buttonPrimaryBackground: var(--palette-purple400);
-  --color-buttonPrimaryBackgroundHover: var(--palette-purple600);
+  --color-buttonPrimaryBackground: var(--df-accent);
+  --color-buttonPrimaryBackgroundHover: var(--df-accent-strong);
   --color-buttonPrimaryBorder: var(--color-buttonPrimaryBackground);
   --color-buttonPrimaryShadow: rgba(0, 0, 0, 0.6);
   --color-buttonPrimaryDisabledText: var(--palette-navy700);
@@ -127,34 +158,34 @@
     --color-buttonPrimaryDisabledBackground
   );
 
-  --color-buttonNormalText: var(--palette-navy150);
-  --color-buttonNormalTextHover: var(--palette-navy150);
-  --color-buttonNormalBackground: var(--palette-navy800);
-  --color-buttonNormalBackgroundHover: var(--palette-navy600);
-  --color-buttonNormalBorder: var(--palette-navy300);
+  --color-buttonNormalText: var(--df-text);
+  --color-buttonNormalTextHover: var(--df-text);
+  --color-buttonNormalBackground: var(--df-surface-raised);
+  --color-buttonNormalBackgroundHover: var(--df-surface-input);
+  --color-buttonNormalBorder: var(--df-line-strong);
   --color-buttonNormalShadow: rgba(0, 0, 0, 0.4);
   --color-buttonNormalSelectedText: var(--palette-white);
-  --color-buttonNormalSelectedBackground: var(--palette-purple600);
+  --color-buttonNormalSelectedBackground: var(--df-accent);
   --color-buttonNormalDisabledText: var(--palette-navy500);
   --color-buttonNormalDisabledBackground: var(--palette-navy800);
   --color-buttonNormalDisabledBorder: var(--palette-navy500);
 
   --color-calendarText: var(--palette-navy50);
-  --color-calendarBackground: var(--palette-navy900);
-  --color-calendarItemText: var(--palette-navy150);
-  --color-calendarItemBackground: var(--palette-navy800);
+  --color-calendarBackground: var(--df-surface);
+  --color-calendarItemText: var(--df-text);
+  --color-calendarItemBackground: var(--df-surface-raised);
   --color-calendarSelectedBackground: var(
     --color-buttonNormalSelectedBackground
   );
-  --color-datePickerRangeBackground: var(--palette-purple600);
+  --color-datePickerRangeBackground: var(--df-accent-soft);
 
   --color-buttonBareText: var(--color-pageText);
   --color-buttonBareTextHover: var(--color-pageText);
   --color-buttonBareDisabledText: var(--color-pageTextSubdued);
   --color-buttonBareBackground: transparent;
   --color-buttonBareDisabledBackground: var(--color-buttonBareBackground);
-  --color-buttonBareBackgroundHover: rgba(200, 200, 200, 0.3);
-  --color-buttonBareBackgroundActive: rgba(200, 200, 200, 0.5);
+  --color-buttonBareBackgroundHover: rgba(255, 255, 255, 0.07);
+  --color-buttonBareBackgroundActive: rgba(255, 255, 255, 0.12);
 
   --color-noticeBackground: var(--palette-green800);
   --color-noticeBackgroundLight: var(--palette-green900);
@@ -175,84 +206,87 @@
   --color-errorTextDarker: var(--color-errorTextDark);
   --color-errorTextMenu: var(--palette-red200);
   --color-errorBorder: var(--palette-red500);
-  --color-upcomingBackground: var(--palette-purple700);
-  --color-upcomingText: var(--palette-purple100);
+  --color-upcomingBackground: var(--df-accent-soft);
+  --color-upcomingText: var(--df-accent-bright);
   --color-upcomingBorder: var(--color-tableBorder);
 
-  --color-formLabelText: var(--palette-purple150);
+  --color-formLabelText: var(--df-text-light);
   --color-formLabelBackground: var(--palette-blue900);
-  --color-formInputBackground: var(--palette-navy800);
-  --color-formInputBackgroundSelected: var(--palette-navy700);
-  --color-formInputBackgroundSelection: var(--palette-purple400);
-  --color-formInputBorder: var(--palette-navy600);
+  --color-formInputBackground: var(--df-surface-input);
+  --color-formInputBackgroundSelected: var(--df-surface-input);
+  --color-formInputBackgroundSelection: var(--df-accent);
+  --color-formInputBorder: var(--df-line-strong);
   --color-formInputTextReadOnlySelection: var(--palette-navy800);
-  --color-formInputBorderSelected: var(--palette-purple400);
-  --color-formInputText: var(--palette-navy150);
+  --color-formInputBorderSelected: var(--df-accent);
+  --color-formInputText: var(--df-text);
   --color-formInputTextSelected: var(--palette-black);
-  --color-formInputTextPlaceholder: var(--palette-navy150);
+  --color-formInputTextPlaceholder: var(--df-text-subdued);
   --color-formInputTextPlaceholderSelected: var(--palette-navy100);
   --color-formInputTextSelection: var(--palette-navy800);
-  --color-formInputShadowSelected: var(--palette-purple200);
-  --color-formInputTextHighlight: var(--palette-purple400);
+  --color-formInputShadowSelected: var(--df-accent);
+  --color-formInputTextHighlight: var(--df-accent);
   --color-checkboxText: var(--color-tableText);
-  --color-checkboxBackgroundSelected: var(--palette-purple300);
-  --color-checkboxBorderSelected: var(--palette-purple300);
-  --color-checkboxShadowSelected: var(--palette-purple500);
+  --color-checkboxBackgroundSelected: var(--df-accent);
+  --color-checkboxBorderSelected: var(--df-accent);
+  --color-checkboxShadowSelected: var(--df-accent-soft);
   --color-checkboxToggleBackground: var(--palette-gray700);
-  --color-checkboxToggleBackgroundSelected: var(--palette-purple300);
+  --color-checkboxToggleBackgroundSelected: var(--df-accent);
   --color-checkboxToggleDisabled: var(--palette-gray400);
 
-  --color-pillBackground: var(--palette-navy800);
-  --color-pillBackgroundLight: var(--palette-navy900);
-  --color-pillText: var(--palette-navy200);
-  --color-pillTextHighlighted: var(--palette-purple200);
-  --color-pillBorder: var(--palette-navy700);
+  --color-pillBackground: var(--df-surface-raised);
+  --color-pillBackgroundLight: var(--df-surface);
+  --color-pillText: var(--df-text-light);
+  --color-pillTextHighlighted: var(--df-accent-bright);
+  --color-pillBorder: var(--df-line);
   --color-pillBorderDark: var(--color-pillBorder);
-  --color-pillBackgroundSelected: var(--palette-purple600);
-  --color-pillTextSelected: var(--palette-navy150);
-  --color-pillBorderSelected: var(--palette-purple400);
-  --color-pillTextSubdued: var(--palette-navy500);
+  --color-pillBackgroundSelected: var(--df-accent-soft);
+  --color-pillTextSelected: var(--df-accent-bright);
+  --color-pillBorderSelected: var(--df-accent);
+  --color-pillTextSubdued: var(--df-text-subdued);
 
-  --color-reportsRed: var(--palette-red300);
-  --color-reportsBlue: var(--palette-blue400);
-  --color-reportsGreen: var(--palette-green400);
-  --color-reportsGray: var(--palette-gray400);
+  --color-reportsRed: var(--df-negative);
+  --color-reportsBlue: var(--df-accent-bright);
+  --color-reportsGreen: var(--df-positive);
+  --color-reportsGray: var(--df-text-subdued);
   --color-reportsLabel: var(--color-pageText);
-  --color-reportsInnerLabel: var(--palette-navy800);
+  --color-reportsInnerLabel: var(--df-surface-raised);
   --color-reportsNumberPositive: var(--color-numberPositive);
   --color-reportsNumberNegative: var(--color-numberNegative);
   --color-reportsNumberNeutral: var(--color-numberNeutral);
-  --color-reportsChartFill: var(--color-reportsNumberPositive);
+  --color-reportsChartFill: var(--df-accent);
 
-  --color-noteTagBackground: var(--palette-purple700);
-  --color-noteTagBackgroundHover: var(--palette-purple500);
-  --color-noteTagDefault: var(--palette-purple700);
-  --color-noteTagText: var(--palette-purple100);
+  --color-noteTagBackground: var(--df-accent-soft);
+  --color-noteTagBackgroundHover: var(--df-accent);
+  --color-noteTagDefault: var(--df-accent-soft);
+  --color-noteTagText: var(--df-accent-bright);
 
-  --color-budgetOtherMonth: var(--palette-navy900);
+  --color-budgetOtherMonth: var(--df-bg);
   --color-budgetCurrentMonth: var(--color-tableBackground);
-  --color-budgetHeaderOtherMonth: var(--palette-navy800);
+  --color-budgetHeaderOtherMonth: var(--df-bg);
   --color-budgetHeaderCurrentMonth: var(--color-tableHeaderBackground);
 
-  --color-floatingActionBarBackground: var(--palette-purple800);
+  --color-floatingActionBarBackground: var(--df-accent);
   --color-floatingActionBarBorder: var(--color-floatingActionBarBackground);
-  --color-floatingActionBarText: var(--palette-navy150);
+  --color-floatingActionBarText: #ffffff;
 
-  --color-tooltipText: var(--palette-navy100);
-  --color-tooltipBackground: var(--palette-navy800);
-  --color-tooltipBorder: var(--palette-navy700);
+  --color-tooltipText: var(--df-text);
+  --color-tooltipBackground: var(--df-surface-raised);
+  --color-tooltipBorder: var(--df-line-strong);
 
-  --color-calendarCellBackground: var(--palette-navy900);
+  --color-calendarCellBackground: var(--df-surface);
 
-  --color-overlayBackground: rgba(0, 0, 0, 0.3);
+  --color-overlayBackground: rgba(0, 0, 0, 0.55);
 
-  --color-chartQual1: var(--palette-chartQual1);
-  --color-chartQual2: var(--palette-chartQual2);
-  --color-chartQual3: var(--palette-chartQual3);
-  --color-chartQual4: var(--palette-chartQual4);
-  --color-chartQual5: var(--palette-chartQual5);
-  --color-chartQual6: var(--palette-chartQual6);
-  --color-chartQual7: var(--palette-chartQual7);
-  --color-chartQual8: var(--palette-chartQual8);
-  --color-chartQual9: var(--palette-chartQual9);
+  /* Violet-led and restrained: the reference plots one accent, so the scale
+     starts there and steps through hues that stay legible on the dark canvas
+     instead of nine unrelated colours. */
+  --color-chartQual1: #7c4dff;
+  --color-chartQual2: #37d0c0;
+  --color-chartQual3: #57d98a;
+  --color-chartQual4: #e8b45c;
+  --color-chartQual5: #e8665c;
+  --color-chartQual6: #b18cff;
+  --color-chartQual7: #5ea8f0;
+  --color-chartQual8: #d97fb8;
+  --color-chartQual9: #8f9bb3;
 }

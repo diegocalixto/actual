@@ -4,11 +4,9 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Route, Routes, useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
-import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { SvgArrowLeft } from '@actual-app/components/icons/v1';
 import {
   SvgAlertTriangle,
-  SvgNavigationMenu,
   SvgViewHide,
   SvgViewShow,
 } from '@actual-app/components/icons/v2';
@@ -21,7 +19,6 @@ import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import { listen } from '@actual-app/core/platform/client/connection';
 import { isDevelopmentEnvironment } from '@actual-app/core/shared/environment';
-import * as Platform from '@actual-app/core/shared/platform';
 import { css } from '@emotion/css';
 
 import { sync } from '#app/appSlice';
@@ -42,7 +39,6 @@ import { Link } from './common/Link';
 import { HelpMenu } from './HelpMenu';
 import { LoggedInUser } from './LoggedInUser';
 import { useServerURL } from './ServerContext';
-import { useSidebar } from './sidebar/SidebarProvider';
 import { ThemeSelector } from './ThemeSelector';
 
 function UncategorizedButton() {
@@ -296,91 +292,53 @@ function BudgetTitlebar() {
   );
 }
 
-type TitlebarProps = {
-  style?: CSSProperties;
-};
-
-export function Titlebar({ style }: TitlebarProps) {
-  const { t } = useTranslation();
+/**
+ * The route-specific controls the shell header carries on the left.
+ *
+ * These used to live inside `Titlebar`, a 36px strip floated over the top of
+ * the scrolling content. The strip is gone — the V2 shell has a real header —
+ * but the controls themselves are unchanged functionality and simply moved
+ * into it.
+ */
+export function ShellRouteControls() {
   const navigate = useNavigate();
   const location = useLocation();
-  const sidebar = useSidebar();
-  const { isNarrowWidth } = useResponsive();
+
+  return (
+    <Routes>
+      <Route
+        path="*"
+        element={
+          location.state?.goBack ? (
+            <Button variant="bare" onPress={() => navigate(-1)}>
+              <SvgArrowLeft width={10} height={10} style={{ marginRight: 5 }} />{' '}
+              <Trans>Back</Trans>
+            </Button>
+          ) : null
+        }
+      />
+
+      <Route path="/accounts/:id" element={<AccountSyncCheck />} />
+
+      <Route path="/budget" element={<BudgetTitlebar />} />
+    </Routes>
+  );
+}
+
+/** The utility cluster the shell header carries on the right. */
+export function ShellHeaderActions() {
   const serverURL = useServerURL();
-  const [floatingSidebar] = useGlobalPref('floatingSidebar');
   const isTestEnv = useIsTestEnv();
 
-  return isNarrowWidth ? null : (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: '0 10px 0 15px',
-        height: 36,
-        pointerEvents: 'none',
-        '& *': {
-          pointerEvents: 'auto',
-        },
-        ...(!Platform.isBrowser && Platform.OS === 'mac' && floatingSidebar
-          ? { paddingLeft: 80 }
-          : {}),
-        ...style,
-      }}
-    >
-      {(floatingSidebar || sidebar.alwaysFloats) && (
-        <Button
-          aria-label={t('Sidebar menu')}
-          variant="bare"
-          style={{ marginRight: 8 }}
-          onHoverStart={e => {
-            if (e.pointerType === 'mouse') {
-              sidebar.setHidden(false);
-            }
-          }}
-          onPress={e => {
-            if (e.pointerType !== 'mouse') {
-              sidebar.setHidden(!sidebar.hidden);
-            }
-          }}
-        >
-          <SvgNavigationMenu
-            className="menu"
-            style={{ width: 15, height: 15, left: 0 }}
-          />
-        </Button>
-      )}
-
-      <Routes>
-        <Route
-          path="*"
-          element={
-            location.state?.goBack ? (
-              <Button variant="bare" onPress={() => navigate(-1)}>
-                <SvgArrowLeft
-                  width={10}
-                  height={10}
-                  style={{ marginRight: 5 }}
-                />{' '}
-                <Trans>Back</Trans>
-              </Button>
-            ) : null
-          }
-        />
-
-        <Route path="/accounts/:id" element={<AccountSyncCheck />} />
-
-        <Route path="/budget" element={<BudgetTitlebar />} />
-      </Routes>
-      <View style={{ flex: 1 }} />
-      <SpaceBetween gap={10}>
-        <UncategorizedButton />
-        {isDevelopmentEnvironment() && !isTestEnv && <ThemeSelector />}
-        <PrivacyButton />
-        {serverURL ? <ServerSyncButton /> : null}
-        <SharedArrayBufferWarning />
-        <LoggedInUser />
-        <HelpMenu />
-      </SpaceBetween>
-    </View>
+  return (
+    <SpaceBetween gap={10}>
+      <UncategorizedButton />
+      {isDevelopmentEnvironment() && !isTestEnv && <ThemeSelector />}
+      <PrivacyButton />
+      {serverURL ? <ServerSyncButton /> : null}
+      <SharedArrayBufferWarning />
+      <LoggedInUser />
+      <HelpMenu />
+    </SpaceBetween>
   );
 }
