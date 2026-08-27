@@ -13,8 +13,15 @@
  */
 export const LAB_ROOT_CLASS = 'df-v2lab';
 
-export const labTokensCss = `
-.${LAB_ROOT_CLASS} {
+/**
+ * The token declarations themselves, without a selector.
+ *
+ * Extracted so the production Overview can mount the same values under its own
+ * class instead of copying them: two lists of hex codes drifting apart is a
+ * worse outcome than one shared string. Only the wrapper moved — no value here
+ * changed, and `labTokensCss` below still renders exactly what it always did.
+ */
+export const DF_TOKEN_DECLARATIONS = `
   /* Ground: deep, smooth, faintly cold. No texture, no pattern. */
   --dfl-canvas: #070a10;
 
@@ -70,5 +77,13 @@ export const labTokensCss = `
     0 2px 6px -3px rgba(0, 0, 0, 0.7);
   --dfl-shadow-hero: 0 40px 80px -44px rgba(0, 0, 0, 1),
     0 2px 8px -4px rgba(0, 0, 0, 0.8);
-}
 `;
+
+/** Wraps the declarations in a rule for a given class. */
+export function tokensCssFor(className: string): string {
+  return `
+.${className} {${DF_TOKEN_DECLARATIONS}}
+`;
+}
+
+export const labTokensCss = tokensCssFor(LAB_ROOT_CLASS);

@@ -26,6 +26,11 @@ type ReportsHeroChartProps = {
   xTicks: number[];
   totals: { income: number; expenses: number; net: number };
   defaultHoverIndex: number;
+  /**
+   * How to write a tick. Given so the axis can name the month it is actually
+   * showing — the laboratory has one fixed month and falls back to it.
+   */
+  formatXTick?: (day: number) => string;
 };
 
 const VW = 1000;
@@ -61,6 +66,7 @@ export function ReportsHeroChart({
   xTicks,
   totals,
   defaultHoverIndex,
+  formatXTick,
 }: ReportsHeroChartProps) {
   const { t } = useTranslation();
   const [hover, setHover] = useState<number | null>(defaultHoverIndex);
@@ -278,7 +284,7 @@ export function ReportsHeroChart({
                   color: 'var(--dfl-text-3)',
                 }}
               >
-                {t('May {{ day }}', { day })}
+                {formatXTick ? formatXTick(day) : t('May {{ day }}', { day })}
               </Text>
             ))}
           </View>

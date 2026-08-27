@@ -24,10 +24,15 @@ import {
 import { SERIES } from './reportsTokens';
 
 type Kpis = {
-  income: { value: number; change: number };
-  expenses: { value: number; change: number };
-  net: { value: number; change: number };
-  savingsRate: { value: number; points: number };
+  /**
+   * `change` is `null` when the previous period is zero or negative: a ratio
+   * against such a base is arithmetic without meaning — "up 1184%" from a loss
+   * says nothing a reader can use — so the chip is left out instead.
+   */
+  income: { value: number; change: number | null };
+  expenses: { value: number; change: number | null };
+  net: { value: number; change: number | null };
+  savingsRate: { value: number; points: number | null };
 };
 
 type ReportsKpisProps = {
@@ -53,9 +58,11 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
         value={formatBRL(kpis.income.value)}
         Icon={SvgArrowThinUp}
         color={SERIES.income}
-        change={formatChange(kpis.income.change)}
-        isUp={kpis.income.change >= 0}
-        isGood={kpis.income.change >= 0}
+        change={
+          kpis.income.change === null ? null : formatChange(kpis.income.change)
+        }
+        isUp={(kpis.income.change ?? 0) >= 0}
+        isGood={(kpis.income.change ?? 0) >= 0}
         previousPeriodLabel={previousPeriodLabel}
       />
       <Kpi
@@ -63,10 +70,14 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
         value={formatBRL(kpis.expenses.value)}
         Icon={SvgArrowThinDown}
         color={SERIES.expenses}
-        change={formatChange(kpis.expenses.change)}
-        isUp={kpis.expenses.change >= 0}
+        change={
+          kpis.expenses.change === null
+            ? null
+            : formatChange(kpis.expenses.change)
+        }
+        isUp={(kpis.expenses.change ?? 0) >= 0}
         /* Spending more is not good news, however the arrow points. */
-        isGood={kpis.expenses.change < 0}
+        isGood={(kpis.expenses.change ?? 0) < 0}
         previousPeriodLabel={previousPeriodLabel}
       />
       <Kpi
@@ -74,9 +85,9 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
         value={formatBRL(kpis.net.value)}
         Icon={SvgAdjust}
         color={SERIES.net}
-        change={formatChange(kpis.net.change)}
-        isUp={kpis.net.change >= 0}
-        isGood={kpis.net.change >= 0}
+        change={kpis.net.change === null ? null : formatChange(kpis.net.change)}
+        isUp={(kpis.net.change ?? 0) >= 0}
+        isGood={(kpis.net.change ?? 0) >= 0}
         previousPeriodLabel={previousPeriodLabel}
       />
       <Kpi
@@ -84,9 +95,13 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
         value={formatPercent(kpis.savingsRate.value)}
         Icon={SvgChartPie}
         color={VIOLET}
-        change={formatPoints(kpis.savingsRate.points)}
-        isUp={kpis.savingsRate.points >= 0}
-        isGood={kpis.savingsRate.points >= 0}
+        change={
+          kpis.savingsRate.points === null
+            ? null
+            : formatPoints(kpis.savingsRate.points)
+        }
+        isUp={(kpis.savingsRate.points ?? 0) >= 0}
+        isGood={(kpis.savingsRate.points ?? 0) >= 0}
         previousPeriodLabel={previousPeriodLabel}
       />
     </View>
@@ -98,7 +113,7 @@ type KpiProps = {
   value: string;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   color: string;
-  change: string;
+  change: string | null;
   isUp: boolean;
   isGood: boolean;
   previousPeriodLabel: string;
@@ -177,7 +192,9 @@ function Kpi({
               minWidth: 0,
             }}
           >
-            <ChangeChip label={change} isUp={isUp} isGood={isGood} />
+            {change !== null && (
+              <ChangeChip label={change} isUp={isUp} isGood={isGood} />
+            )}
             <Text
               style={{
                 fontSize: 12,

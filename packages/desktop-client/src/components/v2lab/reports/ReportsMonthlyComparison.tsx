@@ -16,7 +16,13 @@ import { SERIES } from './reportsTokens';
 
 type Comparison = {
   average: number;
-  change: number;
+  /**
+   * `null` when the earlier half of the window is zero or negative: a ratio
+   * against such a base is arithmetic without meaning, and printing "+0,0%"
+   * there would claim nothing changed when in fact nothing is comparable. The
+   * KPIs above already read it this way; this keeps one rule on one screen.
+   */
+  change: number | null;
   spark: number[];
 };
 
@@ -103,7 +109,7 @@ type BlockProps = {
 };
 
 function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
-  const isUp = data.change >= 0;
+  const isUp = (data.change ?? 0) >= 0;
 
   return (
     <View style={{ flex: '1 1 0', minWidth: 0, gap: 9, padding: '0 14px' }}>
@@ -138,11 +144,13 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
         }}
       >
         <Sparkline values={data.spark} color={color} />
-        <ChangeChip
-          label={formatChange(data.change)}
-          isUp={isUp}
-          isGood={isUp === isGoodWhenUp}
-        />
+        {data.change !== null && (
+          <ChangeChip
+            label={formatChange(data.change)}
+            isUp={isUp}
+            isGood={isUp === isGoodWhenUp}
+          />
+        )}
       </View>
     </View>
   );

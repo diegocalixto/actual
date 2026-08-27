@@ -35,6 +35,7 @@ import { TransactionEdit } from './mobile/transactions/TransactionEdit';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
 import { Reports } from './reports';
+import { V2RealReports } from './reports/v2real/V2RealReports';
 import { NarrowAlternate, WideComponent } from './responsive';
 import { useMultiuserEnabled } from './ServerContext';
 import { Settings } from './settings';
@@ -47,6 +48,17 @@ import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
 import { V2LabReports } from './v2lab/reports/V2LabReports';
 import { V2LabOverview } from './v2lab/V2LabOverview';
+
+/**
+ * `/reports` on the desktop is the approved Reports reading real queries; the
+ * narrow layout keeps the existing mobile dashboard untouched, and every other
+ * `/reports/*` path still reaches the dashboard router.
+ */
+function ReportsRoute() {
+  const { isNarrowWidth } = useResponsive();
+
+  return isNarrowWidth ? <Reports /> : <V2RealReports />;
+}
 
 function NarrowNotSupported({
   redirectTo = '/budget',
@@ -250,6 +262,7 @@ export function FinancesApp() {
                     }
                   />
 
+                  <Route path="/reports" element={<ReportsRoute />} />
                   <Route path="/reports/*" element={<Reports />} />
 
                   <Route
