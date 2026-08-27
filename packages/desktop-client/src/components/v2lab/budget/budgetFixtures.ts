@@ -38,9 +38,19 @@ export type LabEnvelope = {
   budgeted: number;
   /** Already spent this month, in minor units. */
   spent: number;
+  /**
+   * What is left in the envelope, as the budget engine computes it.
+   *
+   * Given rather than derived: the engine's `leftover` is
+   * `budgeted + spent + (carryover ? prevLeftover : max(0, prevLeftover))`, so
+   * a balance rolled over from last month is part of it. `budgeted - spent`
+   * sees none of that and reads zero on a month where the envelope was never
+   * touched but still holds money.
+   */
+  available: number;
 };
 
-export const labEnvelopes: LabEnvelope[] = [
+const ENVELOPES: Omit<LabEnvelope, 'available'>[] = [
   {
     id: 'mercado',
     name: 'Mercado',
@@ -111,7 +121,30 @@ export const labEnvelopes: LabEnvelope[] = [
  * Income for the month. The only figure the envelope list cannot produce on its
  * own, and the one the whole band is measured against.
  */
+/**
+ * A laboratory has no previous month, so here the engine's rule collapses to
+ * `budgeted - spent`. Derived, never written down, so the rows and the band
+ * cannot disagree.
+ */
+export const labEnvelopes: LabEnvelope[] = ENVELOPES.map(envelope => ({
+  ...envelope,
+  available: envelope.budgeted - envelope.spent,
+}));
+
 export const labIncome = 1549000;
+
+/**
+ * What the laboratory shows as still free to assign.
+ *
+ * Derived from the fixtures above rather than written down, so the band and the
+ * envelope list below it can never disagree. The real route does not compute
+ * this — it reads the engine's own `to-budget` cell, which also folds in the
+ * previous month's balance and overspending. A laboratory with no history has
+ * neither, so here the two agree by construction.
+ */
+export const labToDistribute =
+  labIncome -
+  labEnvelopes.reduce((sum, envelope) => sum + envelope.budgeted, 0);
 
 export type LabTip = {
   id: string;

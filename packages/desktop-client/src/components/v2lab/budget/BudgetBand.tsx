@@ -14,6 +14,16 @@ type BudgetBandProps = {
   income: number;
   budgeted: number;
   spent: number;
+  /**
+   * What is still free to assign, as the budget engine computes it.
+   *
+   * Given rather than derived: the engine's figure carries what a local
+   * subtraction cannot see — the balance carried from last month, last month's
+   * overspending, and anything held back for next month. `null` when the file
+   * has no such cell (tracking budgets), and the metric is then omitted rather
+   * than guessed at.
+   */
+  toDistribute: number | null;
 };
 
 /**
@@ -27,8 +37,14 @@ type BudgetBandProps = {
  * Only `income` is given; the other three are sums of the envelope list, and
  * the two remainders are computed here so nothing on screen can drift from it.
  */
-export function BudgetBand({ income, budgeted, spent }: BudgetBandProps) {
-  const toDistribute = income - budgeted;
+export function BudgetBand({
+  income,
+  budgeted,
+  spent,
+  toDistribute,
+}: BudgetBandProps) {
+  // The month's own cash flow: what came in, less what left. A statement about
+  // this month alone, so unlike `toDistribute` it is honestly a subtraction.
   const available = income - spent;
 
   return (
@@ -56,13 +72,17 @@ export function BudgetBand({ income, budgeted, spent }: BudgetBandProps) {
           minHeight: 178,
         }}
       >
-        <Metric
-          label={<Trans>Para distribuir</Trans>}
-          value={toDistribute}
-          share={toDistribute / income}
-          color="var(--dfl-blue)"
-        />
-        <Divider />
+        {toDistribute !== null && (
+          <>
+            <Metric
+              label={<Trans>Para distribuir</Trans>}
+              value={toDistribute}
+              share={toDistribute / income}
+              color="var(--dfl-blue)"
+            />
+            <Divider />
+          </>
+        )}
         <Metric
           label={<Trans>Planejado</Trans>}
           value={budgeted}

@@ -26,6 +26,7 @@ import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
 import { AppBottomNav } from './appshell/AppBottomNav';
 import { AppShell } from './appshell/AppShell';
 import { BankSyncStatus } from './BankSyncStatus';
+import { V2RealBudget } from './budget/v2real/V2RealBudget';
 import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
 import { EnableBankingCallback } from './EnableBankingCallback';
@@ -60,6 +61,16 @@ function HomeRoute() {
   const { isNarrowWidth } = useResponsive();
 
   return isNarrowWidth ? <NarrowAlternate name="Home" /> : <V2RealOverview />;
+}
+
+/**
+ * `/budget` on the desktop is the approved Budget reading real cells; the
+ * narrow layout keeps the existing mobile Budget untouched.
+ */
+function BudgetRoute() {
+  const { isNarrowWidth } = useResponsive();
+
+  return isNarrowWidth ? <NarrowAlternate name="Budget" /> : <V2RealBudget />;
 }
 
 /**
@@ -300,7 +311,7 @@ export function FinancesApp() {
                         FallbackComponent={FeatureErrorFallback}
                         resetKeys={[location.pathname]}
                       >
-                        <NarrowAlternate name="Budget" />
+                        <BudgetRoute />
                       </ErrorBoundary>
                     }
                   />
