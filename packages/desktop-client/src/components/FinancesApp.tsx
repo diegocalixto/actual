@@ -31,6 +31,7 @@ import { ContextMenu } from './ContextMenu';
 import { EnableBankingCallback } from './EnableBankingCallback';
 import { FeatureErrorFallback } from './FeatureErrorFallback';
 import { GlobalKeys } from './GlobalKeys';
+import { V2RealOverview } from './home/v2real/V2RealOverview';
 import { MobileBankSyncAccountEditPage } from './mobile/banksync/MobileBankSyncAccountEditPage';
 import { TransactionEdit } from './mobile/transactions/TransactionEdit';
 import { Notifications } from './Notifications';
@@ -49,6 +50,17 @@ import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
 import { V2LabReports } from './v2lab/reports/V2LabReports';
 import { V2LabOverview } from './v2lab/V2LabOverview';
+
+/**
+ * `/home` on the desktop is the approved Overview reading real data; the narrow
+ * layout keeps the existing mobile Home untouched. The split lives here because
+ * this file already holds both the responsive helper and the router.
+ */
+function HomeRoute() {
+  const { isNarrowWidth } = useResponsive();
+
+  return isNarrowWidth ? <NarrowAlternate name="Home" /> : <V2RealOverview />;
+}
 
 /**
  * `/accounts` on the desktop is the approved Accounts reading real balances;
@@ -273,7 +285,7 @@ export function FinancesApp() {
                         FallbackComponent={FeatureErrorFallback}
                         resetKeys={[location.pathname]}
                       >
-                        <NarrowAlternate name="Home" />
+                        <HomeRoute />
                       </ErrorBoundary>
                     }
                   />
