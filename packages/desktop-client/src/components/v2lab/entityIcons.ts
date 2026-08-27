@@ -98,7 +98,10 @@ const ACCOUNT_RULES: Rule[] = [
   [/poupan|saving|reserva/i, SvgPiggyBank],
   [/sal[aá]rio|salary|payroll|paycheck/i, SvgPortfolio],
   [
-    /investi|invest|a[cç][oõ]es|stock|broker|fund|401k|ira\b|vanguard|roth/i,
+    // `ira` needs a boundary on both sides: the retirement account is meant,
+    // and a trailing boundary alone claims every Portuguese word that ends in
+    // it — "Carteira", "Financeira", "Prateleira".
+    /investi|invest|a[cç][oõ]es|stock|broker|fund|401k|\bira\b|vanguard|roth/i,
     SvgChartBar,
   ],
   [/carteira|wallet|digital|cripto|crypto|bitcoin|paypal|pix/i, SvgWallet],

@@ -20,6 +20,7 @@ import { ScrollProvider } from '#hooks/useScrollListener';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch, useSelector } from '#redux';
 
+import { V2RealAccounts } from './accounts/v2real/V2RealAccounts';
 import { UserAccessPage } from './admin/UserAccess/UserAccessPage';
 import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
 import { AppBottomNav } from './appshell/AppBottomNav';
@@ -48,6 +49,21 @@ import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
 import { V2LabReports } from './v2lab/reports/V2LabReports';
 import { V2LabOverview } from './v2lab/V2LabOverview';
+
+/**
+ * `/accounts` on the desktop is the approved Accounts reading real balances;
+ * the narrow layout keeps the existing mobile Accounts untouched, and the
+ * combined register keeps its own address at `/accounts/all`.
+ */
+function AccountsRoute() {
+  const { isNarrowWidth } = useResponsive();
+
+  return isNarrowWidth ? (
+    <NarrowAlternate name="Accounts" />
+  ) : (
+    <V2RealAccounts />
+  );
+}
 
 /**
  * `/reports` on the desktop is the approved Reports reading real queries; the
@@ -396,7 +412,7 @@ export function FinancesApp() {
                         FallbackComponent={FeatureErrorFallback}
                         resetKeys={[location.pathname]}
                       >
-                        <NarrowAlternate name="Accounts" />
+                        <AccountsRoute />
                       </ErrorBoundary>
                     }
                   />

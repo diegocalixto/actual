@@ -8,13 +8,14 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { LabPanel } from '#components/v2lab/LabPanel';
 
-import type { LabAccount } from './accountsFixtures';
 import { formatPlain, formatShare } from './accountsMoney';
 import { ACCOUNT_HUE, ACCOUNT_HUE_LITERAL } from './accountsTokens';
+import type { ViewAccount } from './accountsViewModel';
 
 type AccountDistributionProps = {
-  accounts: LabAccount[];
-  total: number;
+  accounts: ViewAccount[];
+  /** `null` while the balances load. */
+  total: number | null;
 };
 
 const SIZE = 190;
@@ -36,6 +37,14 @@ export function AccountDistribution({
   accounts,
   total,
 }: AccountDistributionProps) {
+  // The ring answers "how is the money split", so it is drawn over the weight
+  // of each account, not its sign. An overdrawn account still occupies a share
+  // of the picture; what it must not do is subtract arc from its neighbours and
+  // leave the ring short. The legend keeps the signed figure.
+  const weights = accounts.map(account => Math.abs(account.balance ?? 0));
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  const isDrawable = weightTotal > 0;
+
   let offset = 0;
 
   return (
@@ -87,39 +96,53 @@ export function AccountDistribution({
                 </filter>
               </defs>
 
-              {accounts.map(account => {
-                const length = (account.balance / total) * CIRCUMFERENCE;
-                const dash = `${Math.max(0, length - GAP)} ${CIRCUMFERENCE}`;
-                const rotation = -offset;
-                offset += length;
+              {/* Nothing to split yet: one neutral track, so the panel reads as
+                  a ring waiting for figures rather than a broken chart. */}
+              {!isDrawable && (
+                <circle
+                  cx={SIZE / 2}
+                  cy={SIZE / 2}
+                  r={RADIUS}
+                  fill="none"
+                  stroke="var(--dfl-line-strong)"
+                  strokeWidth={STROKE}
+                />
+              )}
 
-                return (
-                  <g key={account.id}>
-                    <circle
-                      cx={SIZE / 2}
-                      cy={SIZE / 2}
-                      r={RADIUS}
-                      fill="none"
-                      stroke={ACCOUNT_HUE_LITERAL[account.hue]}
-                      strokeWidth={STROKE}
-                      strokeDasharray={dash}
-                      strokeDashoffset={rotation}
-                      filter="url(#dfaDonutGlow)"
-                      opacity={0.45}
-                    />
-                    <circle
-                      cx={SIZE / 2}
-                      cy={SIZE / 2}
-                      r={RADIUS}
-                      fill="none"
-                      stroke={ACCOUNT_HUE_LITERAL[account.hue]}
-                      strokeWidth={STROKE}
-                      strokeDasharray={dash}
-                      strokeDashoffset={rotation}
-                    />
-                  </g>
-                );
-              })}
+              {isDrawable &&
+                accounts.map((account, index) => {
+                  const length = (weights[index] / weightTotal) * CIRCUMFERENCE;
+                  const dash = `${Math.max(0, length - GAP)} ${CIRCUMFERENCE}`;
+                  const rotation = -offset;
+                  offset += length;
+
+                  return (
+                    <g key={account.id}>
+                      <circle
+                        cx={SIZE / 2}
+                        cy={SIZE / 2}
+                        r={RADIUS}
+                        fill="none"
+                        stroke={ACCOUNT_HUE_LITERAL[account.hue]}
+                        strokeWidth={STROKE}
+                        strokeDasharray={dash}
+                        strokeDashoffset={rotation}
+                        filter="url(#dfaDonutGlow)"
+                        opacity={0.45}
+                      />
+                      <circle
+                        cx={SIZE / 2}
+                        cy={SIZE / 2}
+                        r={RADIUS}
+                        fill="none"
+                        stroke={ACCOUNT_HUE_LITERAL[account.hue]}
+                        strokeWidth={STROKE}
+                        strokeDasharray={dash}
+                        strokeDashoffset={rotation}
+                      />
+                    </g>
+                  );
+                })}
             </svg>
 
             <View
@@ -153,13 +176,13 @@ export function AccountDistribution({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {formatPlain(total).split(',')[0]}
+                {total === null ? '—' : formatPlain(total).split(',')[0]}
               </FinancialText>
             </View>
           </View>
 
           <View style={{ flex: '1 1 0', minWidth: 0, maxWidth: 460, gap: 3 }}>
-            {accounts.map(account => (
+            {accounts.map((account, index) => (
               <View
                 key={account.id}
                 style={{
@@ -212,7 +235,9 @@ export function AccountDistribution({
                     color: '#ffffff',
                   }}
                 >
-                  {formatPlain(account.balance)}
+                  {account.balance === null
+                    ? '—'
+                    : formatPlain(account.balance)}
                 </FinancialText>
                 <Text
                   style={{
@@ -223,7 +248,7 @@ export function AccountDistribution({
                     color: 'var(--dfl-text-3)',
                   }}
                 >
-                  {formatShare(account.balance / total)}
+                  {isDrawable ? formatShare(weights[index] / weightTotal) : '—'}
                 </Text>
               </View>
             ))}

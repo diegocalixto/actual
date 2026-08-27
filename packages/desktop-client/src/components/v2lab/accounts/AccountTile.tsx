@@ -2,12 +2,12 @@ import React from 'react';
 
 import { View } from '@actual-app/components/view';
 
-import type { LabIcon } from './accountsFixtures';
 import { ACCOUNT_HUE } from './accountsTokens';
 import type { AccountHue } from './accountsTokens';
+import type { EntityIcon } from './accountsViewModel';
 
 type AccountTileProps = {
-  Icon: LabIcon;
+  Icon: EntityIcon;
   hue: AccountHue;
   size?: number;
 };

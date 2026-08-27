@@ -1,6 +1,7 @@
 import React from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
+import { Button } from '@actual-app/components/button';
 import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
@@ -8,16 +9,18 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 
-import type { LabAccount } from './accountsFixtures';
 import { formatPlain } from './accountsMoney';
 import { ACCOUNT_HUE } from './accountsTokens';
+import type { ViewAccount } from './accountsViewModel';
 import { AccountTile } from './AccountTile';
 
 type AccountGroupProps = {
   label: ReactNode;
   /** The small square before the label, in the group's own colour. */
   markerColor: string;
-  accounts: LabAccount[];
+  accounts: ViewAccount[];
+  /** The group's own money. `null` while the balances load. */
+  subtotal: number | null;
 };
 
 /**
@@ -31,7 +34,12 @@ export function AccountGroup({
   label,
   markerColor,
   accounts,
+  subtotal,
 }: AccountGroupProps) {
+  if (accounts.length === 0) {
+    return null;
+  }
+
   return (
     <View style={{ gap: 11 }}>
       <View
@@ -40,6 +48,7 @@ export function AccountGroup({
           alignItems: 'center',
           gap: 10,
           paddingLeft: 4,
+          paddingRight: 4,
         }}
       >
         <View
@@ -55,6 +64,7 @@ export function AccountGroup({
         />
         <Text
           style={{
+            flex: '1 1 0',
             fontSize: 11.5,
             fontWeight: 700,
             letterSpacing: 1.3,
@@ -64,6 +74,22 @@ export function AccountGroup({
         >
           {label}
         </Text>
+        {/* What this side of the budget holds. Quiet enough that the accounts
+            below stay the subject of the column. */}
+        {subtotal !== null && (
+          <FinancialText
+            style={{
+              flex: '0 0 auto',
+              fontSize: 12.5,
+              fontWeight: 600,
+              letterSpacing: -0.1,
+              whiteSpace: 'nowrap',
+              color: 'var(--dfl-text-2)',
+            }}
+          >
+            {`R$ ${formatPlain(subtotal)}`}
+          </FinancialText>
+        )}
       </View>
 
       <View style={{ gap: 8 }}>
@@ -75,23 +101,33 @@ export function AccountGroup({
   );
 }
 
-function Row({ account }: { account: LabAccount }) {
+function Row({ account }: { account: ViewAccount }) {
   const color = ACCOUNT_HUE[account.hue];
 
+  const surface: CSSProperties = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: '15px 18px',
+    minHeight: 74,
+    width: '100%',
+    textAlign: 'left',
+    borderRadius: 15,
+    backgroundColor: 'var(--dfl-surface-raised)',
+    border: '1px solid var(--dfl-line)',
+    boxShadow: 'var(--dfl-shadow), inset 0 1px 0 rgba(160, 195, 240, 0.05)',
+  };
+
+  // The chevron in the reference promised a destination; when the caller gives
+  // one, the whole card becomes it — a real button, so the keyboard reaches it
+  // too. Without a destination it stays a plain card rather than a dead link.
+  const Surface = account.onOpen ? Button : View;
+  const surfaceProps = account.onOpen
+    ? { variant: 'bare' as const, onPress: account.onOpen }
+    : {};
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-        padding: '15px 18px',
-        minHeight: 74,
-        borderRadius: 15,
-        backgroundColor: 'var(--dfl-surface-raised)',
-        border: '1px solid var(--dfl-line)',
-        boxShadow: 'var(--dfl-shadow), inset 0 1px 0 rgba(160, 195, 240, 0.05)',
-      }}
-    >
+    <Surface {...surfaceProps} style={surface}>
       <AccountTile Icon={account.Icon} hue={account.hue} />
 
       {/* Name above, filet below — the reference stacks them, and stacking is
@@ -150,7 +186,7 @@ function Row({ account }: { account: LabAccount }) {
             color: '#ffffff',
           }}
         >
-          {formatPlain(account.balance)}
+          {account.balance === null ? '—' : formatPlain(account.balance)}
         </FinancialText>
       </View>
 
@@ -160,6 +196,6 @@ function Row({ account }: { account: LabAccount }) {
         height={17}
         style={{ flexShrink: 0, color: 'var(--dfl-text-3)' }}
       />
-    </View>
+    </Surface>
   );
 }

@@ -22,15 +22,36 @@ export function formatPlain(value: number): string {
   return brl.format(value / 100);
 }
 
-/** Axis labels: "R$ 45K". Whole thousands only. */
+/**
+ * Axis labels: "R$ 45K".
+ *
+ * Below ten thousand the thousands form starts rounding a real figure into a
+ * wrong one — R$ 500 is not "R$ 1K" — so small axes are printed in full.
+ */
+const AXIS_COMPACT_FLOOR = 1_000_000;
+
 export function formatAxis(value: number): string {
   if (value === 0) {
     return 'R$ 0';
+  }
+  if (Math.abs(value) < AXIS_COMPACT_FLOOR) {
+    return `R$ ${compact.format(value / 100)}`;
   }
   return `R$ ${compact.format(value / 100000)}K`;
 }
 
 /** One decimal, as the reference prints its shares. */
 export function formatShare(ratio: number): string {
+  if (!Number.isFinite(ratio)) {
+    return '—';
+  }
   return `${(ratio * 100).toFixed(1).replace('.', ',')}%`;
+}
+
+/** The hero's month-over-month chip. Two decimals, as the reference prints it. */
+export function formatPercent(ratio: number): string {
+  if (!Number.isFinite(ratio)) {
+    return '—';
+  }
+  return `${(ratio * 100).toFixed(2).replace('.', ',')}%`;
 }

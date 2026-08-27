@@ -2,19 +2,25 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Trans } from 'react-i18next';
 
-import { SvgArrowThinUp } from '@actual-app/components/icons/v1';
+import {
+  SvgArrowThinDown,
+  SvgArrowThinUp,
+} from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 
-import { formatBRL } from './accountsMoney';
+import { formatBRL, formatPercent } from './accountsMoney';
 
 type AccountsHeroProps = {
-  total: number;
+  /** `null` while the balances load; the figure is never guessed at. */
+  total: number | null;
   accountCount: number;
-  monthChange: string;
-  lastUpdate: string;
+  /** Ratio against the close of last month. `null` ⇒ the chip is omitted. */
+  monthChange: number | null;
+  /** `null` ⇒ the stat is omitted rather than inventing a sync time. */
+  lastUpdate: string | null;
 };
 
 /**
@@ -82,42 +88,22 @@ export function AccountsHero({
               textShadow: '0 2px 26px rgba(120, 175, 245, 0.3)',
             }}
           >
-            {formatBRL(total)}
+            {total === null ? '—' : formatBRL(total)}
           </FinancialText>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {/* Omitted outright when it cannot be computed: a month with no
+              close to compare against has no percentage, and printing one
+              would be inventing the comparison. */}
+          {monthChange !== null && (
             <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px 4px 7px',
-                borderRadius: 999,
-                backgroundColor: 'rgba(58, 208, 127, 0.13)',
-                border: '1px solid rgba(58, 208, 127, 0.28)',
-              }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
             >
-              <SvgArrowThinUp
-                aria-hidden="true"
-                width={12}
-                height={12}
-                style={{ color: 'var(--dfl-positive)' }}
-              />
-              <Text
-                style={{
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: 'var(--dfl-positive)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {monthChange}
+              <ChangeChip ratio={monthChange} />
+              <Text style={{ fontSize: 13, color: 'var(--dfl-text-2)' }}>
+                <Trans>vs last month</Trans>
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: 'var(--dfl-text-2)' }}>
-              <Trans>vs last month</Trans>
-            </Text>
-          </View>
+          )}
         </View>
 
         <View
@@ -129,9 +115,52 @@ export function AccountsHero({
           }}
         >
           <Stat label={<Trans>Accounts</Trans>} value={String(accountCount)} />
-          <Stat label={<Trans>Last update</Trans>} value={lastUpdate} />
+          {lastUpdate !== null && (
+            <Stat label={<Trans>Last update</Trans>} value={lastUpdate} />
+          )}
         </View>
       </View>
+    </View>
+  );
+}
+
+/**
+ * The month-over-month chip.
+ *
+ * The reference only ever drew the rising case; real balances fall too, so the
+ * arrow and the hue follow the sign instead of being fixed to green.
+ */
+function ChangeChip({ ratio }: { ratio: number }) {
+  const isUp = ratio >= 0;
+  const Arrow = isUp ? SvgArrowThinUp : SvgArrowThinDown;
+  const color = isUp ? 'var(--dfl-positive)' : 'var(--dfl-negative)';
+  // The rgb of `--dfl-positive` / `--dfl-negative`, written out because these
+  // two need an alpha the tokens do not carry.
+  const tint = isUp ? '58, 208, 127' : '248, 122, 109';
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 10px 4px 7px',
+        borderRadius: 999,
+        backgroundColor: `rgba(${tint}, 0.13)`,
+        border: `1px solid rgba(${tint}, 0.28)`,
+      }}
+    >
+      <Arrow aria-hidden="true" width={12} height={12} style={{ color }} />
+      <Text
+        style={{
+          fontSize: 12.5,
+          fontWeight: 600,
+          color,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {formatPercent(Math.abs(ratio))}
+      </Text>
     </View>
   );
 }

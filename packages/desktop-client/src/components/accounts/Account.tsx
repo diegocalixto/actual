@@ -2026,7 +2026,13 @@ function AccountHack(props: AccountHackProps) {
 }
 
 export function Account() {
-  const params = useParams();
+  const rawParams = useParams();
+  // `/accounts/all` is how the Accounts overview links to the combined
+  // register now that `/accounts` shows the overview instead. Normalising it
+  // back to `undefined` here means this component — and every preference key
+  // derived from the id — behaves exactly as it did before.
+  const params =
+    rawParams.id === 'all' ? { ...rawParams, id: undefined } : rawParams;
   const location = useLocation();
 
   const { data: { grouped: categoryGroups } = { grouped: [] } } =

@@ -12,6 +12,22 @@
  */
 export type AccountHue = 'blue' | 'green' | 'amber' | 'violet' | 'magenta';
 
+/**
+ * The ramp in the order the approved reference walks it.
+ *
+ * Assigning by position rather than by a hash of the id is deliberate: the ring
+ * has to be readable, and a hash cheerfully hands two neighbouring slices the
+ * same colour. Walking this order also reproduces the reference exactly on a
+ * file with three on-budget and two off-budget accounts.
+ */
+export const ACCOUNT_HUE_ORDER: AccountHue[] = [
+  'blue',
+  'green',
+  'amber',
+  'violet',
+  'magenta',
+];
+
 export const ACCOUNT_HUE: Record<AccountHue, string> = {
   blue: 'var(--dfl-hue-blue)',
   green: 'var(--dfl-hue-green)',

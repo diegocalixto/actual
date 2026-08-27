@@ -114,7 +114,8 @@ export const balanceXLabels = ['May 1', 'May 8', 'May 15', 'May 22', 'May 29'];
  * exist so the composition can be judged whole, and they persist nowhere.
  */
 export const labChrome = {
-  monthChange: '8,45%',
+  /** A ratio, the way the real hero receives it. */
+  monthChange: 0.0845,
   accountCount: labAccounts.length,
   lastUpdate: '2 min ago',
   rangeLabel: 'This month',
