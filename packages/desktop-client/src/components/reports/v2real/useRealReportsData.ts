@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
+import type { CategoryEntity } from '@actual-app/core/types/models';
 import { ptBR } from 'date-fns/locale';
 
 import { iconForCategory } from '#components/v2lab/LabStyle';
@@ -136,7 +137,17 @@ export function useRealReportsData(): ReportsViewData {
       [windowStart, month],
     );
 
-  const { data: { list: categories } = { list: [] } } = useCategories();
+  // Read with the element type stated rather than through a destructuring
+  // default: `= { list: [] }` types the fallback as `never[]`, which made this
+  // `CategoryEntity[] | never[]`, and `.map` over a union of array types hands
+  // the callback an `any` — that is where the category names lost their type on
+  // the way to the panel below. Memoised so an unresolved query does not yield
+  // a fresh array on every render.
+  const { data: categoryViews } = useCategories();
+  const categories: CategoryEntity[] = useMemo(
+    () => categoryViews?.list ?? [],
+    [categoryViews],
+  );
 
   const isLoading =
     loadingIncome ||
@@ -212,7 +223,11 @@ export function useRealReportsData(): ReportsViewData {
     };
 
     // ---- categories ------------------------------------------------------------
-    const namesById = new Map(categories.map(c => [c.id, c.name]));
+    // The type arguments are what make the pair a tuple: without them the
+    // literal infers as an array and `Map` has no matching overload.
+    const namesById = new Map<CategoryEntity['id'], CategoryEntity['name']>(
+      categories.map(c => [c.id, c.name]),
+    );
     const ranked = (categorySums ?? [])
       .map(row => {
         const id = row.category ?? 'uncategorised';
