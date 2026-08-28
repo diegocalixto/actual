@@ -8,6 +8,9 @@ import { BUDGET_ROOT_CLASS, BudgetStyle } from './BudgetStyle';
 import { EnvelopeActionsPopover } from './EnvelopeActionsPopover';
 import { useRealBudgetData } from './useRealBudgetData';
 
+/** A person's name. Not copy, so never a translation key. */
+const AUTHOR = 'Diego Calixto';
+
 /**
  * The real Budget.
  *
@@ -39,6 +42,9 @@ export function V2RealBudget() {
               onBudgetAction={data.onBudgetAction}
             />
           ),
+          // Authorship, in the slot the approved composition already ends with:
+          // small, muted, right-aligned, in the normal flow of the page.
+          footnote: AUTHOR,
         }}
       />
     </View>

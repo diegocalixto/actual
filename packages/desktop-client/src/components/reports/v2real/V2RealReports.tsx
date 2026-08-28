@@ -7,6 +7,9 @@ import { ReportsView } from '#components/v2lab/reports/ReportsView';
 import { REPORTS_ROOT_CLASS, ReportsStyle } from './ReportsStyle';
 import { useRealReportsData } from './useRealReportsData';
 
+/** A person's name. Not copy, so never a translation key. */
+const AUTHOR = 'Diego Calixto';
+
 /**
  * The real Reports.
  *
@@ -21,7 +24,11 @@ export function V2RealReports() {
   return (
     <View className={REPORTS_ROOT_CLASS} style={{ flex: 1, minHeight: 0 }}>
       <ReportsStyle />
-      <ReportsView data={data} />
+      {/*
+        Authorship goes in the slot the approved composition already ends with:
+        small, muted, right-aligned, in the normal flow of the page.
+      */}
+      <ReportsView data={{ ...data, footnote: AUTHOR }} />
     </View>
   );
 }

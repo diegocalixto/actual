@@ -84,7 +84,7 @@ export type BudgetViewData = {
   onBudgetedChange?: (envelopeId: string, amount: number) => void;
   isEnvelopesLoading: boolean;
   isActivityLoading: boolean;
-  /** The laboratory's own note. Absent in production. */
+  /** Bottom-right note: the laboratory's caveat, or production's byline. */
   footnote?: ReactNode;
 };
 

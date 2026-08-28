@@ -67,7 +67,7 @@ export type ReportsViewData = {
     topCategory: { name: string; vsPriorAverage: number };
   };
   isLoading: boolean;
-  /** The laboratory's own note. Absent in production. */
+  /** Bottom-right note: the laboratory's caveat, or production's byline. */
   footnote?: ReactNode;
 };
 
