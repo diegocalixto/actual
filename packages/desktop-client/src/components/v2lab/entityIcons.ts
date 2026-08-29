@@ -5,6 +5,7 @@ import {
   SvgApparel,
   SvgBeverage,
   SvgBolt,
+  SvgChart,
   SvgChartBar,
   SvgCloud,
   SvgCoffee,
@@ -14,14 +15,15 @@ import {
   SvgGift,
   SvgHeart,
   SvgHome,
+  SvgInboxDownload,
   SvgLibrary,
   SvgLocationFood,
   SvgMoneyBag,
   SvgPhone,
   SvgPiggyBank,
   SvgPlay,
-  SvgPortfolio,
   SvgRefresh,
+  SvgShield,
   SvgShoppingCart,
   SvgTag,
   SvgTravelBus,
@@ -95,14 +97,24 @@ const CATEGORY_RULES: Rule[] = [
 ];
 
 const ACCOUNT_RULES: Rule[] = [
-  [/poupan|saving|reserva/i, SvgPiggyBank],
-  [/sal[aá]rio|salary|payroll|paycheck/i, SvgPortfolio],
+  // A shield rather than a piggy bank. Both mean "savings", but the piggy is a
+  // toy that collapses into a blob at 18px, while the shield keeps its shape
+  // and says the thing an emergency fund is actually for: money held back and
+  // protected. The category list keeps the piggy, where a spending row is
+  // read at a glance and the literal picture helps more than the metaphor.
+  [/poupan|saving|reserva/i, SvgShield],
+  // Money arriving, not the job that produced it. A briefcase says "work";
+  // a tray with an arrow into it says "this is where the pay lands", which is
+  // what the account is.
+  [/sal[aá]rio|salary|payroll|paycheck/i, SvgInboxDownload],
   [
     // `ira` needs a boundary on both sides: the retirement account is meant,
     // and a trailing boundary alone claims every Portuguese word that ends in
     // it — "Carteira", "Financeira", "Prateleira".
     /investi|invest|a[cç][oõ]es|stock|broker|fund|401k|\bira\b|vanguard|roth/i,
-    SvgChartBar,
+    // A rising line, not a row of bars: bars are a quantity, and an investment
+    // account is read for its direction.
+    SvgChart,
   ],
   [/carteira|wallet|digital|cripto|crypto|bitcoin|paypal|pix/i, SvgWallet],
   [/cart[aã]o|card|credit/i, SvgCreditCard],

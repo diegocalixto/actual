@@ -8,6 +8,9 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { BrandMark } from '#components/appshell/BrandMark';
+import { shellColors } from '#components/appshell/shellTheme';
+
 const HEADER_HEIGHT = 50;
 
 // The app opts into `viewport-fit=cover` and ships `display: standalone`, so on
@@ -96,12 +99,17 @@ export function MobilePageHeader({
         flexShrink: 0,
         height: HEADER_BOX_HEIGHT,
         paddingTop: SAFE_AREA_TOP,
-        backgroundColor: theme.mobileHeaderBackground,
+        // The V2 header is chrome that belongs to the page, not a coloured slab
+        // sitting on top of it: same ground as the canvas, separated by a
+        // hairline. It is what stops the phone reading as the upstream app the
+        // moment the screen lights up.
+        backgroundColor: shellColors.canvas,
+        borderBottom: `1px solid ${shellColors.railBorder}`,
         '& *': {
-          color: theme.mobileHeaderText,
+          color: shellColors.textPrimary,
         },
         '& button[data-pressed]': {
-          backgroundColor: theme.mobileHeaderTextHover,
+          backgroundColor: shellColors.surfaceSunken,
         },
         ...style,
       }}
@@ -110,10 +118,15 @@ export function MobilePageHeader({
         style={{
           flexBasis: '25%',
           justifyContent: 'flex-start',
+          alignItems: 'center',
           flexDirection: 'row',
+          paddingLeft: leftContent ? 0 : 14,
         }}
       >
-        {leftContent}
+        {/* Pages that bring their own leading control (a back button, a month
+            picker) keep it; the rest get the product mark, so the brand is
+            present on every screen a phone opens on. */}
+        {leftContent ?? <BrandMark size={26} />}
       </View>
       <h1
         style={{
@@ -182,7 +195,7 @@ export function MobilePageHeaderSlot({ style }: MobilePageHeaderSlotProps) {
       style={{
         flexShrink: 0,
         minHeight: HEADER_BOX_HEIGHT,
-        backgroundColor: theme.mobileHeaderBackground,
+        backgroundColor: shellColors.canvas,
         ...style,
       }}
     />

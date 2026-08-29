@@ -30,6 +30,25 @@ const SAFE_AREA_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
 
 const ROW_HEIGHT = 62;
 
+/**
+ * The bar's own labels, in the product's Portuguese.
+ *
+ * They are keyed by the nav model's stable ids rather than written into
+ * `usePrimaryNav`, because that model is shared with the desktop rail: renaming
+ * a label there would rewrite four published desktop screens. Anything not
+ * listed keeps the model's label, so a destination added later still appears.
+ */
+function useBarLabels(): Record<string, string> {
+  const { t } = useTranslation();
+
+  return {
+    overview: t('Início'),
+    budget: t('Orçamento'),
+    accounts: t('Contas'),
+    reports: t('Relatórios'),
+  };
+}
+
 /** Height of the bar itself, excluding the safe-area inset below it. */
 export const MOBILE_NAV_HEIGHT = ROW_HEIGHT;
 
@@ -58,6 +77,7 @@ export function AppBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const primary = usePrimaryNav();
+  const barLabels = useBarLabels();
 
   if (!isNarrowWidth) {
     return null;
@@ -86,8 +106,16 @@ export function AppBottomNav() {
         borderTop: `1px solid ${shellColors.railBorder}`,
       }}
     >
-      <TabLink item={overview} pathname={location.pathname} />
-      <TabLink item={budget} pathname={location.pathname} />
+      <TabLink
+        item={overview}
+        label={barLabels[overview.id]}
+        pathname={location.pathname}
+      />
+      <TabLink
+        item={budget}
+        label={barLabels[budget.id]}
+        pathname={location.pathname}
+      />
 
       <View
         style={{
@@ -119,14 +147,18 @@ export function AppBottomNav() {
         </Button>
       </View>
 
-      <TabLink item={accounts} pathname={location.pathname} />
+      <TabLink
+        item={accounts}
+        label={barLabels[accounts.id]}
+        pathname={location.pathname}
+      />
 
       <MoreMenu placement="top" extraItems={[reports]}>
         {({ ref, onPress, isOpen }) => (
           <Button
             ref={ref}
             variant="bare"
-            aria-label={t('More')}
+            aria-label={t('Mais')}
             aria-expanded={isOpen}
             onPress={onPress}
             className={tabClass(isOpen)}
@@ -134,7 +166,7 @@ export function AppBottomNav() {
             <View style={{ alignItems: 'center', gap: 4 }}>
               <SvgDotsHorizontalTriple width={20} height={20} />
               <Text style={TAB_LABEL}>
-                <Trans>More</Trans>
+                <Trans>Mais</Trans>
               </Text>
             </View>
           </Button>
@@ -144,9 +176,18 @@ export function AppBottomNav() {
   );
 }
 
-function TabLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function TabLink({
+  item,
+  label,
+  pathname,
+}: {
+  item: NavItem;
+  /** Overrides the shared model's label. Falls back to it when absent. */
+  label?: string;
+  pathname: string;
+}) {
   const isActive = isNavItemActive(item, pathname);
-  const { Icon, label, to } = item;
+  const { Icon, to } = item;
 
   return (
     <NavLink
@@ -156,7 +197,7 @@ function TabLink({ item, pathname }: { item: NavItem; pathname: string }) {
     >
       <View style={{ alignItems: 'center', gap: 4 }}>
         <Icon width={20} height={20} />
-        <Text style={TAB_LABEL}>{label}</Text>
+        <Text style={TAB_LABEL}>{label ?? item.label}</Text>
       </View>
     </NavLink>
   );
