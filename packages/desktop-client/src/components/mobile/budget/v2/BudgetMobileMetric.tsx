@@ -7,7 +7,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import type { EntityIcon } from '#components/v2lab/LabStyle';
 
-import { formatCurrencyOrPending } from './budgetMobileMoney';
+import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileProgress } from './BudgetMobileProgress';
 
 type BudgetMobileMetricProps = {
@@ -82,7 +82,7 @@ export function BudgetMobileMetric({
           color: 'var(--dfl-text)',
         }}
       >
-        {formatCurrencyOrPending(value)}
+        <BudgetMobileAmount value={value} />
       </FinancialText>
 
       <BudgetMobileProgress percent={percent} tone={tone} height={3} />

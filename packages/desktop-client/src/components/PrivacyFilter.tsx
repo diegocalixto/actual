@@ -1,8 +1,12 @@
 // @ts-strict-ignore
-import { Children, useLayoutEffect, useRef } from 'react';
-import type { ComponentPropsWithRef, ReactNode } from 'react';
+import { Children, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type {
+  ComponentPropsWithRef,
+  MouseEvent,
+  PointerEvent,
+  ReactNode,
+} from 'react';
 
-import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
@@ -47,11 +51,8 @@ export function PrivacyFilter({
   ...props
 }: PrivacyFilterProps) {
   const privacyMode = usePrivacyMode();
-  // Limit mobile support for now.
-  const { isNarrowWidth } = useResponsive();
   const activate =
     privacyMode &&
-    !isNarrowWidth &&
     (!activationFilters ||
       activationFilters.every(value =>
         typeof value === 'boolean' ? value : value(),
@@ -60,7 +61,15 @@ export function PrivacyFilter({
   return !activate ? (
     <>{Children.toArray(children)}</>
   ) : (
-    <PrivacyOverlay {...props}>{children}</PrivacyOverlay>
+    // Keyed by the figure it prints: a reveal belongs to the value that was
+    // shown on purpose, so when another one takes its place — the month was
+    // turned, a sync landed — the overlay starts over, hidden.
+    <PrivacyOverlay
+      key={typeof children === 'string' ? children : undefined}
+      {...props}
+    >
+      {children}
+    </PrivacyOverlay>
   );
 }
 
@@ -94,8 +103,80 @@ function RedactedContent({ children }: RedactedContentProps) {
   return <div ref={containerRef}>{children}</div>;
 }
 
+/** How long a figure shown by a tap stays readable before it hides itself. */
+const TOUCH_REVEAL_MS = 5000;
+
+/** The figure itself in place of its redacted twin. */
+const REVEALED = {
+  ' > div:first-child': {
+    opacity: 1,
+  },
+  ' > div:nth-child(2)': {
+    display: 'none',
+  },
+};
+
+/** A finger or a stylus: a pointer that cannot rest on a figure to read it. */
+function isTouchPointer(pointerType: string) {
+  return pointerType === 'touch' || pointerType === 'pen';
+}
+
 function PrivacyOverlay({ children, ...props }) {
   const { style, ...restProps } = props;
+  const [isRevealed, setIsRevealed] = useState(false);
+  // What the last pointer to go down on the figure was. The click that follows
+  // does not say so in every browser.
+  const pointerType = useRef('');
+
+  useEffect(() => {
+    if (!isRevealed) {
+      return;
+    }
+
+    const hide = () => setIsRevealed(false);
+    const timer = setTimeout(hide, TOUCH_REVEAL_MS);
+    // Timers stand still while the page is in the background, so a figure left
+    // showing would still be showing on the way back.
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        hide();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isRevealed]);
+
+  const onPointerDown = (event: PointerEvent) => {
+    pointerType.current = event.pointerType;
+    // While it is hidden the figure is its own reveal control, so whatever it
+    // sits in — a row that navigates, a cell that opens a menu — must not take
+    // this press. Once shown, a tap goes through as it does with the mode off.
+    if (isTouchPointer(event.pointerType) && !isRevealed) {
+      event.stopPropagation();
+    }
+  };
+
+  const onClick = (event: MouseEvent) => {
+    const wasTouch = isTouchPointer(pointerType.current);
+    pointerType.current = '';
+    // A mouse reveals by hovering and a keyboard has the mode's own switch.
+    if (!wasTouch) {
+      return;
+    }
+
+    if (isRevealed) {
+      setIsRevealed(false);
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setIsRevealed(true);
+  };
 
   return (
     <View
@@ -111,19 +192,44 @@ function PrivacyOverlay({ children, ...props }) {
             ' > div:nth-child(2)': {
               display: 'flex',
             },
-            '&:hover': {
-              ' > div:first-child': {
-                opacity: 1,
+            // Resting the pointer on a figure shows it — where some pointer
+            // can rest. A phone reports a hover after every tap and keeps it
+            // until the next one, which would leave the figure showing.
+            '@media (any-hover: hover)': {
+              '&:hover': REVEALED,
+            },
+            '@media (any-hover: none)': {
+              // Two taps in a row are two taps — show, then act — not a zoom.
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              // A finger is aimed at the figure, and some figures are one line
+              // of small type. The target reaches a little past the ink on
+              // every side; nothing on screen moves for it.
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                inset: '-10px -8px',
               },
-              ' > div:nth-child(2)': {
-                display: 'none',
+              // A long press would otherwise select the figure it cannot see
+              // and offer to copy it or look it up.
+              '&:not([data-revealed]) > div:first-child': {
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
               },
             },
+            '&[data-revealed]': REVEALED,
           },
         ],
         style,
       )}
       {...restProps}
+      data-revealed={isRevealed || undefined}
+      onPointerDown={onPointerDown}
+      onPointerCancel={() => {
+        pointerType.current = '';
+      }}
+      onClick={onClick}
     >
       <div
         className={css([

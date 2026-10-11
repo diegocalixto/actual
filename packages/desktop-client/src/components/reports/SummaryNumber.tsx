@@ -10,6 +10,7 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
 import { ReportCardValueSkeleton } from './ReportCardValueSkeleton';
@@ -48,6 +49,7 @@ export function SummaryNumber({
   const [hasSized, setHasSized] = useState(false);
   const refDiv = useRef<HTMLDivElement>(null);
   const format = useFormat();
+  const isPrivacyEnabled = usePrivacyMode();
   const isNumericValue = Number.isFinite(value);
 
   let displayAmount =
@@ -89,14 +91,23 @@ export function SummaryNumber({
       {!loading && (
         <View
           ref={mergedRef as Ref<HTMLDivElement>}
+          // The figure below is hidden from assistive technology and this
+          // label speaks for it, so under privacy mode the label must not
+          // spell out what the screen is hiding — zero included.
           aria-label={
             !isNumericValue
               ? t('Unknown amount')
-              : value === 0
-                ? t('Zero amount')
-                : value < 0
-                  ? t('Negative amount: {{amount}}', { amount: displayAmount })
-                  : t('Positive amount: {{amount}}', { amount: displayAmount })
+              : isPrivacyEnabled
+                ? t('Hidden amount')
+                : value === 0
+                  ? t('Zero amount')
+                  : value < 0
+                    ? t('Negative amount: {{amount}}', {
+                        amount: displayAmount,
+                      })
+                    : t('Positive amount: {{amount}}', {
+                        amount: displayAmount,
+                      })
           }
           style={{
             alignItems: 'center',

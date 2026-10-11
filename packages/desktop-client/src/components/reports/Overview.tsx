@@ -23,7 +23,12 @@ import type {
 } from '@actual-app/core/types/models';
 
 import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
-import { MobilePageHeader, Page } from '#components/Page';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
+import {
+  mobileHeaderIconButtonStyle,
+  MobilePageHeader,
+  Page,
+} from '#components/Page';
 import { useAccounts } from '#hooks/useAccounts';
 import {
   useDashboardPages,
@@ -490,6 +495,9 @@ export function Overview({ dashboard }: OverviewProps) {
                   <Trans>Reports</Trans>:{' '}
                   {localizeDefaultDashboardPageName(dashboard.name, t)}
                 </View>
+              }
+              rightContent={
+                <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
               }
             />
             <View

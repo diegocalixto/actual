@@ -13,6 +13,7 @@ import * as monthUtils from '@actual-app/core/shared/months';
 import { css } from '@emotion/css';
 
 import { BrandMark } from '#components/appshell/BrandMark';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
 
 import { formatMonthLabel } from './budgetMobileMoney';
 import { budgetLayout, chromeCanvas, chromeLine } from './BudgetMobileStyle';
@@ -187,6 +188,12 @@ export function BudgetMobileTopBar({
           <SvgCalendar width={18} height={18} />
         </Button>
       )}
+
+      {/* In the trailing corner, where every other top bar has it. It also
+          balances the mark and the arrow on the leading side, so on the
+          current month the title sits on the bar's centre instead of to the
+          right of it. */}
+      <MobilePrivacyToggle className={roundButton} />
     </View>
   );
 }

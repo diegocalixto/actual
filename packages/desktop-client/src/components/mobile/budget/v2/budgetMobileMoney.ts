@@ -47,11 +47,6 @@ export function formatCurrency(minorUnits: number): string {
   return `${sign}${CURRENCY} ${formatAmount(Math.abs(minorUnits))}`;
 }
 
-/** `formatCurrency`, or the em dash while the cell is still unresolved. */
-export function formatCurrencyOrPending(minorUnits: number | null): string {
-  return minorUnits === null ? PENDING : formatCurrency(minorUnits);
-}
-
 /**
  * Actual stores an outflow as a negative amount. The screen labels its
  * direction — "Gasto", "usado" — and shows the magnitude, so the sign is turned

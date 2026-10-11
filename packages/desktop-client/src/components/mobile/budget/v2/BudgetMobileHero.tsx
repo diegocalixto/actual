@@ -8,6 +8,7 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { CURRENCY, formatAmount, PENDING } from './budgetMobileMoney';
 import { BudgetMobileRing } from './BudgetMobileRing';
@@ -109,7 +110,11 @@ export function BudgetMobileHero({
                 color: '#ffffff',
               }}
             >
-              {amount === null ? PENDING : formatAmount(Math.abs(amount))}
+              {amount === null ? (
+                PENDING
+              ) : (
+                <PrivacyFilter>{formatAmount(Math.abs(amount))}</PrivacyFilter>
+              )}
             </FinancialText>
           </View>
 

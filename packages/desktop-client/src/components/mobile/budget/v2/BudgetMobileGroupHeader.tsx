@@ -12,8 +12,8 @@ import { css } from '@emotion/css';
 import { FinancialText } from '#components/FinancialText';
 import type { EntityIcon } from '#components/v2lab/LabStyle';
 
+import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
-import { formatCurrencyOrPending } from './budgetMobileMoney';
 
 /** A figure the header carries, and the word that says what it means. */
 type HeaderFigure = {
@@ -206,7 +206,7 @@ function GroupFigure({ figure }: { figure: HeaderFigure }) {
           color: 'var(--dfl-text)',
         }}
       >
-        {formatCurrencyOrPending(figure.value)}
+        <BudgetMobileAmount value={figure.value} />
       </FinancialText>
       <Text style={{ fontSize: 9.5, color: 'var(--dfmb-label)' }}>
         {figure.caption}

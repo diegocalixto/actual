@@ -20,18 +20,15 @@ import { FinancialText } from '#components/FinancialText';
 import { iconForCategory } from '#components/v2lab/LabStyle';
 import { useCategoryScheduleGoalTemplateIndicator } from '#hooks/useCategoryScheduleGoalTemplateIndicator';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useSheetValue } from '#hooks/useSheetValue';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
+import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { hueForIndex } from './budgetMobileHues';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
-import {
-  asMagnitude,
-  formatCurrency,
-  formatCurrencyOrPending,
-  usedPercent,
-} from './budgetMobileMoney';
+import { asMagnitude, formatCurrency, usedPercent } from './budgetMobileMoney';
 import { BudgetMobileProgress } from './BudgetMobileProgress';
 import { toneFor } from './budgetMobileTone';
 import { useCategoryBalanceMenu } from './useCategoryBalanceMenu';
@@ -79,6 +76,7 @@ export function BudgetMobileCategoryRow({
   onShowActivity,
 }: BudgetMobileCategoryRowProps) {
   const { t } = useTranslation();
+  const isPrivacyEnabled = usePrivacyMode();
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
   const isTracking = budgetType === 'tracking';
   // Which of the row's two plan figures the expression prints. The upstream
@@ -147,27 +145,36 @@ export function BudgetMobileCategoryRow({
   // the register, and it is no longer hidden behind a toggle.
   // The row's second line, in the approved shape. Only which of the two amounts
   // it names changes with the preference — the share, the bar, the balance and
-  // the tone are the same facts either way.
-  const detailAmount = formatCurrencyOrPending(
-    showSpentColumn ? spentMagnitude : budgeted,
-  );
+  // the tone are the same facts either way. The amount is a figure of its own
+  // inside the phrase, so privacy mode can hide it and leave the share readable.
+  const detailValue = showSpentColumn ? spentMagnitude : budgeted;
   const detail =
-    percent === null
-      ? showSpentColumn
-        ? t('Gasto {{amount}}', { amount: detailAmount })
-        : t('Orçado {{amount}}', { amount: detailAmount })
-      : showSpentColumn
-        ? t('{{percent}}% usado · Gasto {{amount}}', {
-            percent,
-            amount: detailAmount,
-          })
-        : t('{{percent}}% usado · Orçado {{amount}}', {
-            percent,
-            amount: detailAmount,
-          });
+    percent === null ? (
+      showSpentColumn ? (
+        <Trans>
+          Gasto <BudgetMobileAmount value={detailValue} ownsControl />
+        </Trans>
+      ) : (
+        <Trans>
+          Orçado <BudgetMobileAmount value={detailValue} ownsControl />
+        </Trans>
+      )
+    ) : showSpentColumn ? (
+      <Trans>
+        {{ percent }}% usado · Gasto{' '}
+        <BudgetMobileAmount value={detailValue} ownsControl />
+      </Trans>
+    ) : (
+      <Trans>
+        {{ percent }}% usado · Orçado{' '}
+        <BudgetMobileAmount value={detailValue} ownsControl />
+      </Trans>
+    );
 
+  // With privacy mode on the name stops short of the amounts: a label is read
+  // aloud, and it is the one place a hidden figure would still be spelled out.
   const planLabel =
-    spentMagnitude === null || budgeted === null
+    isPrivacyEnabled || spentMagnitude === null || budgeted === null
       ? t('Editar o orçamento de {{name}}', { name: category.name })
       : t(
           'Editar o orçamento de {{name}}. Gasto {{spent}} de {{planned}} orçado.',
@@ -328,7 +335,7 @@ export function BudgetMobileCategoryRow({
               color: tone,
             }}
           >
-            {formatCurrencyOrPending(balance)}
+            <BudgetMobileAmount value={balance} ownsControl />
           </FinancialText>
           <Text style={{ fontSize: 9, color: 'var(--dfmb-label)' }}>
             <Trans>Saldo</Trans>

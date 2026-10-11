@@ -17,6 +17,7 @@ import { css } from '@emotion/css';
 import { useMoveAccountMutation, useSyncAndDownloadMutation } from '#accounts';
 import { isAccountFailedSync } from '#accounts/syncStatus';
 import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
 import { PullToRefresh } from '#components/mobile/PullToRefresh';
 import {
   mobileHeaderIconButtonStyle,
@@ -158,14 +159,19 @@ export function AccountsPage() {
             borderBottom: `1px solid ${chromeLine}`,
           }}
           rightContent={
-            <Button
-              variant="bare"
-              aria-label={t('Adicionar conta')}
-              style={mobileHeaderIconButtonStyle}
-              onPress={onAddAccount}
-            >
-              <SvgAdd width={20} height={20} />
-            </Button>
+            <>
+              <Button
+                variant="bare"
+                aria-label={t('Adicionar conta')}
+                style={mobileHeaderIconButtonStyle}
+                onPress={onAddAccount}
+              >
+                <SvgAdd width={20} height={20} />
+              </Button>
+              {/* Last, as on every other top bar: the eye is found in the
+                  same corner whichever page is open. */}
+              <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
+            </>
           }
         />
       }

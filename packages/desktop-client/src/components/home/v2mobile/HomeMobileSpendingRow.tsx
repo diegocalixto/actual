@@ -5,6 +5,7 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import type { HomeCategorySpending } from '#components/home/useHomeCategorySpending';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { iconForCategory } from '#components/v2lab/LabStyle';
 
 import { HomeMobileIconTile } from './HomeMobileIconTile';
@@ -76,7 +77,10 @@ export function HomeMobileSpendingRow({
             color: 'var(--dfl-text-3)',
           }}
         >
-          {percent === null ? amount : `${percent}% • ${amount}`}
+          {/* The share stays readable under privacy mode; only the amount
+              goes behind it, as on every other figure of this page. */}
+          {percent !== null && `${percent}% • `}
+          <PrivacyFilter>{amount}</PrivacyFilter>
         </FinancialText>
       </View>
 

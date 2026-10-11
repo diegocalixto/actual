@@ -17,8 +17,8 @@ import { useSheetValue } from '#hooks/useSheetValue';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
+import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
-import { formatCurrencyOrPending } from './budgetMobileMoney';
 import { useCategoryBudgetMenu } from './useCategoryBudgetMenu';
 
 type BudgetMobileIncomeRowProps = {
@@ -167,9 +167,9 @@ export function BudgetMobileIncomeRow({
                 color: 'var(--dfmb-label)',
               }}
             >
-              {t('Orçado {{planned}}', {
-                planned: formatCurrencyOrPending(budgeted),
-              })}
+              <Trans>
+                Orçado <BudgetMobileAmount value={budgeted} ownsControl />
+              </Trans>
             </FinancialText>
           </Button>
         )}
@@ -200,7 +200,7 @@ export function BudgetMobileIncomeRow({
               color: 'var(--dfl-positive)',
             }}
           >
-            {formatCurrencyOrPending(received)}
+            <BudgetMobileAmount value={received} ownsControl />
           </FinancialText>
           <Text style={{ fontSize: 9, color: 'var(--dfmb-label)' }}>
             <Trans>Recebido</Trans>

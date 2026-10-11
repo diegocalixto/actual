@@ -8,7 +8,12 @@ import type { HomeBudgetType } from '#components/home/useHomeMonth';
 import { BalanceTrendCard } from '#components/home/v2/BalanceTrendCard';
 import { RecentActivityCard } from '#components/home/v2/RecentActivityCard';
 import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
-import { MobilePageHeader, Page } from '#components/Page';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
+import {
+  mobileHeaderIconButtonStyle,
+  MobilePageHeader,
+  Page,
+} from '#components/Page';
 
 import { useHomeBalances, useMonthTotals } from './homeData';
 import { HomeMobileAccounts } from './HomeMobileAccounts';
@@ -93,6 +98,9 @@ export function HomeMobilePage({
             backgroundColor: chromeCanvas,
             borderBottom: `1px solid ${chromeLine}`,
           }}
+          rightContent={
+            <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
+          }
         />
       }
       padding={0}

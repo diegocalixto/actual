@@ -53,7 +53,7 @@ import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { BudgetTable } from './BudgetTable';
 import { BudgetMobileAlert } from './v2/BudgetMobileAlert';
-import { formatCurrency } from './v2/budgetMobileMoney';
+import { BudgetMobileAmount } from './v2/BudgetMobileAmount';
 import {
   BUDGET_MOBILE_ROOT_CLASS,
   budgetLayout,
@@ -696,9 +696,9 @@ function UncategorizedTransactionsBanner(props) {
         }
         detail={
           <FinancialText style={{ fontSize: 11.5, color: 'var(--dfmb-label)' }}>
-            {t('Total: {{amount}}', {
-              amount: formatCurrency(totalUncategorizedAmount),
-            })}
+            <Trans>
+              Total: <BudgetMobileAmount value={totalUncategorizedAmount} />
+            </Trans>
           </FinancialText>
         }
         action={{
@@ -776,9 +776,9 @@ function OverbudgetedBanner({ month, onBudgetAction, ...props }) {
         title={<Trans>Você orçou mais do que tem disponível</Trans>}
         detail={
           <FinancialText style={{ fontSize: 11.5, color: 'var(--dfmb-label)' }}>
-            {t('Excedente: {{amount}}', {
-              amount: formatCurrency(Math.abs(toBudgetAmount)),
-            })}
+            <Trans>
+              Excedente: <BudgetMobileAmount value={Math.abs(toBudgetAmount)} />
+            </Trans>
           </FinancialText>
         }
         action={{
@@ -927,9 +927,9 @@ function OverspendingBanner({ month, onBudgetAction, budgetType, ...props }) {
         }
         detail={
           <FinancialText style={{ fontSize: 11.5, color: 'var(--dfmb-label)' }}>
-            {t('Total: {{amount}}', {
-              amount: formatCurrency(totalOverspending),
-            })}
+            <Trans>
+              Total: <BudgetMobileAmount value={totalOverspending} />
+            </Trans>
           </FinancialText>
         }
         action={{
