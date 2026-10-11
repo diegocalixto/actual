@@ -1,29 +1,18 @@
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { Card } from '@actual-app/components/card';
-import { SvgExpandArrow } from '@actual-app/components/icons/v0';
-import { SvgCheveronRight } from '@actual-app/components/icons/v1';
-import { Label } from '@actual-app/components/label';
-import { styles } from '@actual-app/components/styles';
-import type { CSSProperties } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
-import { theme } from '@actual-app/components/theme';
-import { View } from '@actual-app/components/view';
+import { SvgArrowThinDown } from '@actual-app/components/icons/v1';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type { CategoryGroupEntity } from '@actual-app/core/types/models';
-import { css } from '@emotion/css';
-import { AutoTextSize } from 'auto-text-size';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
-import { CellValue } from '#components/spreadsheet/CellValue';
-import { useFormat } from '#hooks/useFormat';
+import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
+import { useSheetValue } from '#hooks/useSheetValue';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
-import { getColumnWidth, ROW_HEIGHT } from './BudgetTable';
 import { IncomeCategoryList } from './IncomeCategoryList';
+import { BudgetMobileGroupCard } from './v2/BudgetMobileGroupCard';
+import { BudgetMobileGroupHeader } from './v2/BudgetMobileGroupHeader';
 
 type IncomeGroupProps = {
   categoryGroup: CategoryGroupEntity;
@@ -36,6 +25,18 @@ type IncomeGroupProps = {
   onToggleCollapse: (id: CategoryGroupEntity['id']) => void;
 };
 
+/**
+ * Where the month's money came from.
+ *
+ * It closes the page rather than opening it: on a budget screen money already
+ * received is the context the plan is read against, not the subject. Green is
+ * used here and nowhere else on this screen, because a positive figure in this
+ * section has one unambiguous meaning.
+ *
+ * A tracking budget budgets its income as well as receiving it, so the header
+ * carries the plan alongside the total; an envelope budget has no such cell and
+ * the header shows one figure rather than an invented second one.
+ */
 export function IncomeGroup({
   categoryGroup,
   month,
@@ -46,9 +47,8 @@ export function IncomeGroup({
   isCollapsed,
   onToggleCollapse,
 }: IncomeGroupProps) {
-  const { t } = useTranslation();
-  const columnWidth = getColumnWidth();
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
+  const isTracking = budgetType === 'tracking';
 
   const categories = useMemo(
     () =>
@@ -65,264 +65,57 @@ export function IncomeGroup({
     ],
   );
 
-  return (
-    <View>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          marginTop: 8,
-          marginBottom: 5,
-          marginRight: 15,
-        }}
-      >
-        {budgetType === 'tracking' && (
-          <Label title={t('Budgeted')} style={{ width: columnWidth }} />
-        )}
-        <Label title={t('Received')} style={{ width: columnWidth }} />
-      </View>
-
-      <Card style={{ marginTop: 0 }}>
-        <IncomeGroupHeader
-          group={categoryGroup}
-          month={month}
-          onEdit={onEditCategoryGroup}
-          isCollapsed={isCollapsed}
-          onToggleCollapse={onToggleCollapse}
-        />
-        <IncomeCategoryList
-          categories={categories}
-          month={month}
-          onEditCategory={onEditCategory}
-          onBudgetAction={onBudgetAction}
-        />
-      </Card>
-    </View>
+  const received = useSheetValue<
+    'envelope-budget' | 'tracking-budget',
+    'group-sum-amount'
+  >(
+    isTracking
+      ? trackingBudget.groupSumAmount(categoryGroup.id)
+      : envelopeBudget.groupSumAmount(categoryGroup.id),
   );
-}
 
-type IncomeGroupHeaderProps = {
-  group: CategoryGroupEntity;
-  month: string;
-  onEdit: (id: CategoryGroupEntity['id']) => void;
-  isCollapsed: (id: CategoryGroupEntity['id']) => boolean;
-  onToggleCollapse: (id: CategoryGroupEntity['id']) => void;
-  style?: CSSProperties;
-};
+  // An envelope budget creates no `group-budget` cell for the income group, so
+  // the read has to be skippable rather than merely ignored. `useHomeSheetCell`
+  // is the app's existing "read one cell from a named sheet, or none" hook —
+  // the mobile Home already reads its month totals through it — and passing
+  // `null` here means no subscription is opened at all under an envelope
+  // budget, instead of binding a cell that does not exist.
+  const budgeted = useHomeSheetCell(
+    monthUtils.sheetForMonth(month),
+    isTracking ? trackingBudget.groupBudgeted(categoryGroup.id) : null,
+  );
 
-function IncomeGroupHeader({
-  group,
-  month,
-  onEdit,
-  isCollapsed,
-  onToggleCollapse,
-  style,
-}: IncomeGroupHeaderProps) {
+  const count =
+    categoryGroup.categories?.filter(
+      category => !category.hidden || showHiddenCategories,
+    ).length ?? 0;
+
   return (
-    <View
-      data-testid="category-group-row"
-      onClick={() => onToggleCollapse(group.id)}
-      style={{
-        cursor: 'pointer',
-        height: ROW_HEIGHT,
-        borderBottomWidth: 1,
-        borderColor: theme.tableBorder,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingLeft: 5,
-        paddingRight: 5,
-        opacity: group.hidden ? 0.5 : undefined,
-        backgroundColor: monthUtils.isCurrentMonth(month)
-          ? theme.budgetHeaderCurrentMonth
-          : theme.budgetHeaderOtherMonth,
-        ...style,
-      }}
-    >
-      <IncomeGroupName
-        group={group}
-        onEdit={onEdit}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={onToggleCollapse}
+    <BudgetMobileGroupCard>
+      <BudgetMobileGroupHeader
+        name={categoryGroup.name}
+        Icon={SvgArrowThinDown}
+        hue="var(--dfl-hue-green)"
+        count={count}
+        primary={{ value: received, caption: <Trans>Total recebido</Trans> }}
+        secondary={
+          isTracking
+            ? { value: budgeted, caption: <Trans>Orçado</Trans> }
+            : undefined
+        }
+        isCollapsed={isCollapsed(categoryGroup.id)}
+        onToggleCollapse={() => onToggleCollapse(categoryGroup.id)}
+        onEditGroup={() => onEditCategoryGroup(categoryGroup.id)}
+        isHidden={!!categoryGroup.hidden}
+        hasDragHandle={false}
       />
-      <IncomeGroupCells group={group} />
-    </View>
-  );
-}
 
-type IncomeGroupNameProps = {
-  group: CategoryGroupEntity;
-  onEdit: (id: CategoryGroupEntity['id']) => void;
-  isCollapsed: (id: CategoryGroupEntity['id']) => boolean;
-  onToggleCollapse: (id: CategoryGroupEntity['id']) => void;
-};
-
-function IncomeGroupName({
-  group,
-  onEdit,
-  isCollapsed,
-  onToggleCollapse,
-}: IncomeGroupNameProps) {
-  const sidebarColumnWidth = getColumnWidth({
-    isSidebar: true,
-    offset: -13.5,
-  });
-  return (
-    <View
-      style={{
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'flex-start',
-        width: sidebarColumnWidth,
-      }}
-    >
-      <Button
-        variant="bare"
-        className={css({
-          flexShrink: 0,
-          color: theme.pageTextSubdued,
-          '&[data-pressed]': {
-            backgroundColor: 'transparent',
-          },
-          marginLeft: -5,
-        })}
-        onPress={() => onToggleCollapse(group.id)}
-      >
-        <SvgExpandArrow
-          width={8}
-          height={8}
-          style={{
-            flexShrink: 0,
-            transition: 'transform .1s',
-            transform: isCollapsed(group.id) ? 'rotate(-90deg)' : '',
-          }}
-        />
-      </Button>
-      <Button
-        variant="bare"
-        style={{
-          maxWidth: sidebarColumnWidth,
-        }}
-        onPress={() => onEdit(group.id)}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-          }}
-        >
-          <Text
-            style={{
-              ...styles.lineClamp(2),
-              width: sidebarColumnWidth,
-              textAlign: 'left',
-              ...styles.smallText,
-            }}
-            data-testid="category-group-name"
-          >
-            {group.name}
-          </Text>
-          <SvgCheveronRight
-            style={{ flexShrink: 0, color: theme.tableTextSubdued }}
-            width={14}
-            height={14}
-          />
-        </View>
-      </Button>
-    </View>
-  );
-}
-
-type IncomeGroupCellsProps = {
-  group: CategoryGroupEntity;
-};
-
-function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
-  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
-  const format = useFormat();
-
-  const budgeted =
-    budgetType === 'tracking' ? trackingBudget.groupBudgeted(group.id) : null;
-
-  const balance =
-    budgetType === 'tracking'
-      ? trackingBudget.groupSumAmount(group.id)
-      : envelopeBudget.groupSumAmount(group.id);
-
-  const columnWidth = getColumnWidth();
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        paddingRight: 5,
-      }}
-    >
-      {budgeted && (
-        <CellValue<'envelope-budget' | 'tracking-budget', 'group-budget'>
-          binding={budgeted}
-          type="financial"
-        >
-          {({ type, value }) => (
-            <View>
-              <PrivacyFilter>
-                <AutoTextSize
-                  key={value}
-                  as={Text}
-                  minFontSizePx={6}
-                  maxFontSizePx={13}
-                  mode="oneline"
-                  style={{
-                    ...styles.tnum,
-                    width: columnWidth,
-                    justifyContent: 'center',
-                    alignItems: 'flex-end',
-                    paddingLeft: 5,
-                    textAlign: 'right',
-                    fontSize: 13,
-                    fontWeight: '500',
-                  }}
-                >
-                  {format(value, type)}
-                </AutoTextSize>
-              </PrivacyFilter>
-            </View>
-          )}
-        </CellValue>
-      )}
-      <CellValue<'envelope-budget' | 'tracking-budget', 'group-sum-amount'>
-        binding={balance}
-        type="financial"
-      >
-        {({ type, value }) => (
-          <View>
-            <PrivacyFilter>
-              <AutoTextSize
-                key={value}
-                as={Text}
-                minFontSizePx={6}
-                maxFontSizePx={13}
-                mode="oneline"
-                style={{
-                  ...styles.tnum,
-                  width: columnWidth,
-                  justifyContent: 'center',
-                  alignItems: 'flex-end',
-                  paddingLeft: 5,
-                  textAlign: 'right',
-                  fontSize: 13,
-                  fontWeight: '500',
-                }}
-              >
-                {format(value, type)}
-              </AutoTextSize>
-            </PrivacyFilter>
-          </View>
-        )}
-      </CellValue>
-    </View>
+      <IncomeCategoryList
+        categories={categories}
+        month={month}
+        onEditCategory={onEditCategory}
+        onBudgetAction={onBudgetAction}
+      />
+    </BudgetMobileGroupCard>
   );
 }

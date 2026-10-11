@@ -1,0 +1,75 @@
+import React from 'react';
+import { Trans } from 'react-i18next';
+
+import {
+  SvgArrowThinDown,
+  SvgArrowThinUp,
+  SvgTarget,
+} from '@actual-app/components/icons/v1';
+import { View } from '@actual-app/components/view';
+
+import { BudgetMobileMetric } from './BudgetMobileMetric';
+import { usedPercent } from './budgetMobileMoney';
+
+type BudgetMobileMetricsProps = {
+  /** What the month plans to spend, as a positive magnitude. */
+  planned: number | null;
+  /** What the month has spent, as a positive magnitude. */
+  spent: number | null;
+  /**
+   * Income minus spending, from the engine's own definition of the month's net
+   * — deliberately not the categories' leftover, which is a different figure.
+   */
+  monthBalance: number | null;
+  /** What the month took in: the reference the three bars are read against. */
+  income: number | null;
+};
+
+/**
+ * The month in three figures.
+ *
+ * The third is labelled "Saldo do mês" in full, never just "Saldo": every group
+ * further down carries its own balance — what is left inside its envelopes —
+ * and the two are different numbers. Shortening the label here would put two
+ * meanings on one word on a single screen.
+ *
+ * Each bar is that figure's share of the month's income, so the three are
+ * measured against the same thing and can be compared by eye. A month with no
+ * income yet has no share to draw, and `usedPercent` returns `null` rather than
+ * dividing by zero.
+ */
+export function BudgetMobileMetrics({
+  planned,
+  spent,
+  monthBalance,
+  income,
+}: BudgetMobileMetricsProps) {
+  const share = (value: number | null) =>
+    value === null ? null : usedPercent(Math.abs(value), income);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 8 }}>
+      <BudgetMobileMetric
+        label={<Trans>Planejado</Trans>}
+        value={planned}
+        Icon={SvgTarget}
+        tone="var(--dfl-violet)"
+        percent={share(planned)}
+      />
+      <BudgetMobileMetric
+        label={<Trans>Gasto</Trans>}
+        value={spent}
+        Icon={SvgArrowThinDown}
+        tone="var(--dfmb-watch)"
+        percent={share(spent)}
+      />
+      <BudgetMobileMetric
+        label={<Trans>Saldo do mês</Trans>}
+        value={monthBalance}
+        Icon={SvgArrowThinUp}
+        tone="var(--dfl-positive)"
+        percent={share(monthBalance)}
+      />
+    </View>
+  );
+}

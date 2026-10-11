@@ -2,7 +2,6 @@ import type { DragItem } from 'react-aria';
 import { DropIndicator, GridList, useDragAndDrop } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 
-import { theme } from '@actual-app/components/theme';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
@@ -15,11 +14,10 @@ import {
   ExpenseGroupHeader,
   ExpenseGroupListItem,
 } from './ExpenseGroupListItem';
+import { BudgetMobileGroupCard } from './v2/BudgetMobileGroupCard';
 
 type ExpenseGroupListProps = {
   categoryGroups: CategoryGroupEntity[];
-  show3Columns: boolean;
-  showBudgetedColumn: boolean;
   month: string;
   onEditCategoryGroup: (id: CategoryGroupEntity['id']) => void;
   onEditCategory: (id: CategoryEntity['id']) => void;
@@ -31,8 +29,6 @@ type ExpenseGroupListProps = {
 
 export function ExpenseGroupList({
   categoryGroups,
-  show3Columns,
-  showBudgetedColumn,
   month,
   onEditCategoryGroup,
   onEditCategory,
@@ -59,7 +55,7 @@ export function ExpenseGroupList({
           className={css({
             '&[data-drop-target]': {
               height: 4,
-              backgroundColor: theme.tableBorderSeparator,
+              backgroundColor: 'var(--dfl-violet)',
               opacity: 1,
               borderRadius: 4,
             },
@@ -76,16 +72,16 @@ export function ExpenseGroupList({
         );
       }
       return (
-        <ExpenseGroupHeader
-          categoryGroup={group}
-          month={month}
-          showBudgetedColumn={showBudgetedColumn}
-          show3Columns={show3Columns}
-          onEditCategoryGroup={() => {}}
-          isCollapsed={() => true}
-          onToggleCollapse={() => {}}
-          isHidden={false}
-        />
+        <BudgetMobileGroupCard>
+          <ExpenseGroupHeader
+            categoryGroup={group}
+            showHiddenCategories={showHiddenCategories}
+            onEditCategoryGroup={() => {}}
+            isCollapsed={() => true}
+            onToggleCollapse={() => {}}
+            isHidden={false}
+          />
+        </BudgetMobileGroupCard>
       );
     },
     onReorder: e => {
@@ -141,8 +137,6 @@ export function ExpenseGroupList({
         onEditCategoryGroup,
         onEditCategory,
         onBudgetAction,
-        show3Columns,
-        showBudgetedColumn,
         showHiddenCategories,
         isCollapsed,
         onToggleCollapse,
@@ -157,8 +151,6 @@ export function ExpenseGroupList({
           onEditCategoryGroup={onEditCategoryGroup}
           onEditCategory={onEditCategory}
           onBudgetAction={onBudgetAction}
-          showBudgetedColumn={showBudgetedColumn}
-          show3Columns={show3Columns}
           showHiddenCategories={showHiddenCategories}
           isCollapsed={isCollapsed}
           onToggleCollapse={onToggleCollapse}

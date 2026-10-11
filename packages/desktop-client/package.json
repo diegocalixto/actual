@@ -56,6 +56,7 @@
     "#components/home/useHomeCategorySpending": "./src/components/home/useHomeCategorySpending.ts",
     "#components/home/useHomeMonth": "./src/components/home/useHomeMonth.ts",
     "#components/home/useHomeSheetCell": "./src/components/home/useHomeSheetCell.ts",
+    "#components/home/v2/useMonthTotals": "./src/components/home/v2/useMonthTotals.ts",
     "#components/mobile/MobileNavTabs": "./src/components/mobile/MobileNavTabs.ts",
     "#components/mobile/utils": "./src/components/mobile/utils.ts",
     "#components/modals/BudgetAutomationsModal/migrateTemplatesToAutomations": "./src/components/modals/BudgetAutomationsModal/migrateTemplatesToAutomations.ts",

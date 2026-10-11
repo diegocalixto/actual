@@ -554,6 +554,7 @@ export type Modal =
       options: {
         onAddCategoryGroup: () => void;
         onToggleHiddenCategories: () => void;
+        onToggleSpentColumn: () => void;
         onSwitchBudgetFile: () => void;
       };
     }

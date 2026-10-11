@@ -1,8 +1,8 @@
+import { useMemo } from 'react';
 import type { DragItem } from 'react-aria';
 import { DropIndicator, GridList, useDragAndDrop } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 
-import { theme } from '@actual-app/components/theme';
 import type { CategoryEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
@@ -26,6 +26,13 @@ export function IncomeCategoryList({
   const { t } = useTranslation();
   const moveCategory = useMoveCategoryMutation();
 
+  // The last row closes the group's card, so it draws no divider. That is a
+  // property of the list rather than of the category.
+  const positions = useMemo(
+    () => new Map(categories.map((category, index) => [category.id, index])),
+    [categories],
+  );
+
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: keys =>
       [...keys].map(
@@ -41,7 +48,7 @@ export function IncomeCategoryList({
           className={css({
             '&[data-drop-target]': {
               height: 4,
-              backgroundColor: theme.tableBorderSeparator,
+              backgroundColor: 'var(--dfl-violet)',
               opacity: 1,
               borderRadius: 4,
             },
@@ -106,7 +113,7 @@ export function IncomeCategoryList({
       aria-label={t('Income categories')}
       items={categories}
       dragAndDropHooks={dragAndDropHooks}
-      dependencies={[month, onEditCategory, onBudgetAction]}
+      dependencies={[month, onEditCategory, onBudgetAction, positions]}
     >
       {category => (
         <IncomeCategoryListItem
@@ -115,6 +122,7 @@ export function IncomeCategoryList({
           month={month}
           onEdit={onEditCategory}
           onBudgetAction={onBudgetAction}
+          isLast={positions.get(category.id) === categories.length - 1}
         />
       )}
     </GridList>

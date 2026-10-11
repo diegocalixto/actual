@@ -1,8 +1,8 @@
+import { useMemo } from 'react';
 import type { DragItem } from 'react-aria';
 import { DropIndicator, GridList, useDragAndDrop } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 
-import { theme } from '@actual-app/components/theme';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
@@ -20,8 +20,6 @@ type ExpenseCategoryListProps = {
   month: string;
   onEditCategory: (id: string) => void;
   onBudgetAction: (month: string, action: string, args: unknown) => void;
-  show3Columns: boolean;
-  showBudgetedColumn: boolean;
 };
 
 export function ExpenseCategoryList({
@@ -30,12 +28,18 @@ export function ExpenseCategoryList({
   month,
   onEditCategory,
   onBudgetAction,
-  show3Columns,
-  showBudgetedColumn,
   shouldHideCategory,
 }: ExpenseCategoryListProps) {
   const { t } = useTranslation();
   const moveCategory = useMoveCategoryMutation();
+
+  // A row's tile colour comes from its position, and the last row closes the
+  // group's card. Both are properties of the list rather than of the category,
+  // so they are resolved here instead of inside every row.
+  const positions = useMemo(
+    () => new Map(categories.map((category, index) => [category.id, index])),
+    [categories],
+  );
 
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: keys =>
@@ -52,7 +56,7 @@ export function ExpenseCategoryList({
           className={css({
             '&[data-drop-target]': {
               height: 4,
-              backgroundColor: theme.tableBorderSeparator,
+              backgroundColor: 'var(--dfl-violet)',
               opacity: 1,
               borderRadius: 4,
             },
@@ -124,8 +128,7 @@ export function ExpenseCategoryList({
         onEditCategory,
         onBudgetAction,
         shouldHideCategory,
-        show3Columns,
-        showBudgetedColumn,
+        positions,
       ]}
     >
       {category => (
@@ -136,8 +139,8 @@ export function ExpenseCategoryList({
           onEditCategory={onEditCategory}
           onBudgetAction={onBudgetAction}
           isHidden={shouldHideCategory(category)}
-          show3Columns={show3Columns}
-          showBudgetedColumn={showBudgetedColumn}
+          index={positions.get(category.id) ?? 0}
+          isLast={positions.get(category.id) === categories.length - 1}
         />
       )}
     </GridList>

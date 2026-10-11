@@ -43,6 +43,11 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'No transactions recorded yet.': 'Nenhuma movimentação registrada ainda.',
     'Open transaction {{title}}': 'Abrir movimentação {{title}}',
 
+    // Budget on a phone — the switch that decides which of a category's two
+    // plan figures its row prints. These strings exist only in this fork.
+    'Show spent per category': 'Mostrar gasto por categoria',
+    'Show budgeted per category': 'Mostrar orçado por categoria',
+
     // Reports — date-range header and range presets.
     'Select by': 'Selecionar por',
     'Quick select': 'Seleção rápida',
