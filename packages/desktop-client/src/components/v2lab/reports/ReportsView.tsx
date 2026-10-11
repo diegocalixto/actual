@@ -221,7 +221,8 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
               fontSize: 11,
               letterSpacing: 0.6,
               textAlign: 'right',
-              opacity: 0.7,
+              // The quietest tier, at full strength: dimmed further it fell
+              // under the contrast small type needs.
               color: 'var(--dfl-text-3)',
             }}
           >

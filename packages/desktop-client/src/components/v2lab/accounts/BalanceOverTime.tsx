@@ -5,6 +5,7 @@ import { SvgCheveronDown } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
 
 import { formatAxis } from './accountsMoney';
@@ -169,7 +170,9 @@ export function BalanceOverTime({ series }: BalanceOverTimeProps) {
                       color: 'var(--dfl-text-3)',
                     }}
                   >
-                    {formatAxis(tick)}
+                    {/* The scale turns the curve back into amounts, so
+                        it goes behind privacy mode with them. */}
+                    <PrivacyFilter>{formatAxis(tick)}</PrivacyFilter>
                   </Text>
                 ))}
               </View>

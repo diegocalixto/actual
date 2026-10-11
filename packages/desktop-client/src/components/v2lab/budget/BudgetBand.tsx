@@ -6,6 +6,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatBRL, formatPercent } from './budgetMoney';
 import { BudgetRing } from './BudgetRing';
@@ -195,7 +196,7 @@ function Metric({ label, value, share, color }: MetricProps) {
           textShadow: '0 1px 18px rgba(120, 170, 235, 0.22)',
         }}
       >
-        {formatBRL(value)}
+        <PrivacyFilter>{formatBRL(value)}</PrivacyFilter>
       </FinancialText>
       <Text
         style={{

@@ -13,8 +13,10 @@ const compact = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 0,
 });
 
+/** The sign leads the symbol, as pt-BR writes it: "-R$ 1.528,20". */
 export function formatBRL(value: number): string {
-  return `R$ ${brl.format(value / 100)}`;
+  const sign = value < 0 ? '-' : '';
+  return `${sign}R$ ${brl.format(Math.abs(value) / 100)}`;
 }
 
 /** Without the prefix — for the two-line label inside the donut. */

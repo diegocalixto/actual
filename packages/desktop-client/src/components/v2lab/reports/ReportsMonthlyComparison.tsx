@@ -4,8 +4,10 @@ import { Trans } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
+import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { ChangeChip } from './ChangeChip';
 import { CardHeading, LabCard } from './LabCard';
@@ -112,7 +114,16 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
   const isUp = (data.change ?? 0) >= 0;
 
   return (
-    <View style={{ flex: '1 1 0', minWidth: 0, gap: 9, padding: '0 14px' }}>
+    <View
+      style={{
+        flex: '1 1 0',
+        minWidth: 0,
+        gap: 9,
+        padding: '0 14px',
+        // Its own width is what decides how the last line below is laid out.
+        containerType: 'inline-size',
+      }}
+    >
       <Text
         style={{
           fontSize: 11.5,
@@ -132,24 +143,34 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
           color: tintValue ? color : '#ffffff',
         }}
       >
-        {formatBRL(data.average)}
+        <PrivacyFilter>{formatBRL(data.average)}</PrivacyFilter>
       </FinancialText>
 
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 10,
+          gap: TREND_GAP,
           minWidth: 0,
+          [STACKED]: { flexDirection: 'column', alignItems: 'stretch', gap: 7 },
         }}
       >
         <Sparkline values={data.spark} color={color} />
         {data.change !== null && (
-          <ChangeChip
-            label={formatChange(data.change)}
-            isUp={isUp}
-            isGood={isUp === isGoodWhenUp}
-          />
+          // Never narrower than what it prints: the trend line is the part
+          // that gives way.
+          <View
+            style={{
+              flex: '0 0 auto',
+              [STACKED]: { alignSelf: 'flex-start' },
+            }}
+          >
+            <ChangeChip
+              label={formatChange(data.change)}
+              isUp={isUp}
+              isGood={isUp === isGoodWhenUp}
+            />
+          </View>
         )}
       </View>
     </View>
@@ -158,6 +179,36 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
 
 const SW = 100;
 const SH = 34;
+
+/** Between a trend line and the change printed beside it. */
+const TREND_GAP = 10;
+/** Narrowest the trend line is still a shape rather than a tick. */
+const TREND_MIN_WIDTH = 18;
+/**
+ * What the change needs at the longest it is expected to run: the arrow and a
+ * signed four-digit percentage. "+8888,8%" measures 80px at this type size.
+ */
+const CHANGE_ROOM = 82;
+/**
+ * A block too narrow for the trend line and the change to share a line.
+ *
+ * In a 1280px window each block has under 100px. Kept side by side there, the
+ * chip is squeezed until its arrow collapses and the percentage runs out of
+ * it, towards the next column. Below the width both fit in, the change takes
+ * its own line under the trend instead. The rule reads the block's width, not
+ * its content, so the three blocks always switch together and stay aligned.
+ */
+const STACKED = `@container (max-width: ${
+  TREND_MIN_WIDTH + TREND_GAP + CHANGE_ROOM - 1
+}px)`;
+
+const SPARKLINE_BOX = css({
+  flex: '1 1 0',
+  minWidth: TREND_MIN_WIDTH,
+  height: SH,
+  display: 'block',
+  [STACKED]: { flex: 'none', width: '100%' },
+});
 
 /** Six closes, drawn small. Scaled to its own range so the shape is visible. */
 function Sparkline({ values, color }: { values: number[]; color: string }) {
@@ -179,7 +230,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
       viewBox={`0 0 ${SW} ${SH}`}
       preserveAspectRatio="none"
       aria-hidden="true"
-      style={{ flex: '1 1 0', minWidth: 40, height: SH, display: 'block' }}
+      className={SPARKLINE_BOX}
     >
       <defs>
         <linearGradient

@@ -8,8 +8,9 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
-import { formatPlain } from './accountsMoney';
+import { formatBRL, formatPlain } from './accountsMoney';
 import { ACCOUNT_HUE } from './accountsTokens';
 import type { ViewAccount } from './accountsViewModel';
 import { AccountTile } from './AccountTile';
@@ -87,7 +88,7 @@ export function AccountGroup({
               color: subtotal < 0 ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
             }}
           >
-            {`R$ ${formatPlain(subtotal)}`}
+            <PrivacyFilter>{formatBRL(subtotal)}</PrivacyFilter>
           </FinancialText>
         )}
       </View>
@@ -190,7 +191,11 @@ function Row({ account }: { account: ViewAccount }) {
             color: isNegative ? 'var(--dfl-negative)' : '#ffffff',
           }}
         >
-          {account.balance === null ? '—' : formatPlain(account.balance)}
+          {account.balance === null ? (
+            '—'
+          ) : (
+            <PrivacyFilter>{formatPlain(account.balance)}</PrivacyFilter>
+          )}
         </FinancialText>
       </View>
 

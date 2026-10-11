@@ -186,6 +186,12 @@ export function useRealReportsData(): ReportsViewData {
       net: income - expenses,
     };
 
+    const axis = axisFor(
+      totals.income,
+      totals.expenses,
+      Math.min(0, ...series.map(point => point.net)),
+    );
+
     // ---- monthly window --------------------------------------------------------
     const monthKeys = Array.from({ length: MONTH_WINDOW }, (_, index) =>
       monthUtils.addMonths(windowStart, index),
@@ -262,9 +268,9 @@ export function useRealReportsData(): ReportsViewData {
       ),
       kpis,
       series,
-      axisMin: 0,
-      axisMax: axisCeiling(totals.income, totals.expenses),
-      axisTicks: axisTicks(axisCeiling(totals.income, totals.expenses)),
+      axisMin: axis.min,
+      axisMax: axis.max,
+      axisTicks: axis.ticks,
       xTicks: xTicksFor(days.length),
       // The axis names the month it is actually showing.
       formatXTick: (day: number) =>
@@ -340,15 +346,45 @@ function comparison(values: number[]) {
   };
 }
 
+/**
+ * The scale of a period nothing has happened in yet. Any ceiling is arbitrary
+ * there; R$ 100 gives the empty plot four gridlines with distinct labels
+ * instead of five that all read zero.
+ */
+const EMPTY_AXIS_CEILING = 10000;
+
 /** A round ceiling above the tallest series, so the curve never touches the top. */
 function axisCeiling(income: number, expenses: number): number {
+  if (income <= 0 && expenses <= 0) {
+    return EMPTY_AXIS_CEILING;
+  }
   const peak = Math.max(income, expenses, 1);
   const magnitude = 10 ** Math.floor(Math.log10(peak));
   return Math.ceil((peak * 1.15) / magnitude) * magnitude;
 }
 
-function axisTicks(max: number): number[] {
-  return [max, (max * 3) / 4, max / 2, max / 4, 0];
+/**
+ * The plot's scale: a gridline every quarter of the ceiling, from the ceiling
+ * down to zero — and on below it, in the same step, as far as the net result
+ * goes.
+ *
+ * The net line is below zero whenever more has left than has come in, which is
+ * every day before the month's income lands. A scale that stopped at zero cut
+ * that part of the line off and left its sample dots on top of the labels and
+ * totals under the plot. It reaches only as far as the line's lowest point,
+ * rounded out to the next gridline.
+ */
+function axisFor(income: number, expenses: number, lowestNet: number) {
+  const max = axisCeiling(income, expenses);
+  const step = max / 4;
+  const min = lowestNet < 0 ? -Math.ceil(-lowestNet / step) * step : 0;
+
+  const ticks: number[] = [];
+  for (let tick = max; tick >= min; tick -= step) {
+    ticks.push(tick);
+  }
+
+  return { min, max, ticks };
 }
 
 /** Five or six labels, whatever divides the month most evenly. */

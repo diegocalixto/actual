@@ -12,6 +12,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { ChangeChip } from './ChangeChip';
 import { LabCard } from './LabCard';
@@ -56,6 +57,7 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       <Kpi
         label={<Trans>Income</Trans>}
         value={formatBRL(kpis.income.value)}
+        isAmount
         Icon={SvgArrowThinUp}
         color={SERIES.income}
         change={
@@ -68,6 +70,7 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       <Kpi
         label={<Trans>Expenses</Trans>}
         value={formatBRL(kpis.expenses.value)}
+        isAmount
         Icon={SvgArrowThinDown}
         color={SERIES.expenses}
         change={
@@ -83,6 +86,7 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       <Kpi
         label={<Trans>Net Result</Trans>}
         value={formatBRL(kpis.net.value)}
+        isAmount
         Icon={SvgAdjust}
         color={SERIES.net}
         change={kpis.net.change === null ? null : formatChange(kpis.net.change)}
@@ -111,6 +115,8 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
 type KpiProps = {
   label: ReactNode;
   value: string;
+  /** An amount goes behind privacy mode; a rate stays readable. */
+  isAmount?: boolean;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   color: string;
   change: string | null;
@@ -122,6 +128,7 @@ type KpiProps = {
 function Kpi({
   label,
   value,
+  isAmount = false,
   Icon,
   color,
   change,
@@ -181,7 +188,7 @@ function Kpi({
               color: '#ffffff',
             }}
           >
-            {value}
+            {isAmount ? <PrivacyFilter>{value}</PrivacyFilter> : value}
           </FinancialText>
 
           <View

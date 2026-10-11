@@ -5,6 +5,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatBRL } from './budgetMoney';
 
@@ -124,7 +125,7 @@ export function BudgetRing({ income, budgeted }: BudgetRingProps) {
             whiteSpace: 'nowrap',
           }}
         >
-          {formatBRL(income)}
+          <PrivacyFilter>{formatBRL(income)}</PrivacyFilter>
         </FinancialText>
       </View>
     </View>

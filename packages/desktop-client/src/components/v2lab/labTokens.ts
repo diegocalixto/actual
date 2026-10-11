@@ -42,7 +42,13 @@ export const DF_TOKEN_DECLARATIONS = `
 
   --dfl-text: #e9eef6;
   --dfl-text-2: #98a4b7;
-  --dfl-text-3: #67717f;
+  /* The quietest tier is still text — captions, axis labels, shares — so it
+     has to clear the 4.5:1 WCAG AA asks of small type on every surface above.
+     At #67717f it read 3.6–4.0:1. This is the same blue-grey lifted until it
+     reads 5.4:1 on the raised surface, and it still sits visibly below
+     --dfl-text-2. The mobile Budget reached this value first, as its own
+     --dfmb-label, for the same reason. */
+  --dfl-text-3: #848e9d;
 
   /* The cold light. Used for the hero's reflection and almost nowhere else. */
   --dfl-blue: #5aa6ff;

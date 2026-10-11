@@ -10,6 +10,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatBRL, formatPercent } from './accountsMoney';
 
@@ -88,7 +89,11 @@ export function AccountsHero({
               textShadow: '0 2px 26px rgba(120, 175, 245, 0.3)',
             }}
           >
-            {total === null ? '—' : formatBRL(total)}
+            {total === null ? (
+              '—'
+            ) : (
+              <PrivacyFilter>{formatBRL(total)}</PrivacyFilter>
+            )}
           </FinancialText>
 
           {/* Omitted outright when it cannot be computed: a month with no
@@ -175,7 +180,9 @@ function Stat({ label, value }: { label: ReactNode; value: string }) {
           letterSpacing: 1.2,
           textTransform: 'uppercase',
           whiteSpace: 'nowrap',
-          color: 'var(--dfl-text-3)',
+          // The tier the plate's own "Total balance" label uses. These sit on
+          // its lit side, where the quieter grey measured 3.0–3.2:1.
+          color: 'var(--dfl-text-2)',
         }}
       >
         {label}

@@ -7,6 +7,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { CardHeading, LabCard } from './LabCard';
 import { CardLink } from './ReportsCategoryDonut';
@@ -188,7 +189,7 @@ function Row({ category, ratio }: { category: RankedCategory; ratio: number }) {
           color: 'var(--dfl-text)',
         }}
       >
-        {formatBRL(category.amount)}
+        <PrivacyFilter>{formatBRL(category.amount)}</PrivacyFilter>
       </FinancialText>
 
       <Text

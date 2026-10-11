@@ -8,6 +8,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { CardHeading, LabCard } from './LabCard';
 import { LabPill } from './LabPill';
@@ -22,6 +23,8 @@ type ReportsCategoryDonutProps = {
 
 const SIZE = 150;
 const STROKE = 30;
+/** Below this the legend's name column is too narrow to read a name in. */
+const LEGEND_MIN_WIDTH = 250;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -51,7 +54,19 @@ export function ReportsCategoryDonut({
           }
         />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+        {/* Ring and legend sit side by side wherever the legend keeps room
+            for a category's name. In a narrower card the rigid columns — the
+            amount and the share — were all that was left, and "Mortgage" read
+            "Mo…"; there the legend takes its own line under the ring. */}
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 18,
+          }}
+        >
           <View
             style={{
               flex: '0 0 auto',
@@ -150,7 +165,7 @@ export function ReportsCategoryDonut({
                   color: '#ffffff',
                 }}
               >
-                {formatCompact(total)}
+                <PrivacyFilter>{formatCompact(total)}</PrivacyFilter>
               </FinancialText>
               <Text
                 style={{
@@ -164,7 +179,9 @@ export function ReportsCategoryDonut({
             </View>
           </View>
 
-          <View style={{ flex: '1 1 0', minWidth: 0, gap: 2 }}>
+          <View
+            style={{ flex: `1 1 ${LEGEND_MIN_WIDTH}px`, minWidth: 0, gap: 2 }}
+          >
             {categories.map(category => (
               <View
                 key={category.id}
@@ -214,7 +231,7 @@ export function ReportsCategoryDonut({
                     color: 'var(--dfl-text)',
                   }}
                 >
-                  {formatPlain(category.amount)}
+                  <PrivacyFilter>{formatPlain(category.amount)}</PrivacyFilter>
                 </FinancialText>
                 <Text
                   style={{

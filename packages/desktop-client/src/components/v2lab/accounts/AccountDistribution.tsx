@@ -6,6 +6,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
 
 import { formatPlain, formatShare } from './accountsMoney';
@@ -206,7 +207,13 @@ export function AccountDistribution({ accounts }: AccountDistributionProps) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {isPending ? '—' : formatPlain(weightTotal).split(',')[0]}
+                {isPending ? (
+                  '—'
+                ) : (
+                  <PrivacyFilter>
+                    {formatPlain(weightTotal).split(',')[0]}
+                  </PrivacyFilter>
+                )}
               </FinancialText>
             </View>
           </View>
@@ -268,9 +275,13 @@ export function AccountDistribution({ accounts }: AccountDistributionProps) {
                         : '#ffffff',
                   }}
                 >
-                  {account.balance === null
-                    ? '—'
-                    : formatPlain(account.balance)}
+                  {account.balance === null ? (
+                    '—'
+                  ) : (
+                    <PrivacyFilter>
+                      {formatPlain(account.balance)}
+                    </PrivacyFilter>
+                  )}
                 </FinancialText>
                 {/* An account with no slice gets no percentage. A dash says
                     "outside this split"; a "0,0%" would say "you have almost

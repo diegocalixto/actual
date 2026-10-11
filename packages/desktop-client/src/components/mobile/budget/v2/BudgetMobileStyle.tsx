@@ -53,13 +53,11 @@ const BUDGET_DECLARATIONS = `
 
   /* The quietest tier of text on this screen: the captions under a figure
      ("Saldo", "Recebido", "SALDO DO MÊS") and the amount on a banner's second
-     line. It exists because the shared --dfl-text-3 is a graphics grey — it
-     clears the 3:1 that a chevron needs and lands at 3.2–3.8:1 against the
-     surfaces here, short of the 4.5:1 WCAG AA asks of text. This is the same
-     blue-grey lifted until it clears that on every background this screen
-     paints, while staying visibly below --dfl-text-2 so the three tiers still
-     read as three. Scoped here, so no other route changes. */
-  --dfmb-label: #848e9d;
+     line. It was this screen's own grey while the shared --dfl-text-3 sat at
+     3.2–3.8:1 against the surfaces here, short of the 4.5:1 WCAG AA asks of
+     text. The shared tier has since been lifted to that same value, so this
+     now simply names it. */
+  --dfmb-label: var(--dfl-text-3);
 
   /* The violet a banner's action is lettered in. --dfl-violet is the screen's
      accent for fills and strokes, where 3:1 is the bar; as 12.5px text on the

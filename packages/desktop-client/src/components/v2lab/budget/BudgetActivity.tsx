@@ -4,6 +4,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DatePill } from '#components/v2lab/DatePill';
 import { LabPanel } from '#components/v2lab/LabPanel';
 
@@ -84,7 +85,7 @@ export function BudgetActivity({ movements }: BudgetActivityProps) {
                   : 'var(--dfl-positive)',
             }}
           >
-            {formatSignedBRL(movement.amount)}
+            <PrivacyFilter>{formatSignedBRL(movement.amount)}</PrivacyFilter>
           </FinancialText>
         </View>
       ))}

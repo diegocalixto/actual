@@ -11,6 +11,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { LabCard } from './LabCard';
 import type { DayPoint } from './reportsFixtures';
@@ -116,7 +117,9 @@ export function ReportsHeroChart({
                   color: 'var(--dfl-text-3)',
                 }}
               >
-                {formatAxis(tick)}
+                {/* The scale turns the curves back into amounts, so it
+                    goes behind privacy mode with them. */}
+                <PrivacyFilter>{formatAxis(tick)}</PrivacyFilter>
               </Text>
             ))}
           </View>
@@ -540,7 +543,7 @@ function ChartTooltip({ point, left }: { point: DayPoint; left: number }) {
               color: 'var(--dfl-text)',
             }}
           >
-            {formatBRL(point[key])}
+            <PrivacyFilter>{formatBRL(point[key])}</PrivacyFilter>
           </FinancialText>
         </View>
       ))}
@@ -594,7 +597,7 @@ function Total({
           color,
         }}
       >
-        {formatBRL(value)}
+        <PrivacyFilter>{formatBRL(value)}</PrivacyFilter>
       </FinancialText>
     </View>
   );

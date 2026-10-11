@@ -233,9 +233,10 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
             style={{
               fontSize: 11,
               letterSpacing: 0.6,
+              // The quietest tier, at full strength: dimmed further it fell
+              // under the contrast small type needs.
               color: 'var(--dfl-text-3)',
               textAlign: 'right',
-              opacity: 0.7,
             }}
           >
             {data.footnote}

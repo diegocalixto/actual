@@ -3,13 +3,17 @@ import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
+import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { BudgetBar } from './BudgetBar';
 import type { LabEnvelope } from './budgetFixtures';
@@ -305,11 +309,26 @@ function Amount({
           color: tone,
         }}
       >
-        {formatPlain(value)}
+        <PrivacyFilter>{formatPlain(value)}</PrivacyFilter>
       </FinancialText>
     </View>
   );
 }
+
+/**
+ * The face of the budgeted field.
+ *
+ * Under privacy mode it follows the app's own rule for a money input
+ * (`FinancialInput`): the redaction face at rest, readable while hovered or
+ * being edited. A field cannot sit behind `PrivacyFilter` the way a printed
+ * figure does — the filter remounts what it wraps, and a field that remounts
+ * when it takes focus loses it.
+ */
+const BUDGETED_FACE = css({ fontFamily: 'inherit' });
+const BUDGETED_FACE_PRIVATE = css({
+  fontFamily: 'inherit',
+  '&:not(:focus):not(:hover)': { fontFamily: 'Redacted Script' },
+});
 
 /**
  * The budgeted column, when the page can write.
@@ -328,6 +347,9 @@ function BudgetedInput({
 }) {
   const [draft, setDraft] = useState(() => toEditable(value));
   const [isEditing, setIsEditing] = useState(false);
+  const isPrivate = usePrivacyMode();
+  // Like `PrivacyFilter`, redaction is desktop-only.
+  const { isNarrowWidth } = useResponsive();
 
   useEffect(() => {
     if (!isEditing) {
@@ -367,6 +389,9 @@ function BudgetedInput({
       <input
         value={draft}
         inputMode="decimal"
+        className={
+          isPrivate && !isNarrowWidth ? BUDGETED_FACE_PRIVATE : BUDGETED_FACE
+        }
         onFocus={event => {
           setIsEditing(true);
           event.currentTarget.select();
@@ -387,6 +412,9 @@ function BudgetedInput({
           flex: '1 1 0',
           minWidth: 0,
           fontSize: 14.5,
+          // Pinned to what the app's face gives this size, so the field keeps
+          // its height when privacy mode draws it in the redaction face.
+          lineHeight: '17px',
           fontWeight: 600,
           letterSpacing: -0.2,
           textAlign: 'right',
@@ -396,7 +424,6 @@ function BudgetedInput({
           border: 'none',
           padding: 0,
           outline: 'none',
-          fontFamily: 'inherit',
         }}
       />
     </View>
