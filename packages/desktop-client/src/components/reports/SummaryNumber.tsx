@@ -16,6 +16,13 @@ import { ReportCardValueSkeleton } from './ReportCardValueSkeleton';
 
 const FONT_SIZE_SCALE_FACTOR = 1.6;
 const CONTAINER_MARGIN = 8;
+/**
+ * The figure is sized to fill its widget, which on a phone means a full-width
+ * card turns one number into half a screen. Capping it keeps the number the
+ * loudest thing in its own card without letting it dominate the page; on a
+ * desktop dashboard the computed size lands below this anyway.
+ */
+const MAX_FONT_SIZE = 44;
 
 type SummaryNumberProps = {
   value: number;
@@ -60,6 +67,7 @@ export function SummaryNumber({
     const calculatedFontSize = Math.min(
       (width * FONT_SIZE_SCALE_FACTOR) / displayAmount.toString().length,
       height, // Ensure the text fits vertically by using the height as the limiting factor
+      MAX_FONT_SIZE,
     );
 
     if (calculatedFontSize > 0) {

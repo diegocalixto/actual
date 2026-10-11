@@ -74,8 +74,10 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
     >
       <View
         style={{
-          fontSize: 25,
-          fontWeight: 500,
+          // The page's own title, at the weight the rest of V2 uses.
+          fontSize: 26,
+          fontWeight: 700,
+          letterSpacing: -0.6,
           flexGrow: 0,
           flexShrink: 0,
           flexBasis: 'auto',
