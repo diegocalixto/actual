@@ -11,8 +11,10 @@ const brl = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
+/** The sign leads the symbol, as pt-BR writes it: "-R$ 1.528,20". */
 export function formatBRL(value: number): string {
-  return `R$ ${brl.format(value / 100)}`;
+  const sign = value < 0 ? '-' : '';
+  return `${sign}R$ ${brl.format(Math.abs(value) / 100)}`;
 }
 
 /** Same, with an explicit sign — for movements, where direction is the point. */

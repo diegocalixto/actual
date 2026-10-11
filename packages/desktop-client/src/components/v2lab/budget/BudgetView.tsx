@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import {
   SvgCheveronLeft,
@@ -14,7 +14,7 @@ import { LabSection } from '#components/v2lab/LabPanel';
 
 import { BudgetActivity } from './BudgetActivity';
 import { BudgetBand } from './BudgetBand';
-import { BudgetEnvelopes } from './BudgetEnvelopes';
+import { BudgetEnvelopes, ENVELOPES_MIN_WIDTH } from './BudgetEnvelopes';
 import type { LabEnvelope, LabMovement, LabTip } from './budgetFixtures';
 import { BudgetTips } from './BudgetTips';
 
@@ -87,6 +87,15 @@ export type BudgetViewData = {
   /** Bottom-right note: the laboratory's caveat, or production's byline. */
   footnote?: ReactNode;
 };
+
+/**
+ * The narrowest the context column works at beside the list: an activity row is
+ * a tile, an envelope, a date and an amount at fixed widths, and below this the
+ * payee's name between them is squeezed to nothing.
+ */
+const CONTEXT_MIN_WIDTH = 480;
+/** Wide enough for a context panel to stand beside its sibling, not under it. */
+const CONTEXT_PANEL_BASIS = 420;
 
 export function BudgetView({ data }: { data: BudgetViewData }) {
   // What the visible list adds up to. The rows' shares stay relative to this,
@@ -161,11 +170,20 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
           toDistribute={data.toDistribute}
         />
 
+        {/* The approved split holds wherever both columns fit. Each carries
+            the least width it works at, so a window too narrow for the pair
+            wraps the context under the list instead of clipping the list's
+            last columns — which are the available balance and the actions. */}
         <View
-          style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 22 }}
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            gap: 22,
+          }}
         >
           {/* Left, and dominant: the plan itself. */}
-          <View style={{ flex: '1.42 1 0', minWidth: 0 }}>
+          <View style={{ flex: '1.42 1 0', minWidth: ENVELOPES_MIN_WIDTH }}>
             <LabSection label={<Trans>Seus envelopes</Trans>}>
               {data.envelopes.length === 0 ? (
                 <EmptyPanel>
@@ -186,25 +204,40 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
             </LabSection>
           </View>
 
-          {/* Right, and quieter: context around the plan. */}
-          <View style={{ flex: '1 1 0', minWidth: 0, gap: 20 }}>
-            <LabSection label={<Trans>Dicas rápidas</Trans>}>
-              <BudgetTips tips={data.tips} />
-            </LabSection>
+          {/* Right, and quieter: context around the plan. Its two panels
+              stack while the column is a column, and sit side by side once it
+              has wrapped under the list and has the whole row to itself. */}
+          <View
+            style={{
+              flex: '1 1 0',
+              minWidth: CONTEXT_MIN_WIDTH,
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              gap: 20,
+            }}
+          >
+            <View style={{ flex: `1 1 ${CONTEXT_PANEL_BASIS}px`, minWidth: 0 }}>
+              <LabSection label={<Trans>Dicas rápidas</Trans>}>
+                <BudgetTips tips={data.tips} />
+              </LabSection>
+            </View>
 
-            <LabSection label={<Trans>Atividade recente</Trans>}>
-              {data.movements.length === 0 ? (
-                <EmptyPanel>
-                  {data.isActivityLoading ? (
-                    <Trans>Carregando atividade…</Trans>
-                  ) : (
-                    <Trans>Nenhuma movimentação neste mês.</Trans>
-                  )}
-                </EmptyPanel>
-              ) : (
-                <BudgetActivity movements={data.movements} />
-              )}
-            </LabSection>
+            <View style={{ flex: `1 1 ${CONTEXT_PANEL_BASIS}px`, minWidth: 0 }}>
+              <LabSection label={<Trans>Atividade recente</Trans>}>
+                {data.movements.length === 0 ? (
+                  <EmptyPanel>
+                    {data.isActivityLoading ? (
+                      <Trans>Carregando atividade…</Trans>
+                    ) : (
+                      <Trans>Nenhuma movimentação neste mês.</Trans>
+                    )}
+                  </EmptyPanel>
+                ) : (
+                  <BudgetActivity movements={data.movements} />
+                )}
+              </LabSection>
+            </View>
           </View>
         </View>
 
@@ -240,6 +273,7 @@ type MonthChipProps = {
  * changing a single number would be worse than no chevron at all.
  */
 function MonthChip({ label, onPrevious, onNext }: MonthChipProps) {
+  const { t } = useTranslation();
   const steppable = onPrevious != null && onNext != null;
 
   return (
@@ -256,7 +290,13 @@ function MonthChip({ label, onPrevious, onNext }: MonthChipProps) {
         boxShadow: 'var(--dfl-shadow)',
       }}
     >
-      {steppable && <StepButton Icon={SvgCheveronLeft} onPress={onPrevious} />}
+      {steppable && (
+        <StepButton
+          Icon={SvgCheveronLeft}
+          label={t('Mês anterior')}
+          onPress={onPrevious}
+        />
+      )}
 
       <View
         style={{
@@ -285,21 +325,31 @@ function MonthChip({ label, onPrevious, onNext }: MonthChipProps) {
         </Text>
       </View>
 
-      {steppable && <StepButton Icon={SvgCheveronRight} onPress={onNext} />}
+      {steppable && (
+        <StepButton
+          Icon={SvgCheveronRight}
+          label={t('Próximo mês')}
+          onPress={onNext}
+        />
+      )}
     </View>
   );
 }
 
 function StepButton({
   Icon,
+  label,
   onPress,
 }: {
   Icon: typeof SvgCheveronLeft;
+  /** The button is a bare glyph, so this is the only name it has. */
+  label: string;
   onPress: () => void;
 }) {
   return (
     <button
       type="button"
+      aria-label={label}
       onClick={onPress}
       style={{
         display: 'flex',
@@ -315,7 +365,7 @@ function StepButton({
         background: 'transparent',
       }}
     >
-      <Icon width={16} height={16} />
+      <Icon aria-hidden="true" width={16} height={16} />
     </button>
   );
 }

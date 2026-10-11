@@ -27,6 +27,32 @@ type BudgetEnvelopesProps = {
 };
 
 const AMOUNT_COLUMN = 116;
+const ROW_GAP = 18;
+const ROW_PADDING_X = 22;
+const TILE_SIZE = 40;
+const NAME_COLUMN = 158;
+const NAME_COLUMN_MIN = 120;
+const BAR_MIN = 60;
+/** The row's trailing chevron: a 16px glyph in a button padded by 2px. */
+const ACTIONS_COLUMN = 20;
+
+/**
+ * The narrowest the list can be before a row stops fitting.
+ *
+ * Every column but the name and the bar is rigid, so below this the panel can
+ * only clip — and what it clips first is the row's far end: the actions, then
+ * the available balance. The page reads this to stop squeezing the list and
+ * move the context column underneath it instead.
+ */
+export const ENVELOPES_MIN_WIDTH =
+  2 + // the panel's own hairline, left and right
+  2 * ROW_PADDING_X +
+  TILE_SIZE +
+  NAME_COLUMN_MIN +
+  BAR_MIN +
+  3 * AMOUNT_COLUMN +
+  ACTIONS_COLUMN +
+  6 * ROW_GAP;
 
 /**
  * The envelope list — the working surface of the page.
@@ -65,8 +91,8 @@ function ColumnHeader() {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 18,
-        padding: '13px 22px 11px',
+        gap: ROW_GAP,
+        padding: `13px ${ROW_PADDING_X}px 11px`,
         borderBottom: '1px solid var(--dfl-line)',
         backgroundColor: 'rgba(4, 8, 16, 0.35)',
       }}
@@ -83,7 +109,7 @@ function ColumnHeader() {
       <HeaderLabel>
         <Trans>Disponível</Trans>
       </HeaderLabel>
-      <View aria-hidden="true" style={{ flex: '0 0 16px' }} />
+      <View aria-hidden="true" style={{ flex: `0 0 ${ACTIONS_COLUMN}px` }} />
     </View>
   );
 }
@@ -129,22 +155,37 @@ function Row({
     typeof envelopeActions === 'function' ? envelopeActions : undefined;
   // The engine's own figure for this envelope, carryover included.
   const remaining = envelope.available;
-  const ratio = envelope.budgeted > 0 ? envelope.spent / envelope.budgeted : 0;
+  // Spending against no plan at all is past the plan by definition, so it
+  // reads as overspent rather than as an envelope nobody has touched.
+  const ratio =
+    envelope.budgeted > 0
+      ? envelope.spent / envelope.budgeted
+      : envelope.spent > 0
+        ? Infinity
+        : 0;
 
   return (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 18,
-        padding: '14px 22px',
+        gap: ROW_GAP,
+        padding: `14px ${ROW_PADDING_X}px`,
         minHeight: 70,
         borderBottom: isLast ? 'none' : '1px solid var(--dfl-line)',
       }}
     >
-      <BudgetTile Icon={envelope.Icon} hue={envelope.hue} />
+      <BudgetTile Icon={envelope.Icon} hue={envelope.hue} size={TILE_SIZE} />
 
-      <View style={{ flex: '0 0 158px', gap: 3, minWidth: 0 }}>
+      {/* The one column allowed to give: a long name ends in an ellipsis
+          before a figure is ever pushed out of the panel. */}
+      <View
+        style={{
+          flex: `0 1 ${NAME_COLUMN}px`,
+          gap: 3,
+          minWidth: NAME_COLUMN_MIN,
+        }}
+      >
         <TextOneLine
           style={{
             fontSize: 15,
@@ -162,7 +203,7 @@ function Row({
 
       {/* The bar carries the row's weight — it is what makes Delivery at 99%
           findable without reading a single number. */}
-      <View style={{ flex: '1 1 0', minWidth: 60 }}>
+      <View style={{ flex: '1 1 0', minWidth: BAR_MIN }}>
         <BudgetBar ratio={ratio} hue={envelope.hue} />
       </View>
 
@@ -198,7 +239,7 @@ function Row({
           aria-label={t('Ações da categoria')}
           onPress={() => setIsOpen(open => !open)}
           style={{
-            flexShrink: 0,
+            flex: `0 0 ${ACTIONS_COLUMN}px`,
             padding: 2,
             color: 'var(--dfl-text-3)',
             backgroundColor: 'transparent',

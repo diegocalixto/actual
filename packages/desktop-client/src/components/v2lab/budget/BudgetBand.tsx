@@ -47,6 +47,11 @@ export function BudgetBand({
   // this month alone, so unlike `toDistribute` it is honestly a subtraction.
   const available = income - spent;
 
+  // Every figure's caption is its slice of the month's income. A month nothing
+  // has come into yet has no such slice — the division is 0 ÷ 0 or n ÷ 0 — so
+  // the caption says that instead of printing the arithmetic's "NaN%".
+  const shareOf = (value: number) => (income > 0 ? value / income : null);
+
   return (
     <View
       style={{
@@ -77,7 +82,7 @@ export function BudgetBand({
             <Metric
               label={<Trans>Para distribuir</Trans>}
               value={toDistribute}
-              share={toDistribute / income}
+              share={shareOf(toDistribute)}
               color="var(--dfl-blue)"
             />
             <Divider />
@@ -86,8 +91,11 @@ export function BudgetBand({
         <Metric
           label={<Trans>Planejado</Trans>}
           value={budgeted}
-          share={budgeted / income}
-          color="var(--dfl-violet)"
+          share={shareOf(budgeted)}
+          // The ramp's lighter violet, not the ring's: as 13px text on this
+          // plane `--dfl-violet` measures 3.8:1, short of the 4.5:1 a label
+          // needs, and this one clears it while staying the ring's hue.
+          color="var(--dfl-hue-violet)"
         />
 
         <View style={{ flex: '0 0 auto', padding: '0 22px' }}>
@@ -97,14 +105,14 @@ export function BudgetBand({
         <Metric
           label={<Trans>Gasto</Trans>}
           value={spent}
-          share={spent / income}
+          share={shareOf(spent)}
           color="var(--dfl-positive)"
         />
         <Divider />
         <Metric
           label={<Trans>Saldo do mês</Trans>}
           value={available}
-          share={available / income}
+          share={shareOf(available)}
           color="var(--dfl-hue-cyan)"
         />
       </View>
@@ -127,18 +135,31 @@ function Divider() {
   );
 }
 
+/** The headline figure's size wherever its column has room for it. */
+const FIGURE_SIZE = 31;
+
 type MetricProps = {
   label: ReactNode;
   value: number;
-  share: number;
+  /** `null` ⇒ the month has no income to be a share of. */
+  share: number | null;
   color: string;
 };
 
 function Metric({ label, value, share, color }: MetricProps) {
-  const shareLabel = formatPercent(share);
+  const shareLabel = share === null ? null : formatPercent(share);
 
   return (
-    <View style={{ flex: '1 1 0', gap: 10, padding: '0 18px', minWidth: 0 }}>
+    <View
+      style={{
+        flex: '1 1 0',
+        gap: 10,
+        padding: '0 18px',
+        minWidth: 0,
+        // The column is what the figure below is measured against.
+        containerType: 'inline-size',
+      }}
+    >
       <Text
         style={{
           fontSize: 13,
@@ -156,7 +177,16 @@ function Metric({ label, value, share, color }: MetricProps) {
       </Text>
       <FinancialText
         style={{
-          fontSize: 31,
+          // Full size wherever the column holds it — every window from about
+          // 1400px up. Narrower than that a five-digit figure, some 6.2em at
+          // this weight, is wider than its column: it runs through the
+          // hairline and into the figure beside it. So the size follows the
+          // column down, capped at what still fits one. The plain value comes
+          // first, for an engine that has no container units.
+          fontSize: [
+            `${FIGURE_SIZE}px`,
+            `clamp(22px, 16.2cqw, ${FIGURE_SIZE}px)`,
+          ],
           fontWeight: 600,
           lineHeight: 1.1,
           letterSpacing: -1.1,
@@ -174,7 +204,11 @@ function Metric({ label, value, share, color }: MetricProps) {
           whiteSpace: 'nowrap',
         }}
       >
-        <Trans>{{ shareLabel }} da renda do mês</Trans>
+        {shareLabel === null ? (
+          <Trans>Sem renda neste mês</Trans>
+        ) : (
+          <Trans>{{ shareLabel }} da renda do mês</Trans>
+        )}
       </Text>
     </View>
   );
