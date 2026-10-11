@@ -137,7 +137,7 @@ export function AccountsView({ data }: { data: AccountsViewData }) {
           {/* Right: the same money, read two other ways. */}
           <View style={{ flex: '1.06 1 0', minWidth: 0, gap: 18 }}>
             <BalanceOverTime series={data.balance} />
-            <AccountDistribution accounts={accounts} total={data.total} />
+            <AccountDistribution accounts={accounts} />
           </View>
         </View>
 

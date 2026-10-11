@@ -84,7 +84,7 @@ export function AccountGroup({
               fontWeight: 600,
               letterSpacing: -0.1,
               whiteSpace: 'nowrap',
-              color: 'var(--dfl-text-2)',
+              color: subtotal < 0 ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
             }}
           >
             {`R$ ${formatPlain(subtotal)}`}
@@ -103,6 +103,7 @@ export function AccountGroup({
 
 function Row({ account }: { account: ViewAccount }) {
   const color = ACCOUNT_HUE[account.hue];
+  const isNegative = account.balance !== null && account.balance < 0;
 
   const surface: CSSProperties = {
     flexDirection: 'row',
@@ -168,11 +169,14 @@ function Row({ account }: { account: ViewAccount }) {
           gap: 5,
         }}
       >
+        {/* An overdrawn account takes the negative tone. In a column of white
+            figures a leading minus is the only thing separating a debt from an
+            asset, and at this size it is one glyph wide. */}
         <Text
           style={{
             fontSize: 13.5,
             fontWeight: 500,
-            color: 'var(--dfl-text-2)',
+            color: isNegative ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
           }}
         >
           R$
@@ -183,7 +187,7 @@ function Row({ account }: { account: ViewAccount }) {
             fontWeight: 600,
             letterSpacing: -0.3,
             whiteSpace: 'nowrap',
-            color: '#ffffff',
+            color: isNegative ? 'var(--dfl-negative)' : '#ffffff',
           }}
         >
           {account.balance === null ? '—' : formatPlain(account.balance)}

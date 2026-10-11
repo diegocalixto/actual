@@ -14,8 +14,6 @@ import type { ViewAccount } from './accountsViewModel';
 
 type AccountDistributionProps = {
   accounts: ViewAccount[];
-  /** `null` while the balances load. */
-  total: number | null;
 };
 
 const SIZE = 190;
@@ -33,34 +31,66 @@ const GAP = 0;
  * the legend is there for the exact figures, not to decode the colours. Every
  * share is computed from the balances, never written down.
  */
-export function AccountDistribution({
-  accounts,
-  total,
-}: AccountDistributionProps) {
-  // The ring answers "how is the money split", so it is drawn over the weight
-  // of each account, not its sign. An overdrawn account still occupies a share
-  // of the picture; what it must not do is subtract arc from its neighbours and
-  // leave the ring short. The legend keeps the signed figure.
-  const weights = accounts.map(account => Math.abs(account.balance ?? 0));
+export function AccountDistribution({ accounts }: AccountDistributionProps) {
+  // A share is a share *of something*, and the something here is the money the
+  // file holds. A debt is not part of that whole, and taking its magnitude as a
+  // weight — which is what this did — makes every other share a fraction of a
+  // number the panel never prints: against one mortgage, an account holding
+  // R$ 190 of a R$ 43.108 total came out as "0,0%", and the mortgage itself
+  // came out as "46,8%" of a distribution it is not inside.
+  //
+  // So the ring divides the positive balances, an overdrawn account is listed
+  // with its real figure and no share at all, and the caption says so whenever
+  // one is present. Nothing here changes for a file where every account holds
+  // something, which is what the approved reference shows.
+  const weights = accounts.map(account => Math.max(account.balance ?? 0, 0));
   const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
-  const isDrawable = weightTotal > 0;
+
+  const hasLiability = accounts.some(
+    account => account.balance !== null && account.balance < 0,
+  );
+
+  // A sum is only a sum once every part has arrived. A balance still in flight
+  // weighs nothing, so drawing the ring early would hand its whole arc to
+  // whichever accounts happened to resolve first — one of them briefly reading
+  // 100% — and then jump. Until every cell is in, the ring is a plain track and
+  // every share is a dash, which is what the rest of this screen does with a
+  // figure it does not yet know.
+  const isPending = accounts.some(account => account.balance === null);
+  const isDrawable = weightTotal > 0 && !isPending;
+
+  // The figure in the middle is the whole the ring divides, not the file's net
+  // worth: a centre reading R$ 43.108 inside a ring that splits R$ 355.663
+  // silently invites every share to be read against the wrong number. Where no
+  // account is overdrawn the two are the same figure, so this is the panel's
+  // own total on any file the reference describes — and the hero above still
+  // prints the net total, in much larger type, a few pixels away.
 
   let offset = 0;
 
   return (
     <LabPanel style={{ backgroundColor: 'var(--dfl-surface-raised)' }}>
       <View style={{ padding: '18px 22px 18px', gap: 16 }}>
-        <Text
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 1.3,
-            textTransform: 'uppercase',
-            color: 'var(--dfl-text)',
-          }}
-        >
-          <Trans>Account distribution</Trans>
-        </Text>
+        <View style={{ gap: 5 }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 1.3,
+              textTransform: 'uppercase',
+              color: 'var(--dfl-text)',
+            }}
+          >
+            <Trans>Account distribution</Trans>
+          </Text>
+          {hasLiability && (
+            <Text style={{ fontSize: 11.5, color: 'var(--dfl-text-3)' }}>
+              <Trans>
+                The ring, its total and its shares cover positive balances only.
+              </Trans>
+            </Text>
+          )}
+        </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 26 }}>
           <View
@@ -176,7 +206,7 @@ export function AccountDistribution({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {total === null ? '—' : formatPlain(total).split(',')[0]}
+                {isPending ? '—' : formatPlain(weightTotal).split(',')[0]}
               </FinancialText>
             </View>
           </View>
@@ -232,13 +262,19 @@ export function AccountDistribution({
                     fontWeight: 600,
                     textAlign: 'right',
                     whiteSpace: 'nowrap',
-                    color: '#ffffff',
+                    color:
+                      account.balance !== null && account.balance < 0
+                        ? 'var(--dfl-negative)'
+                        : '#ffffff',
                   }}
                 >
                   {account.balance === null
                     ? '—'
                     : formatPlain(account.balance)}
                 </FinancialText>
+                {/* An account with no slice gets no percentage. A dash says
+                    "outside this split"; a "0,0%" would say "you have almost
+                    nothing there", which is the opposite of a large debt. */}
                 <Text
                   style={{
                     flex: '0 0 44px',
@@ -248,7 +284,9 @@ export function AccountDistribution({
                     color: 'var(--dfl-text-3)',
                   }}
                 >
-                  {isDrawable ? formatShare(weights[index] / weightTotal) : '—'}
+                  {isDrawable && account.balance !== null && account.balance > 0
+                    ? formatShare(weights[index] / weightTotal)
+                    : '—'}
                 </Text>
               </View>
             ))}
