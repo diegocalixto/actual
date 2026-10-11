@@ -6,6 +6,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatMoney } from './labMoney';
 import { LabPanel } from './LabPanel';
@@ -79,7 +80,7 @@ function Row({ account, isLast }: { account: LabAccount; isLast: boolean }) {
           minWidth: 104,
         }}
       >
-        {formatMoney(account.balance)}
+        <PrivacyFilter>{formatMoney(account.balance)}</PrivacyFilter>
       </FinancialText>
     </View>
   );
@@ -110,7 +111,7 @@ export function LabAccountsTotal({ accounts }: LabAccountsProps) {
           whiteSpace: 'nowrap',
         }}
       >
-        {formatMoney(total)}
+        <PrivacyFilter>{formatMoney(total)}</PrivacyFilter>
       </FinancialText>
     </View>
   );

@@ -6,6 +6,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatMoney } from './labMoney';
 import { LabPanel } from './LabPanel';
@@ -96,7 +97,7 @@ function Cell({ label, value, color, emphasized = false }: CellProps) {
           whiteSpace: 'nowrap',
         }}
       >
-        {formatMoney(value)}
+        <PrivacyFilter>{formatMoney(value)}</PrivacyFilter>
       </FinancialText>
     </View>
   );

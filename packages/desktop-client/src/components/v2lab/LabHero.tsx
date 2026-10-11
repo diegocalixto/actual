@@ -5,6 +5,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatMoney } from './labMoney';
 
@@ -69,7 +70,10 @@ export function LabHero({ available, toBudget }: LabHeroProps) {
             whiteSpace: 'nowrap',
           }}
         >
-          {formatMoney(available)}
+          {/* Behind the app's privacy mode, like every figure on this page:
+              the switch sits in the header above it, and this is the number
+              a person turns it on to hide. */}
+          <PrivacyFilter>{formatMoney(available)}</PrivacyFilter>
         </FinancialText>
 
         <Text style={{ fontSize: 13.5, color: 'var(--dfl-text-2)' }}>
@@ -125,7 +129,7 @@ export function LabHero({ available, toBudget }: LabHeroProps) {
               whiteSpace: 'nowrap',
             }}
           >
-            {formatMoney(toBudget)}
+            <PrivacyFilter>{formatMoney(toBudget)}</PrivacyFilter>
           </FinancialText>
         </View>
       )}

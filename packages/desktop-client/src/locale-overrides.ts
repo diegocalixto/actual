@@ -43,6 +43,12 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'No transactions recorded yet.': 'Nenhuma movimentação registrada ainda.',
     'Open transaction {{title}}': 'Abrir movimentação {{title}}',
 
+    // Home dashboard V2 — strings introduced by the new Overview composition.
+    'Available balance': 'Saldo disponível',
+    'New transaction': 'Novo lançamento',
+    'Spending this month': 'Gastos do mês',
+    'Recent activity': 'Movimentações recentes',
+
     // Budget on a phone — the switch that decides which of a category's two
     // plan figures its row prints. These strings exist only in this fork.
     'Show spent per category': 'Mostrar gasto por categoria',

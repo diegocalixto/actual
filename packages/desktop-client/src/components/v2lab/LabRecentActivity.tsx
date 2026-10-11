@@ -4,6 +4,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { DatePill } from './DatePill';
 import { formatSignedMoney } from './labMoney';
@@ -81,7 +82,9 @@ export function LabRecentActivity({ movements }: LabRecentActivityProps) {
                   minWidth: 96,
                 }}
               >
-                {formatSignedMoney(movement.amount)}
+                <PrivacyFilter>
+                  {formatSignedMoney(movement.amount)}
+                </PrivacyFilter>
               </FinancialText>
             </View>
           );

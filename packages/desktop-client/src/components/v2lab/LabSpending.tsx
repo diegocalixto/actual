@@ -4,6 +4,7 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatMoney } from './labMoney';
 import { LabPanel } from './LabPanel';
@@ -77,7 +78,9 @@ export function LabSpending({ categories }: LabSpendingProps) {
                 minWidth: 92,
               }}
             >
-              {formatMoney(Math.abs(category.amount))}
+              <PrivacyFilter>
+                {formatMoney(Math.abs(category.amount))}
+              </PrivacyFilter>
             </FinancialText>
           </View>
         ))}
