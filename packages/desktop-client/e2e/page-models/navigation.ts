@@ -71,12 +71,50 @@ export class Navigation {
     this.page = page;
   }
 
+  /**
+   * A destination behind the rail's "More". The upstream sidebar listed these
+   * as links; the rail keeps four destinations and opens the rest as a menu.
+   */
+  private async goToSecondaryPage(name: string) {
+    const link = this.page.getByRole('link', { name });
+    const menuItem = this.page.getByRole('menu').getByRole('button', { name });
+
+    if (!(await link.or(menuItem).first().isVisible())) {
+      await this.page.getByRole('button', { name: 'More' }).click();
+    }
+
+    await link.or(menuItem).first().click();
+  }
+
+  /**
+   * Accounts are no longer links in the sidebar: each one is a row of the
+   * Accounts page, and that row is what opens its register. The combined
+   * register, the sidebar's "All accounts", is the button beside the title.
+   */
   async goToAccountPage(accountName: string) {
     await this.page
-      .getByRole('link', { name: new RegExp(`^${accountName}`) })
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Accounts', exact: true })
       .click();
 
-    return new AccountPage(this.page);
+    if (accountName === 'All accounts') {
+      await this.page.getByRole('button', { name: 'All transactions' }).click();
+    } else {
+      await this.page
+        .getByTestId('account-list-item')
+        .filter({
+          has: this.page
+            .getByTestId('account-name')
+            .getByText(accountName, { exact: true }),
+        })
+        .click();
+    }
+
+    // The list stays on screen until the register has loaded, and both name
+    // their figures alike: wait for the register before handing it back.
+    const accountPage = new AccountPage(this.page);
+    await accountPage.waitFor();
+    return accountPage;
   }
 
   async goToReportsPage() {
@@ -94,65 +132,49 @@ export class Navigation {
   }
 
   async goToSchedulesPage() {
-    await this.page.getByRole('link', { name: 'Schedules' }).click();
+    await this.goToSecondaryPage('Schedules');
 
     return new SchedulesPage(this.page);
   }
 
   async goToRulesPage() {
-    const rulesLink = this.page.getByRole('link', { name: 'Rules' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await rulesLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await rulesLink.click();
+    await this.goToSecondaryPage('Rules');
 
     return new RulesPage(this.page);
   }
 
   async goToPayeesPage() {
-    const payeesLink = this.page.getByRole('link', { name: 'Payees' });
-
-    // Expand the "More" menu only if the Payees link is not visible
-    if (!(await payeesLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await payeesLink.click();
+    await this.goToSecondaryPage('Payees');
 
     return new PayeesPage(this.page);
   }
 
   async goToBankSyncPage() {
-    const bankSyncLink = this.page.getByRole('link', { name: 'Bank Sync' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await bankSyncLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await bankSyncLink.click();
+    await this.goToSecondaryPage('Bank Sync');
 
     return new BankSyncPage(this.page);
   }
 
   async goToSettingsPage() {
-    const settingsLink = this.page.getByRole('link', { name: 'Settings' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await settingsLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await settingsLink.click();
+    await this.goToSecondaryPage('Settings');
 
     return new SettingsPage(this.page);
   }
 
   async createAccount(data: AccountEntry) {
-    await this.page.getByRole('button', { name: 'Add account' }).click();
+    // "Add account" lives on the Accounts page, not in a sidebar that is
+    // always on screen. The page offers it twice — beside the title and under
+    // the list — and either opens the same form.
+    const addAccount = this.page
+      .getByRole('button', { name: 'Add account' })
+      .first();
+    if (!(await addAccount.isVisible())) {
+      await this.page
+        .getByRole('navigation')
+        .getByRole('link', { name: 'Accounts', exact: true })
+        .click();
+    }
+    await addAccount.click();
 
     // Wait for the form heading to confirm it is fully mounted before
     // touching any fields.

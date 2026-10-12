@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { View } from '@actual-app/components/view';
+import { viewStyles } from '@actual-app/components/view';
+import { css, cx } from '@emotion/css';
 
 import { ReportsView } from '#components/v2lab/reports/ReportsView';
 
@@ -22,13 +23,22 @@ export function V2RealReports() {
   const data = useRealReportsData();
 
   return (
-    <View className={REPORTS_ROOT_CLASS} style={{ flex: 1, minHeight: 0 }}>
+    // The page's landmark. The upstream pages get theirs from `Page`; these
+    // are drawn outside it, and without one a screen reader has no way to jump
+    // past the navigation to the content.
+    <main
+      className={cx(
+        viewStyles,
+        REPORTS_ROOT_CLASS,
+        css({ flex: 1, minHeight: 0 }),
+      )}
+    >
       <ReportsStyle />
       {/*
         Authorship goes in the slot the approved composition already ends with:
         small, muted, right-aligned, in the normal flow of the page.
       */}
       <ReportsView data={{ ...data, footnote: AUTHOR }} />
-    </View>
+    </main>
   );
 }

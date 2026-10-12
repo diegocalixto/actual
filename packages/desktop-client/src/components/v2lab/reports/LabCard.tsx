@@ -54,8 +54,9 @@ export function CardHeading({ title, subtitle, action }: CardHeadingProps) {
       }}
     >
       <View style={{ gap: 3, minWidth: 0 }}>
-        <Text
+        <h2
           style={{
+            margin: 0,
             fontSize: 15,
             fontWeight: 600,
             letterSpacing: -0.2,
@@ -63,7 +64,7 @@ export function CardHeading({ title, subtitle, action }: CardHeadingProps) {
           }}
         >
           {title}
-        </Text>
+        </h2>
         {subtitle && (
           <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-3)' }}>
             {subtitle}

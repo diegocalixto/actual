@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { View } from '@actual-app/components/view';
+import { viewStyles } from '@actual-app/components/view';
+import { css, cx } from '@emotion/css';
 
 import { OverviewView } from '#components/v2lab/OverviewView';
 
@@ -33,7 +34,16 @@ export function V2RealOverview() {
   } = useRealOverviewData();
 
   return (
-    <View className={OVERVIEW_ROOT_CLASS} style={{ flex: 1, minHeight: 0 }}>
+    // The page's landmark. The upstream pages get theirs from `Page`; these
+    // are drawn outside it, and without one a screen reader has no way to jump
+    // past the navigation to the content.
+    <main
+      className={cx(
+        viewStyles,
+        OVERVIEW_ROOT_CLASS,
+        css({ flex: 1, minHeight: 0 }),
+      )}
+    >
       <OverviewStyle />
       <OverviewView
         data={{
@@ -53,6 +63,6 @@ export function V2RealOverview() {
           footnote: AUTHOR,
         }}
       />
-    </View>
+    </main>
   );
 }

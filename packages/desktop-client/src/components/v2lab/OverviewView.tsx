@@ -116,8 +116,9 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
           >
             {data.greeting}
           </Text>
-          <Text
+          <h1
             style={{
+              margin: 0,
               fontSize: 30,
               fontWeight: 700,
               letterSpacing: -0.8,
@@ -125,7 +126,7 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
             }}
           >
             <Trans>Overview</Trans>
-          </Text>
+          </h1>
         </View>
 
         <View

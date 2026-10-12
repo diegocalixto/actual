@@ -110,7 +110,10 @@ export function AccountsMobileHero({
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 7 }}>
+        <View
+          data-testid="accounts-total-balance"
+          style={{ flexDirection: 'row', alignItems: 'baseline', gap: 7 }}
+        >
           {/* The symbol is withheld while the cell is unresolved: "R$ —" reads
               as a currency with a missing amount, the dash alone as a figure
               that has not arrived. */}

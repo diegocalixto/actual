@@ -191,6 +191,7 @@ function Row({
         }}
       >
         <TextOneLine
+          data-testid="category-name"
           style={{
             fontSize: 15,
             fontWeight: 600,

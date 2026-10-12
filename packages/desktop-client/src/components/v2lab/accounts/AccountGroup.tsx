@@ -129,7 +129,7 @@ function Row({ account }: { account: ViewAccount }) {
     : {};
 
   return (
-    <Surface {...surfaceProps} style={surface}>
+    <Surface {...surfaceProps} data-testid="account-list-item" style={surface}>
       <AccountTile Icon={account.Icon} hue={account.hue} />
 
       {/* Name above, filet below — the reference stacks them, and stacking is
@@ -137,6 +137,7 @@ function Row({ account }: { account: ViewAccount }) {
           squeezing into whatever the name leaves over. */}
       <View style={{ flex: '1 1 0', minWidth: 0, gap: 9, paddingTop: 2 }}>
         <TextOneLine
+          data-testid="account-name"
           style={{
             fontSize: 15.5,
             fontWeight: 600,
@@ -162,7 +163,10 @@ function Row({ account }: { account: ViewAccount }) {
         />
       </View>
 
+      {/* The symbol and the digits are one fact set at two sizes, so the
+          testid covers both — the same names the phone's rows carry. */}
       <View
+        data-testid="account-balance"
         style={{
           flex: '0 0 auto',
           flexDirection: 'row',
@@ -172,7 +176,9 @@ function Row({ account }: { account: ViewAccount }) {
       >
         {/* An overdrawn account takes the negative tone. In a column of white
             figures a leading minus is the only thing separating a debt from an
-            asset, and at this size it is one glyph wide. */}
+            asset, and at this size it is one glyph wide. The minus leads the
+            symbol, as `formatBRL` writes it everywhere else on this page:
+            "R$ -312.500,00" was a second convention for the same fact. */}
         <Text
           style={{
             fontSize: 13.5,
@@ -180,7 +186,7 @@ function Row({ account }: { account: ViewAccount }) {
             color: isNegative ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
           }}
         >
-          R$
+          {isNegative ? '-R$' : 'R$'}
         </Text>
         <FinancialText
           style={{
@@ -194,7 +200,9 @@ function Row({ account }: { account: ViewAccount }) {
           {account.balance === null ? (
             '—'
           ) : (
-            <PrivacyFilter>{formatPlain(account.balance)}</PrivacyFilter>
+            <PrivacyFilter>
+              {formatPlain(Math.abs(account.balance))}
+            </PrivacyFilter>
           )}
         </FinancialText>
       </View>

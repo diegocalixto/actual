@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 import { SvgViewList } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
-import { View } from '@actual-app/components/view';
+import { viewStyles } from '@actual-app/components/view';
+import { css, cx } from '@emotion/css';
 
 import { AccountsView } from '#components/v2lab/accounts/AccountsView';
 import { useNavigate } from '#hooks/useNavigate';
@@ -35,14 +36,20 @@ export function V2RealAccounts() {
   const navigate = useNavigate();
 
   return (
-    <View
-      className={ACCOUNTS_ROOT_CLASS}
-      style={{
-        flex: 1,
-        minHeight: 0,
-        backgroundColor: 'var(--dfl-canvas)',
-        color: 'var(--dfl-text)',
-      }}
+    // The page's landmark. The upstream pages get theirs from `Page`; these
+    // are drawn outside it, and without one a screen reader has no way to jump
+    // past the navigation to the content.
+    <main
+      className={cx(
+        viewStyles,
+        ACCOUNTS_ROOT_CLASS,
+        css({
+          flex: 1,
+          minHeight: 0,
+          backgroundColor: 'var(--dfl-canvas)',
+          color: 'var(--dfl-text)',
+        }),
+      )}
     >
       <AccountsStyle />
       <AccountsView
@@ -73,6 +80,6 @@ export function V2RealAccounts() {
           ),
         }}
       />
-    </View>
+    </main>
   );
 }

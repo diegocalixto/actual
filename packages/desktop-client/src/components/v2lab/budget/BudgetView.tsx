@@ -141,8 +141,9 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
           }}
         >
           <View style={{ gap: 5, paddingLeft: 2 }}>
-            <Text
+            <h1
               style={{
+                margin: 0,
                 fontSize: 30,
                 fontWeight: 700,
                 letterSpacing: -0.8,
@@ -150,7 +151,7 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
               }}
             >
               <Trans>Orçamento</Trans>
-            </Text>
+            </h1>
             <Text style={{ fontSize: 13.5, color: 'var(--dfl-text-2)' }}>
               <Trans>Seu plano para este mês</Trans>
             </Text>

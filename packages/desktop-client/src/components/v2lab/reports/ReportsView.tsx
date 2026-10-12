@@ -114,8 +114,9 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
             >
               {data.greeting}
             </Text>
-            <Text
+            <h1
               style={{
+                margin: 0,
                 fontSize: 30,
                 fontWeight: 700,
                 letterSpacing: -0.8,
@@ -123,7 +124,7 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
               }}
             >
               <Trans>Reports</Trans>
-            </Text>
+            </h1>
             <Text style={{ fontSize: 13.5, color: 'var(--dfl-text-2)' }}>
               <Trans>
                 Analyze your financial performance and discover insights to make

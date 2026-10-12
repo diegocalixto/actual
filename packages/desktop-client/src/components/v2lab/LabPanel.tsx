@@ -2,7 +2,6 @@ import React from 'react';
 import type { ReactNode } from 'react';
 
 import type { CSSProperties } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 type LabPanelProps = {
@@ -53,8 +52,9 @@ export function LabSection({ label, action, children }: LabSectionProps) {
           paddingLeft: 2,
         }}
       >
-        <Text
+        <h2
           style={{
+            margin: 0,
             fontSize: 11.5,
             fontWeight: 600,
             letterSpacing: 1.1,
@@ -63,7 +63,7 @@ export function LabSection({ label, action, children }: LabSectionProps) {
           }}
         >
           {label}
-        </Text>
+        </h2>
         {action}
       </View>
       {children}

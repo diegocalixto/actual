@@ -2,7 +2,6 @@ import React from 'react';
 import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { AccountDistribution } from './AccountDistribution';
@@ -71,8 +70,9 @@ export function AccountsView({ data }: { data: AccountsViewData }) {
             gap: 20,
           }}
         >
-          <Text
+          <h1
             style={{
+              margin: 0,
               fontSize: 30,
               fontWeight: 700,
               letterSpacing: -0.8,
@@ -81,7 +81,7 @@ export function AccountsView({ data }: { data: AccountsViewData }) {
             }}
           >
             <Trans>Accounts</Trans>
-          </Text>
+          </h1>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {data.onAddAccount && <AddAccountButton onPress={addAccount} />}

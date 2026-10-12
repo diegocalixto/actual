@@ -79,6 +79,7 @@ export function AccountsHero({
           </Text>
 
           <FinancialText
+            data-testid="accounts-total-balance"
             style={{
               fontSize: 46,
               fontWeight: 700,
