@@ -23,11 +23,33 @@ import { HomeMobileMoney } from './HomeMobileMoney';
  */
 type Flow = 'in' | 'out' | 'signed';
 
+/** The badge beside the figure, and the space between the two. */
+const BADGE_SIZE = 14;
+const BADGE_GAP = 4;
+
+/** What the figure's line has left once the badge has taken its share. */
+export const MONTH_FIGURE_ROOM = `100cqi - ${BADGE_SIZE + BADGE_GAP}px`;
+/** The tracking the three figures are set with, which their fit accounts for. */
+export const MONTH_FIGURE_TRACKING = -0.3;
+
+/**
+ * The amount a metric prints: the magnitude where the label already gives the
+ * direction, the signed figure where the sign is the verdict.
+ */
+export function shownAmount(value: number | null, flow: Flow) {
+  return value === null || flow === 'signed' ? value : Math.abs(value);
+}
+
 type HomeMobileMonthMetricProps = {
   label: ReactNode;
   /** Integer minor units as the cell publishes them, or `null` while loading. */
   value: number | null;
   flow: Flow;
+  /**
+   * The size the figure is set at, decided by the card: the three share one,
+   * fitted to the longest of them.
+   */
+  figureSize: string;
 };
 
 /**
@@ -41,14 +63,24 @@ export function HomeMobileMonthMetric({
   label,
   value,
   flow,
+  figureSize,
 }: HomeMobileMonthMetricProps) {
   const isIn = flow === 'signed' ? value === null || value >= 0 : flow === 'in';
   const tone = isIn ? 'var(--dfl-positive)' : 'var(--dfl-negative)';
   const Icon = isIn ? SvgArrowThinUp : SvgArrowThinDown;
-  const shown = value === null || flow === 'signed' ? value : Math.abs(value);
+  const shown = shownAmount(value, flow);
 
   return (
-    <View style={{ flex: '1 1 0', minWidth: 0, gap: 7, padding: '0 6px' }}>
+    <View
+      style={{
+        flex: '1 1 0',
+        minWidth: 0,
+        gap: 7,
+        padding: '0 6px',
+        // The column's own width is what its figure is fitted to.
+        containerType: 'inline-size',
+      }}
+    >
       <Text
         style={{
           fontSize: 9.5,
@@ -62,18 +94,16 @@ export function HomeMobileMonthMetric({
         {label}
       </Text>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', gap: BADGE_GAP }}
+      >
         <HomeMobileMoney
           value={shown}
           withCurrency
           style={{
-            // A third of the width has to hold "R$ 15.490,00" and its badge on
-            // one line. At a fixed size that fits a 428pt screen and spills out
-            // of the column on a 375pt one, so the figure tracks the viewport
-            // and stops growing once it reaches the approved size.
-            fontSize: 'clamp(11px, 3.3vw, 14px)',
+            fontSize: figureSize,
             fontWeight: 700,
-            letterSpacing: -0.3,
+            letterSpacing: MONTH_FIGURE_TRACKING,
             color: tone,
           }}
         />
@@ -83,8 +113,8 @@ export function HomeMobileMonthMetric({
             flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'center',
-            width: 14,
-            height: 14,
+            width: BADGE_SIZE,
+            height: BADGE_SIZE,
             borderRadius: 999,
             border: `1px solid ${tone}`,
             opacity: 0.75,

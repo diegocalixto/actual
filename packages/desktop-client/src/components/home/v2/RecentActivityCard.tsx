@@ -98,11 +98,17 @@ export function RecentActivityCard() {
             aria-label={t('Ver todas as transações')}
             onPress={() => void navigate('/accounts')}
             className={css({
-              padding: '4px 6px',
-              marginRight: -6,
+              // One line of small type with a finger-sized target around it:
+              // the box is grown with padding and pulled back by the same
+              // margin, so the heading's line keeps its height.
+              padding: '15px 12px',
+              margin: '-11px -12px -11px 0',
               borderRadius: shellRadius.chip,
               color: shellColors.accent,
               '&[data-hovered]': {
+                backgroundColor: shellColors.surfaceSunken,
+              },
+              '&[data-pressed]': {
                 backgroundColor: shellColors.surfaceSunken,
               },
             })}

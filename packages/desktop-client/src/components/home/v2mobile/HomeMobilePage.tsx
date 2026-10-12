@@ -113,8 +113,10 @@ export function HomeMobilePage({
           flexShrink: 0,
           padding: `14px ${mobileLayout.gutter}px`,
           // The bar is fixed and overlays the page, so the bottom padding has
-          // to clear it — and, on an iPhone, the home indicator under it.
-          paddingBottom: MOBILE_NAV_SPACER,
+          // to clear it — and, on an iPhone, the home indicator under it. The
+          // extra room is the Budget's, so the three pages end the same
+          // distance above the bar.
+          paddingBottom: `calc(${MOBILE_NAV_SPACER} + 14px)`,
           gap: mobileLayout.stackGap,
           backgroundColor: 'var(--dfl-canvas)',
           color: 'var(--dfl-text)',

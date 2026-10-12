@@ -8,8 +8,13 @@ import {
 } from '@actual-app/components/icons/v1';
 import { View } from '@actual-app/components/view';
 
-import { BudgetMobileMetric } from './BudgetMobileMetric';
-import { usedPercent } from './budgetMobileMoney';
+import { fittedFontSize } from '#components/v2lab/LabStyle';
+
+import {
+  BudgetMobileMetric,
+  METRIC_FIGURE_TRACKING,
+} from './BudgetMobileMetric';
+import { formatCurrency, usedPercent } from './budgetMobileMoney';
 
 type BudgetMobileMetricsProps = {
   /** What the month plans to spend, as a positive magnitude. */
@@ -37,6 +42,10 @@ type BudgetMobileMetricsProps = {
  * measured against the same thing and can be compared by eye. A month with no
  * income yet has no share to draw, and `usedPercent` returns `null` rather than
  * dividing by zero.
+ *
+ * The three figures are set at one size, and that size is the one the longest
+ * of them fits its tile at: a third of a phone holds "R$ 9.850,00" and not
+ * "-R$ 2.345.398,90", which used to run out of its tile and into the next.
  */
 export function BudgetMobileMetrics({
   planned,
@@ -47,11 +56,22 @@ export function BudgetMobileMetrics({
   const share = (value: number | null) =>
     value === null ? null : usedPercent(Math.abs(value), income);
 
+  const figureSize = fittedFontSize({
+    designSize: 'clamp(12px, 3.5vw, 14.5px)',
+    room: '100cqi',
+    floor: '9px',
+    letterSpacing: METRIC_FIGURE_TRACKING,
+    figures: [planned, spent, monthBalance].map(value =>
+      value === null ? null : formatCurrency(value),
+    ),
+  });
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 8 }}>
       <BudgetMobileMetric
         label={<Trans>Planejado</Trans>}
         value={planned}
+        figureSize={figureSize}
         Icon={SvgTarget}
         tone="var(--dfl-violet)"
         percent={share(planned)}
@@ -59,6 +79,7 @@ export function BudgetMobileMetrics({
       <BudgetMobileMetric
         label={<Trans>Gasto</Trans>}
         value={spent}
+        figureSize={figureSize}
         Icon={SvgArrowThinDown}
         tone="var(--dfmb-watch)"
         percent={share(spent)}
@@ -66,6 +87,7 @@ export function BudgetMobileMetrics({
       <BudgetMobileMetric
         label={<Trans>Saldo do mês</Trans>}
         value={monthBalance}
+        figureSize={figureSize}
         Icon={SvgArrowThinUp}
         tone="var(--dfl-positive)"
         percent={share(monthBalance)}

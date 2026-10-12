@@ -9,9 +9,15 @@ import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { amountWidthInEm, fittedFontSize } from '#components/v2lab/LabStyle';
 
 import { CURRENCY, formatAmount, PENDING } from './budgetMobileMoney';
 import { BudgetMobileRing } from './BudgetMobileRing';
+
+/** The symbol is set smaller than the figure it introduces. */
+const SYMBOL_SIZE = 18;
+const SYMBOL_GAP = 6;
+const FIGURE_TRACKING = -1;
 
 type BudgetMobileHeroProps = {
   label: ReactNode;
@@ -39,6 +45,12 @@ type BudgetMobileHeroProps = {
  * The whole surface is the control that opens the budget summary, which is the
  * affordance the upstream header hung off its "To Budget" figure. The figure is
  * still what you press; it is simply the size of the card now.
+ *
+ * The figure shares its line with the symbol and its card with the ring, so a
+ * long one — a budget in the millions, an overbudget with its minus — had no
+ * room left and broke the symbol onto a line of its own. It now gives up size
+ * instead: the column it sits in is the measure, and the figure is set at the
+ * design's size or at the size that still fits, whichever is smaller.
  */
 export function BudgetMobileHero({
   label,
@@ -49,6 +61,11 @@ export function BudgetMobileHero({
   ariaLabel,
 }: BudgetMobileHeroProps) {
   const isNegative = amount !== null && amount < 0;
+  const symbol = isNegative ? `-${CURRENCY}` : CURRENCY;
+  const figure = amount === null ? null : formatAmount(Math.abs(amount));
+  // What the symbol and the space after it take out of the line.
+  const symbolRoom =
+    Math.ceil(amountWidthInEm(symbol) * SYMBOL_SIZE) + SYMBOL_GAP;
 
   return (
     <Button
@@ -79,7 +96,14 @@ export function BudgetMobileHero({
         }}
       >
         <View
-          style={{ flex: 1, minWidth: 0, gap: 5, alignItems: 'flex-start' }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            gap: 5,
+            alignItems: 'flex-start',
+            // The width the figure is fitted to.
+            containerType: 'inline-size',
+          }}
         >
           <Text
             style={{
@@ -95,25 +119,43 @@ export function BudgetMobileHero({
           </Text>
 
           <View
-            style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: SYMBOL_GAP,
+            }}
           >
-            <Text style={{ fontSize: 18, fontWeight: 600, color: '#ffffff' }}>
-              {isNegative ? `-${CURRENCY}` : CURRENCY}
-            </Text>
-            <FinancialText
+            <Text
               style={{
-                fontSize: 'clamp(26px, 7.6vw, 33px)',
-                fontWeight: 700,
-                lineHeight: 1.05,
-                letterSpacing: -1,
+                flexShrink: 0,
+                fontSize: SYMBOL_SIZE,
+                fontWeight: 600,
                 whiteSpace: 'nowrap',
                 color: '#ffffff',
               }}
             >
-              {amount === null ? (
+              {symbol}
+            </Text>
+            <FinancialText
+              style={{
+                fontSize: fittedFontSize({
+                  designSize: 'clamp(26px, 7.6vw, 33px)',
+                  room: `100cqi - ${symbolRoom}px`,
+                  floor: '17px',
+                  letterSpacing: FIGURE_TRACKING,
+                  figures: [figure],
+                }),
+                fontWeight: 700,
+                lineHeight: 1.05,
+                letterSpacing: FIGURE_TRACKING,
+                whiteSpace: 'nowrap',
+                color: '#ffffff',
+              }}
+            >
+              {figure === null ? (
                 PENDING
               ) : (
-                <PrivacyFilter>{formatAmount(Math.abs(amount))}</PrivacyFilter>
+                <PrivacyFilter>{figure}</PrivacyFilter>
               )}
             </FinancialText>
           </View>

@@ -13,6 +13,7 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { fittedFontSize } from '#components/v2lab/LabStyle';
 
 import { ChangeChip } from './ChangeChip';
 import { LabCard } from './LabCard';
@@ -43,6 +44,9 @@ type ReportsKpisProps = {
 
 const VIOLET = '#9b7bff';
 
+const FIGURE_SIZE = 23;
+const FIGURE_TRACKING = -0.9;
+
 /**
  * The period in four figures.
  *
@@ -50,13 +54,31 @@ const VIOLET = '#9b7bff';
  * cards side by side read as one row rather than four competing signals. Every
  * number here is derived, and the comparison is against the real previous
  * month, not a remembered one.
+ *
+ * The four values are one size: the design's, or the size the longest of them
+ * still fits beside its icon at. A period in the millions used to run out of
+ * its card.
  */
 export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
+  const income = formatBRL(kpis.income.value);
+  const expenses = formatBRL(kpis.expenses.value);
+  const net = formatBRL(kpis.net.value);
+  const savingsRate = formatPercent(kpis.savingsRate.value);
+
+  const valueSize = fittedFontSize({
+    designSize: `${FIGURE_SIZE}px`,
+    room: '100cqi',
+    floor: '13px',
+    letterSpacing: FIGURE_TRACKING,
+    figures: [income, expenses, net, savingsRate],
+  });
+
   return (
     <View style={{ flexDirection: 'row', gap: 16 }}>
       <Kpi
         label={<Trans>Income</Trans>}
-        value={formatBRL(kpis.income.value)}
+        value={income}
+        valueSize={valueSize}
         isAmount
         Icon={SvgArrowThinUp}
         color={SERIES.income}
@@ -69,7 +91,8 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       />
       <Kpi
         label={<Trans>Expenses</Trans>}
-        value={formatBRL(kpis.expenses.value)}
+        value={expenses}
+        valueSize={valueSize}
         isAmount
         Icon={SvgArrowThinDown}
         color={SERIES.expenses}
@@ -85,7 +108,8 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       />
       <Kpi
         label={<Trans>Net Result</Trans>}
-        value={formatBRL(kpis.net.value)}
+        value={net}
+        valueSize={valueSize}
         isAmount
         Icon={SvgAdjust}
         color={SERIES.net}
@@ -96,7 +120,8 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
       />
       <Kpi
         label={<Trans>Savings Rate</Trans>}
-        value={formatPercent(kpis.savingsRate.value)}
+        value={savingsRate}
+        valueSize={valueSize}
         Icon={SvgChartPie}
         color={VIOLET}
         change={
@@ -115,6 +140,8 @@ export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
 type KpiProps = {
   label: ReactNode;
   value: string;
+  /** The size the row's four values share, fitted to the longest of them. */
+  valueSize: string;
   /** An amount goes behind privacy mode; a rate stays readable. */
   isAmount?: boolean;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -128,6 +155,7 @@ type KpiProps = {
 function Kpi({
   label,
   value,
+  valueSize,
   isAmount = false,
   Icon,
   color,
@@ -164,7 +192,15 @@ function Kpi({
           <Icon width={20} height={20} />
         </View>
 
-        <View style={{ flex: '1 1 0', minWidth: 0, gap: 6 }}>
+        <View
+          style={{
+            flex: '1 1 0',
+            minWidth: 0,
+            gap: 6,
+            // The column's width is what the value is fitted to.
+            containerType: 'inline-size',
+          }}
+        >
           <Text
             style={{
               fontSize: 11,
@@ -180,10 +216,10 @@ function Kpi({
 
           <FinancialText
             style={{
-              fontSize: 23,
+              fontSize: [`${FIGURE_SIZE}px`, valueSize],
               fontWeight: 600,
               lineHeight: 1.1,
-              letterSpacing: -0.9,
+              letterSpacing: FIGURE_TRACKING,
               whiteSpace: 'nowrap',
               color: '#ffffff',
             }}

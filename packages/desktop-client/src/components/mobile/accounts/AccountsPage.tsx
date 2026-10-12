@@ -209,8 +209,10 @@ export function AccountsPage() {
                 padding: `14px ${accountsLayout.gutter}px`,
                 // The bar is fixed and overlays the page, so the bottom padding
                 // has to clear it — and, on an iPhone, the home indicator under
-                // it.
-                paddingBottom: MOBILE_NAV_SPACER,
+                // it. The extra room is the Budget's: without it the last
+                // control ended exactly at the bar's edge, under the raised
+                // action button, which took the lower strip of its target.
+                paddingBottom: `calc(${MOBILE_NAV_SPACER} + 14px)`,
                 gap: accountsLayout.stackGap,
               }}
             >

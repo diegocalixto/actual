@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
+import { useLocation } from 'react-router';
 
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
@@ -8,7 +9,8 @@ import { useToggle } from 'usehooks-ts';
 import { useNavigate } from '#hooks/useNavigate';
 
 import type { NavItem } from './navigation';
-import { useSecondaryNav } from './navigation';
+import { isNavItemActive, useSecondaryNav } from './navigation';
+import { shellColors, shellLayout } from './shellTheme';
 
 type MoreMenuProps = {
   placement: 'right bottom' | 'top';
@@ -32,6 +34,12 @@ type MoreMenuProps = {
  * Every item is a route that already exists — this only changes where they are
  * reached from, never whether they can be. Shared by the desktop rail and the
  * mobile bottom bar so the two navigations cannot drift apart.
+ *
+ * Opened from the phone's bar it is a list for a finger: rows the height of a
+ * touch target and wide enough to aim at, where the rail's menu keeps the
+ * density a pointer is comfortable with. The destination the reader is already
+ * on is drawn in the accent in both, so the menu answers "where am I" as well
+ * as "where can I go".
  */
 export function MoreMenu({
   placement,
@@ -39,10 +47,17 @@ export function MoreMenu({
   children,
 }: MoreMenuProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, toggleOpen, setOpen] = useToggle();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const secondary = useSecondaryNav();
   const items = [...extraItems, ...secondary];
+  // The bar is the only caller that opens the menu upwards, and the only one
+  // that is pressed with a finger.
+  const isForTouch = placement === 'top';
+  const current = items.find(item =>
+    isNavItemActive(item, location.pathname),
+  )?.id;
 
   return (
     <>
@@ -63,11 +78,24 @@ export function MoreMenu({
               void navigate(item.to);
             }
           }}
+          style={isForTouch ? { minWidth: 220 } : undefined}
+          getItemStyle={item => ({
+            ...(isForTouch && {
+              minHeight: shellLayout.touchTarget,
+              paddingLeft: 16,
+              paddingRight: 20,
+              fontSize: 15,
+            }),
+            ...(item.name === current && {
+              color: shellColors.accent,
+              fontWeight: 600,
+            }),
+          })}
           items={items.map(item => ({
             name: item.id,
             text: item.label,
             icon: item.Icon,
-            iconSize: 15,
+            iconSize: isForTouch ? 18 : 15,
           }))}
         />
       </Popover>

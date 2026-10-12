@@ -8,11 +8,17 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import type { HomeBudgetType } from '#components/home/useHomeMonth';
+import { amountWidthInEm, fittedFontSize } from '#components/v2lab/LabStyle';
 import { useNavigate } from '#hooks/useNavigate';
 
 import { HomeMobileHeroLight } from './HomeMobileHeroLight';
 import { HomeMobileMoney } from './HomeMobileMoney';
-import { CURRENCY } from './mobileMoneyFormat';
+import { CURRENCY, formatAmount } from './mobileMoneyFormat';
+
+/** The symbol is set smaller than the figure it introduces. */
+const SYMBOL_SIZE = 20;
+const SYMBOL_GAP = 7;
+const FIGURE_TRACKING = -1.1;
 
 type HomeMobileHeroProps = {
   /** Sum of the on-budget account balances, or `null` while the cell loads. */
@@ -38,6 +44,11 @@ type HomeMobileHeroProps = {
  * The strip appears only under an envelope budget, because a tracking budget
  * publishes no "to budget" cell — an empty row there would imply a figure the
  * budget does not have.
+ *
+ * An overdrawn headline is written the way every other negative on this
+ * screen is: the minus leads, ahead of the symbol, and both take the negative
+ * tone. It used to read "R$ -2.324,00", with the strip under it saying
+ * "-R$ 1.234,00" — two conventions on one card.
  */
 export function HomeMobileHero({
   available,
@@ -46,6 +57,16 @@ export function HomeMobileHero({
 }: HomeMobileHeroProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const isOverdrawn = available !== null && available < 0;
+  const symbol = isOverdrawn ? `-${CURRENCY}` : CURRENCY;
+  // A positive balance is the ordinary state, so the headline stays in the
+  // page's own ink; only an overdrawn budget — a real alert — takes the
+  // negative tone.
+  const headlineColor = isOverdrawn ? 'var(--dfl-negative)' : '#ffffff';
+  // What the symbol and the space after it take out of the line.
+  const symbolRoom =
+    Math.ceil(amountWidthInEm(symbol) * SYMBOL_SIZE) + SYMBOL_GAP;
 
   return (
     <View
@@ -66,6 +87,8 @@ export function HomeMobileHero({
           position: 'relative',
           padding: '18px 18px 16px',
           gap: 6,
+          // The width the headline is fitted to.
+          containerType: 'inline-size',
         }}
       >
         <Text
@@ -80,29 +103,47 @@ export function HomeMobileHero({
           <Trans>Saldo disponível</Trans>
         </Text>
 
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 7 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'baseline',
+            gap: SYMBOL_GAP,
+          }}
+        >
           {/* The symbol is withheld while the cell is unresolved: "R$ —" reads
               as a currency with a missing amount, the dash alone as a figure
               that has not arrived. */}
           {available !== null && (
-            <Text style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>
-              {CURRENCY}
+            <Text
+              style={{
+                flexShrink: 0,
+                fontSize: SYMBOL_SIZE,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                color: headlineColor,
+              }}
+            >
+              {symbol}
             </Text>
           )}
           <HomeMobileMoney
-            value={available}
+            value={available === null ? null : Math.abs(available)}
             style={{
-              fontSize: 36,
+              // The design's size, or the size at which a longer balance
+              // still fits beside its symbol.
+              fontSize: fittedFontSize({
+                designSize: '36px',
+                room: `100cqi - ${symbolRoom}px`,
+                floor: '20px',
+                letterSpacing: FIGURE_TRACKING,
+                figures: [
+                  available === null ? null : formatAmount(Math.abs(available)),
+                ],
+              }),
               fontWeight: 700,
               lineHeight: 1.05,
-              letterSpacing: -1.1,
-              // A positive balance is the ordinary state, so the headline stays
-              // in the page's own ink; only an overdrawn budget — a real alert
-              // — takes the negative tone.
-              color:
-                available !== null && available < 0
-                  ? 'var(--dfl-negative)'
-                  : '#ffffff',
+              letterSpacing: FIGURE_TRACKING,
+              color: headlineColor,
             }}
           />
         </View>

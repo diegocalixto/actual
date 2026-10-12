@@ -13,6 +13,7 @@ import { css } from '@emotion/css';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
+import { fittedFontSize } from '#components/v2lab/LabStyle';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { BudgetBar } from './BudgetBar';
@@ -39,6 +40,37 @@ const NAME_COLUMN_MIN = 120;
 const BAR_MIN = 60;
 /** The row's trailing chevron: a 16px glyph in a button padded by 2px. */
 const ACTIONS_COLUMN = 20;
+/** How the three money columns set their figures. */
+const AMOUNT_SIZE = 14.5;
+const AMOUNT_TRACKING = -0.2;
+const AMOUNT_SYMBOL = 'R$';
+/**
+ * The gap between the symbol and the figure — and two points to spare, because
+ * the editable column is a field, and a field cuts the last digit of a line
+ * that comes out a point longer than estimated.
+ */
+const AMOUNT_GAP = 3;
+const AMOUNT_SPARE = 2;
+
+/**
+ * The size a money column is set at, symbol and figure alike.
+ *
+ * A column is 116px whatever it holds, which is a five-digit amount at the
+ * design's size. A longer one ran into the column beside it, and in the
+ * editable column the field simply cut its last digit off. Each column now
+ * takes the size its longest line fits at — one size down the whole column,
+ * so the symbols and the digits keep lining up, and the symbol never ends up
+ * larger than the figure it introduces.
+ */
+function columnFigureSize(figures: number[]): string {
+  return fittedFontSize({
+    designSize: `${AMOUNT_SIZE}px`,
+    room: `100cqi - ${AMOUNT_GAP + AMOUNT_SPARE}px`,
+    floor: '10px',
+    letterSpacing: AMOUNT_TRACKING,
+    figures: figures.map(figure => AMOUNT_SYMBOL + formatPlain(figure)),
+  });
+}
 
 /**
  * The narrowest the list can be before a row stops fitting.
@@ -72,6 +104,12 @@ export function BudgetEnvelopes({
   onBudgetedChange,
   envelopeActions,
 }: BudgetEnvelopesProps) {
+  const figureSizes = {
+    budgeted: columnFigureSize(envelopes.map(envelope => envelope.budgeted)),
+    spent: columnFigureSize(envelopes.map(envelope => envelope.spent)),
+    available: columnFigureSize(envelopes.map(envelope => envelope.available)),
+  };
+
   return (
     <LabPanel>
       <ColumnHeader />
@@ -79,6 +117,7 @@ export function BudgetEnvelopes({
         <Row
           key={envelope.id}
           envelope={envelope}
+          figureSizes={figureSizes}
           share={totalBudgeted > 0 ? envelope.budgeted / totalBudgeted : 0}
           isLast={index === envelopes.length - 1}
           onBudgetedChange={onBudgetedChange}
@@ -139,6 +178,8 @@ function HeaderLabel({ children }: { children: ReactNode }) {
 
 type RowProps = {
   envelope: LabEnvelope;
+  /** One size per money column, shared by every row. */
+  figureSizes: { budgeted: string; spent: string; available: string };
   share: number;
   isLast: boolean;
   onBudgetedChange?: (envelopeId: string, amount: number) => void;
@@ -147,6 +188,7 @@ type RowProps = {
 
 function Row({
   envelope,
+  figureSizes,
   share,
   isLast,
   onBudgetedChange,
@@ -215,16 +257,23 @@ function Row({
       {onBudgetedChange ? (
         <BudgetedInput
           value={envelope.budgeted}
+          figureSize={figureSizes.budgeted}
+          label={t('Orçado de {{name}}', { name: envelope.name })}
           onCommit={amount => onBudgetedChange(envelope.id, amount)}
         />
       ) : (
-        <Amount value={envelope.budgeted} muted />
+        <Amount
+          value={envelope.budgeted}
+          figureSize={figureSizes.budgeted}
+          muted
+        />
       )}
-      <Amount value={envelope.spent} muted />
+      <Amount value={envelope.spent} figureSize={figureSizes.spent} muted />
       {/* Semantic, not per-category: what is left is the one figure whose sign
           matters, so it is the one figure allowed to be green or red. */}
       <Amount
         value={remaining}
+        figureSize={figureSizes.available}
         color={
           remaining > 0
             ? 'var(--dfl-positive)'
@@ -274,10 +323,12 @@ function Row({
  */
 function Amount({
   value,
+  figureSize,
   muted = false,
   color,
 }: {
   value: number;
+  figureSize: string;
   muted?: boolean;
   color?: string;
 }) {
@@ -290,11 +341,21 @@ function Amount({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        gap: 3,
+        gap: AMOUNT_GAP,
         padding: '4px 8px',
+        // The cell's width is what its line is fitted to.
+        containerType: 'inline-size',
       }}
     >
-      <Text style={{ fontSize: 14.5, fontWeight: 600, color: tone }}>R$</Text>
+      <Text
+        style={{
+          fontSize: [`${AMOUNT_SIZE}px`, figureSize],
+          fontWeight: 600,
+          color: tone,
+        }}
+      >
+        {AMOUNT_SYMBOL}
+      </Text>
       <FinancialText
         style={{
           /* Grows to fill the cell so the symbol stays pinned left and the
@@ -302,9 +363,9 @@ function Amount({
              uses, which is what makes all three line up. */
           flex: '1 1 0',
           minWidth: 0,
-          fontSize: 14.5,
+          fontSize: [`${AMOUNT_SIZE}px`, figureSize],
           fontWeight: 600,
-          letterSpacing: -0.2,
+          letterSpacing: AMOUNT_TRACKING,
           textAlign: 'right',
           whiteSpace: 'nowrap',
           color: tone,
@@ -338,12 +399,21 @@ const BUDGETED_FACE_PRIVATE = css({
  * the read-only amount beside it, and only reveals itself on focus. The plan is
  * something you adjust in place, and a row of boxes would turn the panel back
  * into the spreadsheet this design replaced.
+ *
+ * It looks like a figure and is announced as a field: thirteen of these in a
+ * column were thirteen fields named nothing, which left a screen reader's user
+ * to count rows to know whose plan they were about to change.
  */
 function BudgetedInput({
   value,
+  figureSize,
+  label,
   onCommit,
 }: {
   value: number;
+  figureSize: string;
+  /** The field's name: which envelope's plan this is. */
+  label: string;
   onCommit: (amount: number) => void;
 }) {
   const [draft, setDraft] = useState(() => toEditable(value));
@@ -375,20 +445,27 @@ function BudgetedInput({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        gap: 3,
+        gap: AMOUNT_GAP,
         borderRadius: 8,
         padding: '4px 8px',
         background: isEditing ? 'rgba(6, 10, 18, 0.85)' : 'transparent',
         border: `1px solid ${isEditing ? 'var(--dfl-blue)' : 'transparent'}`,
+        // The cell's width is what its line is fitted to.
+        containerType: 'inline-size',
       }}
     >
       <Text
-        style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--dfl-text-2)' }}
+        style={{
+          fontSize: [`${AMOUNT_SIZE}px`, figureSize],
+          fontWeight: 600,
+          color: 'var(--dfl-text-2)',
+        }}
       >
-        R$
+        {AMOUNT_SYMBOL}
       </Text>
       <input
         value={draft}
+        aria-label={label}
         inputMode="decimal"
         className={
           isPrivate && !isNarrowWidth ? BUDGETED_FACE_PRIVATE : BUDGETED_FACE
@@ -412,12 +489,12 @@ function BudgetedInput({
         style={{
           flex: '1 1 0',
           minWidth: 0,
-          fontSize: 14.5,
+          fontSize: figureSize,
           // Pinned to what the app's face gives this size, so the field keeps
           // its height when privacy mode draws it in the redaction face.
           lineHeight: '17px',
           fontWeight: 600,
-          letterSpacing: -0.2,
+          letterSpacing: AMOUNT_TRACKING,
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',
           color: 'var(--dfl-text-2)',

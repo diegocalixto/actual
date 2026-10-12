@@ -13,7 +13,12 @@ type SectionHeadingProps = {
   children: ReactNode;
 };
 
-/** A titled block: small caps eyebrow, optional trailing action, content. */
+/**
+ * A titled block: small caps eyebrow, optional trailing action, content.
+ *
+ * The eyebrow is drawn as a label and announced as a heading: it is what a
+ * screen reader's user moves between to cross the page a section at a time.
+ */
 export function SectionHeading({
   title,
   action,
@@ -32,7 +37,9 @@ export function SectionHeading({
           paddingRight: 2,
         }}
       >
-        <Text style={shellEyebrowStyle}>{title}</Text>
+        <Text role="heading" aria-level={2} style={shellEyebrowStyle}>
+          {title}
+        </Text>
         {action}
       </View>
       {children}

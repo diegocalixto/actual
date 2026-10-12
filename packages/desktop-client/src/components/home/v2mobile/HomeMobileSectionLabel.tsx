@@ -13,10 +13,13 @@ type HomeMobileSectionLabelProps = {
 /**
  * The line that names a section.
  *
- * It is a label, not a heading: small, letter-spaced and upper-cased, so it
- * organises the page without ever competing with the figures below it. The
- * trailing slot exists because every section here has one fact that belongs on
- * the title line rather than inside the panel.
+ * It is drawn as a label, not as a heading: small, letter-spaced and
+ * upper-cased, so it organises the page without ever competing with the
+ * figures below it. It is announced as a heading all the same — the page's
+ * title was its only one, which left a screen reader's user no way to move
+ * from one section to the next. The trailing slot exists because every section
+ * here has one fact that belongs on the title line rather than inside the
+ * panel.
  */
 export function HomeMobileSectionLabel({
   label,
@@ -34,6 +37,8 @@ export function HomeMobileSectionLabel({
       }}
     >
       <Text
+        role="heading"
+        aria-level={2}
         style={{
           fontSize: 13.5,
           fontWeight: 600,

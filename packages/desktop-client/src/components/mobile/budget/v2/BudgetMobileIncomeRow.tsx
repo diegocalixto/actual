@@ -21,6 +21,13 @@ import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
 import { useCategoryBudgetMenu } from './useCategoryBudgetMenu';
 
+/** The row's own padding, which the controls on it reach across. */
+const ROW_PADDING_Y = 10;
+const ROW_PADDING_X = 12;
+const ROW_GAP = 10;
+/** What a control answers a press with. Touch has no hover to do it. */
+const PRESSED = 'rgba(150, 180, 215, 0.1)';
+
 type BudgetMobileIncomeRowProps = {
   category: CategoryEntity;
   month: string;
@@ -93,8 +100,8 @@ export function BudgetMobileIncomeRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        padding: '10px 12px',
+        gap: ROW_GAP,
+        padding: `${ROW_PADDING_Y}px ${ROW_PADDING_X}px`,
         borderBottom: isLast ? 'none' : '1px solid var(--dfl-line)',
         opacity: isHidden ? 0.5 : undefined,
       }}
@@ -126,9 +133,13 @@ export function BudgetMobileIncomeRow({
           className={css({
             width: '100%',
             justifyContent: 'flex-start',
-            padding: '1px 2px',
+            // As tall as the row lets it be: all of it under an envelope
+            // budget, the upper half when a plan sits underneath.
+            padding: `${ROW_PADDING_Y + 2}px 2px ${isTracking ? 2 : ROW_PADDING_Y + 2}px`,
+            margin: `-${ROW_PADDING_Y + 1}px 0 -${isTracking ? 1 : ROW_PADDING_Y + 1}px`,
             borderRadius: 6,
             '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+            '&[data-pressed]': { backgroundColor: PRESSED },
           })}
         >
           <TextOneLine
@@ -154,9 +165,12 @@ export function BudgetMobileIncomeRow({
             })}
             className={css({
               alignSelf: 'flex-start',
-              padding: '1px 2px',
+              // The rest of the gap, and down to the row's other edge.
+              padding: `3px 2px ${ROW_PADDING_Y + 2}px`,
+              margin: `-2px 0 -${ROW_PADDING_Y + 1}px`,
               borderRadius: 6,
               '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+              '&[data-pressed]': { backgroundColor: PRESSED },
             })}
           >
             <FinancialText
@@ -185,10 +199,13 @@ export function BudgetMobileIncomeRow({
         }
         className={css({
           flexShrink: 0,
-          minHeight: 40,
-          padding: '2px 4px',
+          // The row's full height.
+          minHeight: 40 + 2 * ROW_PADDING_Y,
+          padding: `${ROW_PADDING_Y + 2}px 4px`,
+          margin: `-${ROW_PADDING_Y}px 0`,
           borderRadius: 8,
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+          '&[data-pressed]': { backgroundColor: PRESSED },
         })}
       >
         <View style={{ alignItems: 'flex-end' }}>
@@ -215,12 +232,18 @@ export function BudgetMobileIncomeRow({
           name: category.name,
         })}
         className={css({
+          // Above the amount beside it, whose padding this target overlaps.
+          position: 'relative',
           flexShrink: 0,
-          minHeight: 40,
-          padding: '2px 1px',
-          borderRadius: 999,
+          // The row's full height, and every point of width between the
+          // amount's ink and the card's edge.
+          minHeight: 40 + 2 * ROW_PADDING_Y,
+          padding: `${ROW_PADDING_Y + 2}px ${ROW_PADDING_X + 1}px ${ROW_PADDING_Y + 2}px ${ROW_GAP + 5}px`,
+          margin: `-${ROW_PADDING_Y}px -${ROW_PADDING_X}px -${ROW_PADDING_Y}px -${ROW_GAP + 4}px`,
+          borderRadius: 0,
           color: 'var(--dfl-text-3)',
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+          '&[data-pressed]': { backgroundColor: PRESSED },
         })}
       >
         <SvgCheveronRight width={15} height={15} />

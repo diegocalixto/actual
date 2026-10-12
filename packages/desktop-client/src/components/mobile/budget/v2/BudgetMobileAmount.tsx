@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Text } from '@actual-app/components/text';
+
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { formatCurrency, PENDING } from './budgetMobileMoney';
@@ -39,6 +41,10 @@ const WHOLE_CONTROL = {
  * every caller keeps its own type, size and colour.
  *
  * The em dash of a cell that is still loading is not money and is left as is.
+ *
+ * An amount is one word. Where the phrase around it is allowed to take a
+ * second line, it breaks before the amount and never between the symbol and
+ * the digits.
  */
 export function BudgetMobileAmount({
   value,
@@ -49,8 +55,10 @@ export function BudgetMobileAmount({
   }
 
   return (
-    <PrivacyFilter style={ownsControl ? WHOLE_CONTROL : undefined}>
-      {formatCurrency(value)}
-    </PrivacyFilter>
+    <Text style={{ whiteSpace: 'nowrap' }}>
+      <PrivacyFilter style={ownsControl ? WHOLE_CONTROL : undefined}>
+        {formatCurrency(value)}
+      </PrivacyFilter>
+    </Text>
   );
 }

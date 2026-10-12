@@ -26,6 +26,13 @@ export const budgetLayout = {
   stackGap: 14,
   /** The bar the page draws for itself, in place of the shared mobile header. */
   topBarHeight: 58,
+  /**
+   * The side a control gets under a finger: the 44pt iOS asks of a touch
+   * target. Where a control is drawn smaller than this, its box is grown with
+   * padding and pulled back with an equal negative margin, so the target grows
+   * and nothing on screen moves.
+   */
+  touchTarget: 44,
 };
 
 /**

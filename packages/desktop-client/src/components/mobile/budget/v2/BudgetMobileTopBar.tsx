@@ -26,6 +26,18 @@ import { budgetLayout, chromeCanvas, chromeLine } from './BudgetMobileStyle';
  */
 const SAFE_AREA_TOP = 'env(safe-area-inset-top, 0px)';
 
+/** What a control answers a pointer with: a rest, and a press. */
+const HOVERED = 'rgba(150, 180, 215, 0.06)';
+const PRESSED = 'rgba(150, 180, 215, 0.12)';
+
+/**
+ * How far the month's target reaches past its one line of type: up over the
+ * title, down to the bar's edge. Together with the line they make the 44pt a
+ * finger needs.
+ */
+const MONTH_REACH_UP = 18;
+const MONTH_REACH_DOWN = 12;
+
 type BudgetMobileTopBarProps = {
   /** `YYYY-MM`. */
   month: string;
@@ -59,6 +71,12 @@ type BudgetMobileTopBarProps = {
  * important thing on the screen — every figure below is a figure *for* this
  * month — but putting it on the title line would make the two compete and force
  * the arrows to shrink below a usable target.
+ *
+ * Every control here is a full touch target. The icons are drawn where they
+ * always were; what grew is the box around each one, which now meets its
+ * neighbour instead of leaving a strip between them that did nothing. The
+ * month is one line of small type, so its target reaches up over the title —
+ * which is not a control — and down to the bar's edge.
  */
 export function BudgetMobileTopBar({
   month,
@@ -76,14 +94,14 @@ export function BudgetMobileTopBar({
   const isCurrentMonth = monthUtils.isCurrentMonth(month);
 
   const roundButton = css({
-    width: 38,
-    height: 40,
+    width: budgetLayout.touchTarget,
+    height: budgetLayout.touchTarget,
     flexShrink: 0,
     padding: 0,
     borderRadius: 999,
     color: 'var(--dfl-text-2)',
-    '&[data-hovered]': { backgroundColor: 'rgba(150, 180, 215, 0.06)' },
-    '&[data-pressed]': { backgroundColor: 'rgba(150, 180, 215, 0.12)' },
+    '&[data-hovered]': { backgroundColor: HOVERED },
+    '&[data-pressed]': { backgroundColor: PRESSED },
   });
 
   return (
@@ -92,11 +110,12 @@ export function BudgetMobileTopBar({
         flexShrink: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 2,
         height: `calc(${budgetLayout.topBarHeight}px + ${SAFE_AREA_TOP})`,
         paddingTop: SAFE_AREA_TOP,
-        paddingLeft: 10,
-        paddingRight: 10,
+        // The targets meet edge to edge, and the gutter gives back what the
+        // outer two gained, so the mark and the eye stay where they were.
+        paddingLeft: 6,
+        paddingRight: 6,
         backgroundColor: chromeCanvas,
         borderBottom: `1px solid ${chromeLine}`,
       }}
@@ -107,9 +126,12 @@ export function BudgetMobileTopBar({
         aria-label={t('Menu da página de orçamento')}
         className={css({
           flexShrink: 0,
-          padding: 4,
+          width: budgetLayout.touchTarget,
+          height: budgetLayout.touchTarget,
+          padding: 0,
           borderRadius: 999,
-          '&[data-hovered]': { backgroundColor: 'rgba(150, 180, 215, 0.06)' },
+          '&[data-hovered]': { backgroundColor: HOVERED },
+          '&[data-pressed]': { backgroundColor: PRESSED },
         })}
       >
         <BrandMark size={28} />
@@ -149,9 +171,11 @@ export function BudgetMobileTopBar({
           onPress={() => onOpenMonthMenu(month)}
           aria-label={t('Ações do mês')}
           className={css({
-            padding: '0 6px',
-            borderRadius: 6,
-            '&[data-hovered]': { backgroundColor: 'rgba(150, 180, 215, 0.06)' },
+            padding: `${MONTH_REACH_UP}px 14px ${MONTH_REACH_DOWN}px`,
+            margin: `-${MONTH_REACH_UP}px 0 -${MONTH_REACH_DOWN}px`,
+            borderRadius: 10,
+            '&[data-hovered]': { backgroundColor: HOVERED },
+            '&[data-pressed]': { backgroundColor: PRESSED },
           })}
         >
           <Text

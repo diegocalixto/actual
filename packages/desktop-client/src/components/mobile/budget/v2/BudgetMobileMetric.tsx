@@ -10,10 +10,18 @@ import type { EntityIcon } from '#components/v2lab/LabStyle';
 import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileProgress } from './BudgetMobileProgress';
 
+/** The tracking the three figures are set with, which their fit accounts for. */
+export const METRIC_FIGURE_TRACKING = -0.3;
+
 type BudgetMobileMetricProps = {
   label: ReactNode;
   /** Integer minor units, or `null` while the cell is still resolving. */
   value: number | null;
+  /**
+   * The size the figure is set at, decided by the row: the three tiles share
+   * one, fitted to the longest of their figures.
+   */
+  figureSize: string;
   Icon: EntityIcon;
   tone: string;
   /** How full this figure is relative to its own reference, 0–100. */
@@ -31,6 +39,7 @@ type BudgetMobileMetricProps = {
 export function BudgetMobileMetric({
   label,
   value,
+  figureSize,
   Icon,
   tone,
   percent,
@@ -42,6 +51,8 @@ export function BudgetMobileMetric({
         minWidth: 0,
         gap: 7,
         padding: '11px 8px 10px',
+        // The tile's own width is what its figure is fitted to.
+        containerType: 'inline-size',
         borderRadius: 'var(--dfmb-radius-sm)',
         border: '1px solid var(--dfl-line-strong)',
         backgroundColor: 'var(--dfl-surface)',
@@ -75,9 +86,9 @@ export function BudgetMobileMetric({
 
       <FinancialText
         style={{
-          fontSize: 'clamp(12px, 3.5vw, 14.5px)',
+          fontSize: figureSize,
           fontWeight: 700,
-          letterSpacing: -0.3,
+          letterSpacing: METRIC_FIGURE_TRACKING,
           whiteSpace: 'nowrap',
           color: 'var(--dfl-text)',
         }}

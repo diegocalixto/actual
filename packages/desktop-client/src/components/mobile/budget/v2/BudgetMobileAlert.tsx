@@ -87,6 +87,7 @@ export function BudgetMobileAlert({
           aria-label={action.ariaLabel}
           onPress={action.onPress}
           className={css({
+            position: 'relative',
             flexShrink: 0,
             padding: '7px 12px',
             borderRadius: 999,
@@ -95,9 +96,22 @@ export function BudgetMobileAlert({
             color: 'var(--dfmb-action)',
             fontSize: 12.5,
             fontWeight: 600,
+            // The pill is drawn 31pt tall, and its outline is what says so, so
+            // it cannot simply be made taller. The target reaches past the
+            // outline instead, into the banner's own padding.
+            overflow: 'visible',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: '-8px -6px',
+            },
             '&[data-hovered]': {
               backgroundColor:
                 'color-mix(in srgb, var(--dfl-violet) 12%, transparent)',
+            },
+            '&[data-pressed]': {
+              backgroundColor:
+                'color-mix(in srgb, var(--dfl-violet) 22%, transparent)',
             },
           })}
         >

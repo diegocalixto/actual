@@ -256,6 +256,79 @@ export class V2Shell {
     return previous;
   }
 
+  // ---- Layout ---------------------------------------------------------------
+
+  /**
+   * The amounts that are not wholly inside the boxes they are printed in.
+   *
+   * An amount that runs out of its tile, or is cut by the edge of its control,
+   * is a wrong amount on screen however right the cell behind it is. This
+   * reads where the ink of every figure falls and holds it against each box
+   * around it, up to the page's landmark — so it notices a figure that
+   * overflows whatever the reason, and says nothing of how a page keeps one
+   * in. What a box lets the reader scroll to is not out of it, and neither
+   * are the few points by which a line set on whole pixels differs from one
+   * that is not: every figure has more padding around it than that.
+   */
+  async figuresOutOfBounds(): Promise<string[]> {
+    return await this.main.first().evaluate(root => {
+      const MONEY =
+        /(?:\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?!\d)(?!\s?%)(?!\s?pp))|(?:R\$\s?-?\d)/;
+      const TOLERANCE = 3;
+      const out: string[] = [];
+
+      for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
+        if (el.tagName === 'STYLE' || el.tagName === 'SCRIPT') continue;
+
+        // A field cuts what does not fit, and scrolls it out of sight.
+        if (el instanceof HTMLInputElement) {
+          const hidden = el.scrollWidth - el.clientWidth;
+          if (MONEY.test(el.value) && hidden > TOLERANCE) {
+            out.push(`${el.value} (${Math.round(hidden)}px cut by its field)`);
+          }
+          continue;
+        }
+
+        let left = Infinity;
+        let right = -Infinity;
+        let text = '';
+        for (const node of Array.from(el.childNodes)) {
+          const own = (node.textContent ?? '').trim();
+          if (node.nodeType !== Node.TEXT_NODE || !own) continue;
+          text += (text ? ' ' : '') + own;
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          for (const box of Array.from(range.getClientRects())) {
+            if (box.width === 0) continue;
+            left = Math.min(left, box.left);
+            right = Math.max(right, box.right);
+          }
+        }
+        if (!MONEY.test(text) || left === Infinity) continue;
+
+        for (
+          let around: Element | null = el;
+          around && root.contains(around);
+          around = around.parentElement
+        ) {
+          const style = getComputedStyle(around);
+          if (style.display === 'inline' || style.display === 'contents') {
+            continue;
+          }
+          const box = around.getBoundingClientRect();
+          const past = Math.max(right - box.right, box.left - left);
+          if (past <= TOLERANCE) continue;
+          if (!/(auto|scroll)/.test(style.overflowX)) {
+            out.push(`${text} (${Math.round(past)}px out)`);
+          }
+          break;
+        }
+      }
+
+      return out;
+    });
+  }
+
   /**
    * Where a hidden amount sits on screen. Only one that stands alone: inside
    * a row or a button the second tap acts, which is another test's subject.

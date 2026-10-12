@@ -474,9 +474,17 @@ function Dot({ color, left, top, size, emphasised }: DotProps) {
   );
 }
 
+/** As wide as the amounts it was drawn with need, and this far from the cursor. */
+const TOOLTIP_WIDTH = 172;
+const TOOLTIP_OFFSET = 14;
+
 /**
  * The tooltip flips to the left of the cursor once past the middle, so it never
  * covers the part of the curve the pointer is asking about.
+ *
+ * It is as wide as it was drawn, and wider when a day's amounts need it: at a
+ * fixed width a result in the millions ran out of the box. The flip is taken
+ * from the box's own width for that reason, not from a number.
  */
 function ChartTooltip({ point, left }: { point: DayPoint; left: number }) {
   const flip = left > 58;
@@ -487,8 +495,12 @@ function ChartTooltip({ point, left }: { point: DayPoint; left: number }) {
         position: 'absolute',
         left: `${left}%`,
         top: 12,
-        marginLeft: flip ? -186 : 14,
-        width: 172,
+        marginLeft: flip ? 0 : TOOLTIP_OFFSET,
+        transform: flip
+          ? `translateX(calc(-100% - ${TOOLTIP_OFFSET}px))`
+          : undefined,
+        width: 'max-content',
+        minWidth: TOOLTIP_WIDTH,
         padding: '11px 13px',
         gap: 9,
         borderRadius: 'var(--dfl-radius-sm)',

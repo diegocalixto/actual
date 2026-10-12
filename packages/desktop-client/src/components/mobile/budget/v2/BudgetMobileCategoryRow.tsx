@@ -34,6 +34,13 @@ import { toneFor } from './budgetMobileTone';
 import { useCategoryBalanceMenu } from './useCategoryBalanceMenu';
 import { useCategoryBudgetMenu } from './useCategoryBudgetMenu';
 
+/** The row's own padding, which the controls on it reach across. */
+const ROW_PADDING_Y = 9;
+const ROW_PADDING_X = 12;
+const ROW_GAP = 8;
+/** What a control answers a press with. Touch has no hover to do it. */
+const PRESSED = 'rgba(150, 180, 215, 0.1)';
+
 type BudgetMobileCategoryRowProps = {
   category: CategoryEntity;
   month: string;
@@ -64,6 +71,16 @@ type BudgetMobileCategoryRowProps = {
  * category's transactions. Nothing here computes a financial figure — the four
  * cells are read from the budget engine and only combined into a percentage,
  * which is derived rather than stored so it can never disagree with them.
+ *
+ * Four controls share one row, and each was the size of its own ink: the name
+ * 19pt tall, the plan 15pt, the chevron 17pt wide, with strips between them
+ * that did nothing. A finger aimed at the plan opened the category's menu
+ * about as often as not. The row is now divided between the four with nothing
+ * left over — the name has its upper half, the plan its lower half, the
+ * balance and the chevron its full height — and what is drawn has not moved:
+ * each box is grown with padding and pulled back with an equal negative
+ * margin. A press tints the control that took it, which is the only way a
+ * phone can say which of the four that was.
  */
 export function BudgetMobileCategoryRow({
   category,
@@ -190,8 +207,8 @@ export function BudgetMobileCategoryRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        padding: '9px 12px',
+        gap: ROW_GAP,
+        padding: `${ROW_PADDING_Y}px ${ROW_PADDING_X}px`,
         borderBottom: isLast ? 'none' : '1px solid var(--dfl-line)',
         opacity: isHidden ? 0.5 : undefined,
       }}
@@ -246,9 +263,12 @@ export function BudgetMobileCategoryRow({
           className={css({
             width: '100%',
             justifyContent: 'flex-start',
-            padding: '1px 2px',
+            // Up to the row's edge, and down to its share of the gap.
+            padding: `${ROW_PADDING_Y + 2}px 2px 2px`,
+            margin: `-${ROW_PADDING_Y + 1}px 0 -1px`,
             borderRadius: 6,
             '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+            '&[data-pressed]': { backgroundColor: PRESSED },
           })}
         >
           <TextOneLine
@@ -271,20 +291,30 @@ export function BudgetMobileCategoryRow({
           aria-label={planLabel}
           className={css({
             width: '100%',
-            padding: '2px 2px',
+            // The rest of the gap, and down to the row's other edge.
+            padding: `4px 2px ${ROW_PADDING_Y + 3}px`,
+            margin: `-2px 0 -${ROW_PADDING_Y + 1}px`,
             borderRadius: 6,
             '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+            '&[data-pressed]': { backgroundColor: PRESSED },
           })}
         >
+          {/* The bar and the phrase share a line while both fit. When the
+              amounts are long they do not, and the phrase used to be cut by
+              the control's edge — "Orçado R$ 1.2" for a plan of R$ 1.234.567,89.
+              It now takes the next line whole, and the bar keeps its own. */}
           <View
             style={{
               width: '100%',
               flexDirection: 'row',
+              flexWrap: 'wrap',
               alignItems: 'center',
-              gap: 5,
+              justifyContent: 'flex-end',
+              columnGap: 5,
+              rowGap: 3,
             }}
           >
-            <View style={{ flex: 1, minWidth: 20 }}>
+            <View style={{ flex: '1 1 20px', minWidth: 20 }}>
               <BudgetMobileProgress percent={percent} tone={tone} />
             </View>
             {/* The plan rides with the percentage instead of holding a column
@@ -298,10 +328,12 @@ export function BudgetMobileCategoryRow({
                 unlabelled one is a number to be guessed at. */}
             <FinancialText
               style={{
-                flexShrink: 0,
+                flex: '0 1 auto',
+                minWidth: 0,
+                maxWidth: '100%',
                 fontSize: 'clamp(8px, 2.2vw, 11px)',
                 fontWeight: 600,
-                whiteSpace: 'nowrap',
+                textAlign: 'right',
                 color: tone,
               }}
             >
@@ -320,10 +352,13 @@ export function BudgetMobileCategoryRow({
         className={css({
           position: 'relative',
           flexShrink: 0,
-          minHeight: 40,
-          padding: '2px 4px',
+          // The row's full height.
+          minHeight: 40 + 2 * ROW_PADDING_Y,
+          padding: `${ROW_PADDING_Y + 2}px 4px`,
+          margin: `-${ROW_PADDING_Y}px 0`,
           borderRadius: 8,
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+          '&[data-pressed]': { backgroundColor: PRESSED },
         })}
       >
         <View style={{ alignItems: 'flex-end' }}>
@@ -349,7 +384,7 @@ export function BudgetMobileCategoryRow({
             style={{
               position: 'absolute',
               right: -2,
-              top: 0,
+              top: ROW_PADDING_Y,
               borderRadius: '50%',
               color: tone,
             }}
@@ -366,12 +401,19 @@ export function BudgetMobileCategoryRow({
           name: category.name,
         })}
         className={css({
+          // Above the amount beside it, whose padding this target overlaps.
+          position: 'relative',
           flexShrink: 0,
-          minHeight: 40,
-          padding: '2px 1px',
-          borderRadius: 999,
+          // The row's full height, and every point of width between the
+          // balance's ink and the card's edge: the gap, and the padding on
+          // either side of it.
+          minHeight: 40 + 2 * ROW_PADDING_Y,
+          padding: `${ROW_PADDING_Y + 2}px ${ROW_PADDING_X + 1}px ${ROW_PADDING_Y + 2}px ${ROW_GAP + 5}px`,
+          margin: `-${ROW_PADDING_Y}px -${ROW_PADDING_X}px -${ROW_PADDING_Y}px -${ROW_GAP + 4}px`,
+          borderRadius: 0,
           color: 'var(--dfl-text-3)',
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+          '&[data-pressed]': { backgroundColor: PRESSED },
         })}
       >
         <SvgCheveronRight width={15} height={15} />

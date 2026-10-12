@@ -8,6 +8,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
+import { fittedFontSize } from './amountFit';
 import { formatMoney } from './labMoney';
 import { LabPanel } from './LabPanel';
 import type { LabMonthTotals } from './overviewFixtures';
@@ -16,8 +17,18 @@ type LabMonthSummaryProps = {
   totals: LabMonthTotals;
 };
 
-/** Money in, money out, and the month's verdict. */
+const FIGURE_TRACKING = -0.5;
+
+/**
+ * Money in, money out, and the month's verdict.
+ *
+ * Each figure has a third of the panel. That is ample for the month the design
+ * was drawn with and not for one in the millions, which ran past its hairline;
+ * the three now give up size together, to what the longest of them fits at.
+ */
 export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
+  const figures = [totals.income, totals.spent, totals.net].map(formatMoney);
+
   return (
     <LabPanel>
       <View
@@ -30,18 +41,21 @@ export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
         <Cell
           label={<Trans>Money in</Trans>}
           value={totals.income}
+          figures={figures}
           color="var(--dfl-positive)"
         />
         <Divider />
         <Cell
           label={<Trans>Money out</Trans>}
           value={totals.spent}
+          figures={figures}
           color="var(--dfl-negative)"
         />
         <Divider />
         <Cell
           label={<Trans>Monthly net</Trans>}
           value={totals.net}
+          figures={figures}
           // The verdict is the one figure whose sign is a judgement.
           color={
             totals.net > 0
@@ -60,11 +74,15 @@ export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
 type CellProps = {
   label: ReactNode;
   value: number;
+  /** The three figures of the panel, which share the fit of the longest. */
+  figures: string[];
   color: string;
   emphasized?: boolean;
 };
 
-function Cell({ label, value, color, emphasized = false }: CellProps) {
+function Cell({ label, value, figures, color, emphasized = false }: CellProps) {
+  const designSize = `${emphasized ? 24 : 22}px`;
+
   return (
     // `flex-end` keeps the three amounts on one baseline even if a label wraps.
     <View
@@ -74,6 +92,8 @@ function Cell({ label, value, color, emphasized = false }: CellProps) {
         padding: '0 16px',
         gap: 8,
         justifyContent: 'flex-end',
+        // The cell's width is what its figure is fitted to.
+        containerType: 'inline-size',
       }}
     >
       <Text
@@ -89,10 +109,19 @@ function Cell({ label, value, color, emphasized = false }: CellProps) {
       </Text>
       <FinancialText
         style={{
-          fontSize: emphasized ? 24 : 22,
+          fontSize: [
+            designSize,
+            fittedFontSize({
+              designSize,
+              room: '100cqi',
+              floor: '13px',
+              letterSpacing: FIGURE_TRACKING,
+              figures,
+            }),
+          ],
           fontWeight: emphasized ? 700 : 600,
           lineHeight: 1.1,
-          letterSpacing: -0.5,
+          letterSpacing: FIGURE_TRACKING,
           color,
           whiteSpace: 'nowrap',
         }}

@@ -16,7 +16,7 @@ import { useNavigate } from '#hooks/useNavigate';
 
 import { MoreMenu } from './MoreMenu';
 import type { NavItem } from './navigation';
-import { isNavItemActive, usePrimaryNav } from './navigation';
+import { isNavItemActive, usePrimaryNav, useSecondaryNav } from './navigation';
 import { shellColors, shellRadius } from './shellTheme';
 
 /**
@@ -77,6 +77,7 @@ export function AppBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const primary = usePrimaryNav();
+  const secondary = useSecondaryNav();
   const barLabels = useBarLabels();
 
   if (!isNarrowWidth) {
@@ -87,6 +88,13 @@ export function AppBottomNav() {
   // reading a report is a desk activity, and the centre slot is worth more to
   // the action a person opens the app on the bus to perform.
   const [overview, budget, accounts, reports] = primary;
+
+  // On a page that lives behind "Mais" — Reports, Settings, Payees — no tab
+  // was lit, and the bar stopped saying where the reader was. "Mais" is lit
+  // for those, as the tab that holds them.
+  const isBehindMore = [reports, ...secondary].some(item =>
+    isNavItemActive(item, location.pathname),
+  );
 
   return (
     <View
@@ -161,7 +169,7 @@ export function AppBottomNav() {
             aria-label={t('Mais')}
             aria-expanded={isOpen}
             onPress={onPress}
-            className={tabClass(isOpen)}
+            className={tabClass(isOpen || isBehindMore)}
           >
             <View style={{ alignItems: 'center', gap: 4 }}>
               <SvgDotsHorizontalTriple width={20} height={20} />

@@ -689,10 +689,16 @@ function UncategorizedTransactionsBanner(props) {
       <BudgetMobileAlert
         tone="watch"
         Icon={SvgExclamationOutline}
+        // The plural is the sentence as written; one of something gets its
+        // own, so the banner never reads "1 transações".
         title={
-          <Trans count={transactions.length}>
-            Você tem {{ count: transactions.length }} transações sem categoria
-          </Trans>
+          transactions.length === 1 ? (
+            <Trans>Você tem 1 transação sem categoria</Trans>
+          ) : (
+            <Trans count={transactions.length}>
+              Você tem {{ count: transactions.length }} transações sem categoria
+            </Trans>
+          )
         }
         detail={
           <FinancialText style={{ fontSize: 11.5, color: 'var(--dfmb-label)' }}>
@@ -919,11 +925,16 @@ function OverspendingBanner({ month, onBudgetAction, budgetType, ...props }) {
       <BudgetMobileAlert
         tone="critical"
         Icon={SvgExclamationOutline}
+        // As above: one category "passou", several "passaram".
         title={
-          <Trans count={numberOfOverspentCategories}>
-            {{ count: numberOfOverspentCategories }} categorias passaram do
-            orçado
-          </Trans>
+          numberOfOverspentCategories === 1 ? (
+            <Trans>1 categoria passou do orçado</Trans>
+          ) : (
+            <Trans count={numberOfOverspentCategories}>
+              {{ count: numberOfOverspentCategories }} categorias passaram do
+              orçado
+            </Trans>
+          )
         }
         detail={
           <FinancialText style={{ fontSize: 11.5, color: 'var(--dfmb-label)' }}>

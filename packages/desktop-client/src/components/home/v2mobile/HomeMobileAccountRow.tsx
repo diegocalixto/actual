@@ -53,8 +53,15 @@ export function HomeMobileAccountRow({
   // On-budget money is spendable and reads in the positive colour; off-budget
   // money is not, so it reads in plain text — painting it green too would tell
   // the reader it is available when the group header has just said it is not.
-  const balanceColor =
-    kind === 'onBudget' ? 'var(--dfl-positive)' : 'var(--dfl-text)';
+  // A balance below zero is neither: an overdrawn account drawn in green said
+  // the opposite of what it meant, so it takes the negative tone in both
+  // groups, as the same account does on the Accounts page.
+  const isNegative = balance !== null && balance < 0;
+  const balanceColor = isNegative
+    ? 'var(--dfl-negative)'
+    : kind === 'onBudget'
+      ? 'var(--dfl-positive)'
+      : 'var(--dfl-text)';
 
   return (
     <Button
@@ -109,15 +116,23 @@ export function HomeMobileAccountRow({
             gap: 4,
           }}
         >
+          {/* The minus leads, ahead of the symbol — "-R$ 312.500,00" — as it
+              does on every other figure of this page and on the Accounts
+              page. Left with the digits it read "R$ -312.500,00". */}
           {balance !== null && (
             <Text
-              style={{ fontSize: 12.5, fontWeight: 600, color: balanceColor }}
+              style={{
+                fontSize: 12.5,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                color: balanceColor,
+              }}
             >
-              {CURRENCY}
+              {isNegative ? `-${CURRENCY}` : CURRENCY}
             </Text>
           )}
           <HomeMobileMoney
-            value={balance}
+            value={balance === null ? null : Math.abs(balance)}
             style={{
               fontSize: 15,
               fontWeight: 600,

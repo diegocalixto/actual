@@ -8,6 +8,7 @@ import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { fittedFontSize } from '#components/v2lab/LabStyle';
 
 import { ChangeChip } from './ChangeChip';
 import { CardHeading, LabCard } from './LabCard';
@@ -40,11 +41,25 @@ type ReportsMonthlyComparisonProps = {
  * three, not a single month-over-month step: one quiet month would otherwise
  * read as a collapse. Each sparkline is the same six closes the average is
  * taken from, so the shape and the number cannot disagree.
+ *
+ * The three averages are one size: the design's, or the size the longest of
+ * them still fits its third of the card at. In a 1280px window that third is
+ * under 100px, and a six-digit average ran into the block beside it.
  */
 export function ReportsMonthlyComparison({
   monthly,
   monthCount,
 }: ReportsMonthlyComparisonProps) {
+  const valueSize = fittedFontSize({
+    designSize: `${VALUE_SIZE}px`,
+    room: '100cqi',
+    floor: '11px',
+    letterSpacing: VALUE_TRACKING,
+    figures: [monthly.income, monthly.expenses, monthly.net].map(comparison =>
+      formatBRL(comparison.average),
+    ),
+  });
+
   return (
     <LabCard>
       <View style={{ padding: '16px 20px 14px', gap: 13 }}>
@@ -61,6 +76,7 @@ export function ReportsMonthlyComparison({
           <Block
             label={<Trans>Income (avg)</Trans>}
             data={monthly.income}
+            valueSize={valueSize}
             color={SERIES.income}
             isGoodWhenUp
           />
@@ -68,6 +84,7 @@ export function ReportsMonthlyComparison({
           <Block
             label={<Trans>Expenses (avg)</Trans>}
             data={monthly.expenses}
+            valueSize={valueSize}
             color={SERIES.expenses}
             isGoodWhenUp={false}
             tintValue
@@ -76,6 +93,7 @@ export function ReportsMonthlyComparison({
           <Block
             label={<Trans>Net Result (avg)</Trans>}
             data={monthly.net}
+            valueSize={valueSize}
             color={SERIES.net}
             isGoodWhenUp
           />
@@ -102,15 +120,27 @@ function Divider() {
   );
 }
 
+const VALUE_SIZE = 16.5;
+const VALUE_TRACKING = -0.4;
+
 type BlockProps = {
   label: ReactNode;
   data: Comparison;
+  /** The size the three averages share, fitted to the longest of them. */
+  valueSize: string;
   color: string;
   isGoodWhenUp: boolean;
   tintValue?: boolean;
 };
 
-function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
+function Block({
+  label,
+  data,
+  valueSize,
+  color,
+  isGoodWhenUp,
+  tintValue,
+}: BlockProps) {
   const isUp = (data.change ?? 0) >= 0;
 
   return (
@@ -120,7 +150,8 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
         minWidth: 0,
         gap: 9,
         padding: '0 14px',
-        // Its own width is what decides how the last line below is laid out.
+        // Its own width is what decides how the last line below is laid out,
+        // and what the average above it is fitted to.
         containerType: 'inline-size',
       }}
     >
@@ -136,9 +167,9 @@ function Block({ label, data, color, isGoodWhenUp, tintValue }: BlockProps) {
 
       <FinancialText
         style={{
-          fontSize: 16.5,
+          fontSize: [`${VALUE_SIZE}px`, valueSize],
           fontWeight: 600,
-          letterSpacing: -0.4,
+          letterSpacing: VALUE_TRACKING,
           whiteSpace: 'nowrap',
           color: tintValue ? color : '#ffffff',
         }}

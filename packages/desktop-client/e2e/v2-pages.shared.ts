@@ -8,7 +8,9 @@
  * 428×926 with touch. It asserts what a person relies on rather than how a
  * page is built: that the navigation reaches each page, that the accounts,
  * categories and indicators of the test file are on it, that the balances add
- * up, and that privacy mode leaves no amount readable.
+ * up, that privacy mode leaves no amount readable, that a control is large
+ * enough for the finger it is meant for, and that an amount is printed whole
+ * however long it is.
  */
 import type { Page } from '@playwright/test';
 
@@ -57,6 +59,19 @@ const VIEWPORTS = {
   },
 };
 
+/**
+ * The second window each layout is used in. Nothing about a page may depend on
+ * the first being the only one: a figure that fits a 428pt phone has to fit a
+ * 390pt one.
+ */
+const NARROWER = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 390, height: 844 },
+};
+
+/** The smallest side iOS asks of something a finger has to hit. */
+const TOUCH_TARGET = 44;
+
 /** A figure that has arrived: digits, a comma and two decimals. */
 const AMOUNT = /\d,\d{2}$/;
 
@@ -73,7 +88,9 @@ function toCents(text: string) {
  * Read-only by design: every test looks, navigates or flips a display
  * preference, so the whole group shares one page and one test file instead of
  * building a file per test. A failure stops the group, and a retry builds a
- * fresh file.
+ * fresh file. The one test that writes — it plans a category in the millions
+ * to see the amount printed whole — is the last, so nothing reads the file
+ * after it.
  */
 export function describeV2Pages(layout: V2Layout) {
   test.describe(`V2 pages (${layout})`, () => {
@@ -156,6 +173,30 @@ export function describeV2Pages(layout: V2Layout) {
           ).toBeVisible();
         }
       } else {
+        // The phone's sections are headings too: a title is not the only
+        // place a screen reader's user can jump to.
+        for (const section of [
+          'Este mês',
+          'Contas',
+          'Evolução do saldo',
+          'Atividade recente',
+        ]) {
+          await expect(
+            shell.main.getByRole('heading', {
+              level: 2,
+              name: section,
+              exact: true,
+            }),
+          ).toBeVisible();
+        }
+        // An account below zero is written as the Accounts page writes it:
+        // the minus ahead of the symbol, never "R$ -312.500,00".
+        await expect(
+          shell.main.getByRole('button', {
+            name: 'Ver transações de Mortgage',
+          }),
+        ).toHaveText(/-R\$\s?312\.500,00/);
+
         // On the phone the balance card is also the way into the budget.
         await page.getByRole('button', { name: 'Abrir o orçamento' }).click();
         await shell.waitForPage('budget');
@@ -175,10 +216,18 @@ export function describeV2Pages(layout: V2Layout) {
       expect(names).toEqual(expect.arrayContaining(EXPENSE_CATEGORIES));
 
       if (layout === 'desktop') {
-        // One editable plan per expense category.
+        // One editable plan per expense category, each named for its own.
         await expect(shell.main.getByRole('textbox')).toHaveCount(
           EXPENSE_CATEGORIES.length,
         );
+        for (const category of EXPENSE_CATEGORIES) {
+          await expect(
+            shell.main.getByRole('textbox', {
+              name: `Orçado de ${category}`,
+              exact: true,
+            }),
+          ).toHaveCount(1);
+        }
       } else {
         await expect(shell.main.getByTestId('category-group-name')).toHaveText([
           'Usual Expenses',
@@ -375,6 +424,110 @@ export function describeV2Pages(layout: V2Layout) {
 
       await page.locator('[data-e2e-leak]').evaluate(leak => leak.remove());
       expect((await shell.figures()).readable).toEqual([]);
+    });
+
+    if (layout === 'mobile') {
+      test('the Budget and the menu give a finger something to hit', async () => {
+        await shell.goTo('budget');
+
+        const sizeOf = async (name: string | RegExp) => {
+          const control = page.getByRole('button', { name }).first();
+          await control.scrollIntoViewIfNeeded();
+          const box = await control.boundingBox();
+          if (!box) {
+            throw new Error(`No control named ${String(name)} on screen.`);
+          }
+          return box;
+        };
+
+        // The bar, a group's line, and the two controls that span a row.
+        for (const name of [
+          'Menu da página de orçamento',
+          'Mês anterior',
+          'Ações do mês',
+          'Próximo mês',
+          'Ocultar valores',
+          'Abrir menu do grupo Usual Expenses',
+          'Recolher ou expandir o grupo Usual Expenses',
+          'Abrir menu de saldo de Food',
+        ]) {
+          const box = await sizeOf(name);
+          expect(box.height, name).toBeGreaterThanOrEqual(TOUCH_TARGET);
+          expect(box.width, name).toBeGreaterThanOrEqual(TOUCH_TARGET);
+        }
+
+        // A row is 58pt tall and holds two controls one above the other, so
+        // each has half of it; and its chevron has every point of width the
+        // row can give it without moving the balance.
+        const name = await sizeOf('Abrir menu da categoria Food');
+        const plan = await sizeOf(/^Editar o orçamento de Food/);
+        const chevron = await sizeOf('Ver as transações de Food');
+        expect(name.height).toBeGreaterThanOrEqual(28);
+        expect(plan.height).toBeGreaterThanOrEqual(24);
+        expect(chevron.width).toBeGreaterThanOrEqual(40);
+        expect(chevron.height).toBeGreaterThanOrEqual(TOUCH_TARGET);
+        // Nothing is left between the two that a finger could land on.
+        expect(plan.y - (name.y + name.height)).toBeLessThanOrEqual(0.5);
+
+        // Everything "Mais" holds is a row of the same height.
+        await shell.navigation.getByRole('button', { name: 'Mais' }).click();
+        const rows = page.getByRole('menu').getByRole('button');
+        await expect(rows.first()).toBeVisible();
+        for (const row of await rows.all()) {
+          const box = await row.boundingBox();
+          expect(box?.height).toBeGreaterThanOrEqual(TOUCH_TARGET);
+        }
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('menu')).toHaveCount(0);
+      });
+    }
+
+    test('an amount in the millions is still printed whole', async () => {
+      // The one test that writes. A plan of R$ 1.234.567,89 reaches the
+      // Budget's headline, its indicators, its group and its row, and the
+      // Home's line for what is left to distribute.
+      await shell.goTo('budget');
+      if (layout === 'desktop') {
+        const plan = shell.main.getByRole('textbox', {
+          name: 'Orçado de Food',
+          exact: true,
+        });
+        await plan.fill('1234567,89');
+        await plan.press('Enter');
+      } else {
+        // The phone's keypad fills from the cents up.
+        await page
+          .getByRole('button', { name: /^Editar o orçamento de Food/ })
+          .click();
+        const dialog = page.getByRole('dialog', { name: 'Modal dialog' });
+        const amount = dialog.getByTestId('amount-input');
+        await amount.fill('123456789');
+        await amount.blur();
+        await dialog
+          .getByRole('heading')
+          .getByRole('button', { name: 'Close' })
+          .click();
+        await expect(dialog).toHaveCount(0);
+      }
+      // The month's plan, with the new amount in it.
+      await expect(
+        shell.main.getByText(/1\.237\.197,89/).first(),
+      ).toBeVisible();
+
+      for (const viewport of [VIEWPORTS[layout].viewport, NARROWER[layout]]) {
+        await page.setViewportSize(viewport);
+
+        for (const name of V2_PAGES) {
+          await shell.goTo(name);
+          await shell.settledFigures();
+          expect(
+            await shell.figuresOutOfBounds(),
+            `${name} at ${viewport.width}×${viewport.height}`,
+          ).toEqual([]);
+        }
+      }
+
+      await page.setViewportSize(VIEWPORTS[layout].viewport);
     });
   });
 }
