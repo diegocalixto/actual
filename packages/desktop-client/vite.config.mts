@@ -345,6 +345,12 @@ export default defineConfig(async ({ mode, command }) => {
         ? undefined
         : VitePWA({
             registerType: 'prompt',
+            // The app ships its own manifest (public/site.webmanifest, linked
+            // from index.html). Left unset, the plugin also emits a default
+            // manifest.webmanifest named after the package and injects a
+            // second <link rel="manifest">, so which one an install flow
+            // reads would depend on the browser.
+            manifest: false,
             // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this
             // strategies: 'injectManifest',
             // srcDir: 'service-worker',
