@@ -41,7 +41,8 @@ export function FinancialInput({
 }: FinancialInputProps) {
   const format = useFormat();
   const privacyMode = usePrivacyMode();
-  // Like PrivacyFilter, redaction is desktop-only for now
+  // Desktop-only for now: the reveal here rests on hover and focus, and a
+  // phone has no hover to rest on
   const { isNarrowWidth } = useResponsive();
   const inputRef = useRef<HTMLInputElement>(null);
   const [internalValue, setInternalValue] = useState(() =>

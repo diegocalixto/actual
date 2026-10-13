@@ -14,7 +14,10 @@ export function FloatingActionBar({ style, children }: FloatingActionBarProps) {
         backgroundColor: theme.floatingActionBarBackground,
         color: theme.floatingActionBarText,
         position: 'fixed',
-        bottom: 10,
+        // Sits on its own above the page — the nav bar is not rendered on the
+        // screens that use it — so it has to clear the iOS home indicator by
+        // itself. The other fixed/pinned mobile bars already do.
+        bottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
         margin: '0 10px',
         width: '95vw',
         height: 60,

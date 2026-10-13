@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 import { MobileAccountPage } from './mobile-account-page';
@@ -12,133 +11,72 @@ import { MobileSchedulesPage } from './mobile-schedules-page';
 import { MobileTransactionEntryPage } from './mobile-transaction-entry-page';
 import { SettingsPage } from './settings-page';
 
-const NAVBAR_ROWS = 3;
-const NAV_LINKS_HIDDEN_BY_DEFAULT = [
-  'Reports',
-  'Schedules',
-  'Payees',
-  'Rules',
-  'Bank Sync',
-  'Settings',
-];
-const ROUTES_BY_PAGE = {
-  Budget: '/budget',
-  Accounts: '/accounts',
-  Transaction: '/transactions/new',
-  Reports: '/reports',
-  Schedules: '/schedules',
-  Payees: '/payees',
-  Rules: '/rules',
-  'Bank Sync': '/bank-sync',
-  Settings: '/settings',
-};
+/**
+ * Where each destination sits on the phone's bar: a tab with the bar's own
+ * label, the raised action in its centre, or an entry behind "Mais".
+ */
+const DESTINATIONS = {
+  Budget: { route: '/budget', tab: 'Orçamento' },
+  Accounts: { route: '/accounts', tab: 'Contas' },
+  Transaction: { route: '/transactions/new', action: 'New transaction' },
+  Reports: { route: '/reports', more: 'Reports' },
+  Schedules: { route: '/schedules', more: 'Schedules' },
+  Payees: { route: '/payees', more: 'Payees' },
+  Rules: { route: '/rules', more: 'Rules' },
+  'Bank Sync': { route: '/bank-sync', more: 'Bank Sync' },
+  Settings: { route: '/settings', more: 'Settings' },
+} satisfies Record<
+  string,
+  { route: string; tab?: string; action?: string; more?: string }
+>;
 
 export class MobileNavigation {
   readonly page: Page;
   readonly heading: Locator;
   readonly navbar: Locator;
-  readonly mainContentSelector: string;
-  readonly navbarSelector: string;
 
   constructor(page: Page) {
     this.page = page;
     this.heading = page.getByRole('heading');
     this.navbar = page.getByRole('navigation');
-    this.mainContentSelector = '[role=main]';
-    this.navbarSelector = '[role=navigation]';
-  }
-
-  async dragNavbarUp() {
-    const mainContentBoundingBox = await this.page
-      .locator(this.mainContentSelector)
-      .boundingBox();
-
-    if (!mainContentBoundingBox) {
-      throw new Error('Unable to get bounding box of main content.');
-    }
-
-    const navbarBoundingBox = await this.page
-      .locator(this.navbarSelector)
-      .boundingBox();
-
-    if (!navbarBoundingBox) {
-      throw new Error('Unable to get bounding box of navbar.');
-    }
-
-    await this.page.dragAndDrop(this.navbarSelector, this.mainContentSelector, {
-      sourcePosition: { x: 1, y: 0 },
-      targetPosition: {
-        x: 1,
-        y: mainContentBoundingBox.height - navbarBoundingBox.height,
-      },
-    });
-  }
-
-  async dragNavbarDown() {
-    const boundingBox = await this.page
-      .locator(this.navbarSelector)
-      .boundingBox();
-
-    if (!boundingBox) {
-      throw new Error('Unable to get bounding box of navbar.');
-    }
-
-    await this.page.dragAndDrop(this.navbarSelector, this.navbarSelector, {
-      sourcePosition: { x: 1, y: 0 },
-      targetPosition: {
-        x: 1,
-        // Only scroll until bottom of screen i.e. bottom of first navbar row.
-        y: boundingBox.height / NAVBAR_ROWS,
-      },
-    });
-
-    await expect(this.navbar).not.toHaveAttribute('data-navbar-state', 'open');
-  }
-
-  async hasNavbarState(...states: string[]) {
-    if ((await this.navbar.count()) === 0) {
-      // No navbar on page.
-      return false;
-    }
-
-    const dataNavbarState = await this.navbar.getAttribute('data-navbar-state');
-    if (!dataNavbarState) {
-      throw new Error('Navbar does not have data-navbar-state attribute.');
-    }
-    return states.includes(dataNavbarState);
   }
 
   async navigateToPage<T extends { waitFor: Locator['waitFor'] }>(
-    pageName: keyof typeof ROUTES_BY_PAGE,
+    pageName: keyof typeof DESTINATIONS,
     pageModelFactory: () => T,
   ): Promise<T> {
     const pageInstance = pageModelFactory();
+    const destination: {
+      route: string;
+      tab?: string;
+      action?: string;
+      more?: string;
+    } = DESTINATIONS[pageName];
 
-    if (this.page.url().endsWith(ROUTES_BY_PAGE[pageName])) {
+    if (this.page.url().endsWith(destination.route)) {
       // Already on the page.
       return pageInstance;
     }
 
     await this.navbar.waitFor();
 
-    const navbarStates = NAV_LINKS_HIDDEN_BY_DEFAULT.includes(pageName)
-      ? ['default', 'hidden']
-      : ['hidden'];
-
-    if (await this.hasNavbarState(...navbarStates)) {
-      await this.dragNavbarUp();
+    if (destination.tab) {
+      await this.navbar.getByRole('link', { name: destination.tab }).click();
+    } else if (destination.action) {
+      await this.navbar
+        .getByRole('button', { name: destination.action })
+        .click();
+    } else if (destination.more) {
+      // Everything the upstream sheet revealed by dragging is one tap away,
+      // behind the bar's last entry.
+      await this.navbar.getByRole('button', { name: 'Mais' }).click();
+      await this.page
+        .getByRole('menu')
+        .getByRole('button', { name: destination.more, exact: true })
+        .click();
     }
-
-    const link = this.navbar.getByRole('link', { name: pageName });
-    // Click via evaluate: the navbar uses react-spring transforms, so
-    // Playwright's viewport-stability check rejects mid-animation clicks.
-    await link.evaluate(el => (el as HTMLElement).click());
 
     await pageInstance.waitFor();
-
-    if (await this.hasNavbarState('open')) {
-      await this.dragNavbarDown();
-    }
 
     return pageInstance;
   }
@@ -158,7 +96,9 @@ export class MobileNavigation {
   }
 
   async goToUncategorizedPage() {
-    const button = this.page.getByRole('button', { name: 'Categorize' });
+    // "Categorize" upstream; the phone's budget names the same banner action
+    // "Categorizar transações sem categoria".
+    const button = this.page.getByRole('button', { name: /^Categoriz/ });
     await button.click();
 
     return new MobileAccountPage(this.page);

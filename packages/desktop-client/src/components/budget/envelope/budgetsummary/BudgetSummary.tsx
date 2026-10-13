@@ -270,7 +270,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
             <TotalsList
               prevMonthName={prevMonthName}
               style={{
-                padding: '5px 0',
+                padding: '5px 13px',
                 marginTop: 17,
                 backgroundColor: theme.budgetHeaderCurrentMonth,
                 borderTopWidth: 1,

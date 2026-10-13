@@ -32,6 +32,7 @@ import {
 
 import { makeAmountFullStyle } from '#components/budget/util';
 import { TransferDirectionIcon } from '#components/common/TransferDirectionIcon';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useAccount } from '#hooks/useAccount';
 import { useCachedSchedules } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
@@ -319,7 +320,7 @@ export function TransactionListItem({
                   ...textStyle,
                 }}
               >
-                {integerToCurrency(amount)}
+                <PrivacyFilter>{integerToCurrency(amount)}</PrivacyFilter>
               </Text>
               {showRunningBalance && runningBalance !== undefined && (
                 <Text
@@ -334,7 +335,9 @@ export function TransactionListItem({
                     }),
                   }}
                 >
-                  {integerToCurrency(runningBalance)}
+                  <PrivacyFilter>
+                    {integerToCurrency(runningBalance)}
+                  </PrivacyFilter>
                 </Text>
               )}
             </View>

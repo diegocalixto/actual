@@ -1,18 +1,10 @@
 import { useCallback } from 'react';
-import type { ComponentPropsWithoutRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type { CategoryEntity } from '@actual-app/core/types/models';
-import { AutoTextSize } from 'auto-text-size';
 
-import { makeAmountGrey } from '#components/budget/util';
-import { PrivacyFilter } from '#components/PrivacyFilter';
-import { CellValue } from '#components/spreadsheet/CellValue';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 import { useNotes } from '#hooks/useNotes';
@@ -20,33 +12,32 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useUndo } from '#hooks/useUndo';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
-import type { SheetFields } from '#spreadsheet';
 
-import { getColumnWidth, PILL_STYLE } from './BudgetTable';
-
-type BudgetCellProps<
-  SheetFieldName extends SheetFields<'envelope-budget' | 'tracking-budget'>,
-> = ComponentPropsWithoutRef<
-  typeof CellValue<'envelope-budget' | 'tracking-budget', SheetFieldName>
-> & {
+type UseCategoryBudgetMenuProps = {
   category: CategoryEntity;
   month: string;
   onBudgetAction: (month: string, action: string, args: unknown) => void;
 };
 
-export function BudgetCell<
-  SheetFieldName extends SheetFields<'envelope-budget' | 'tracking-budget'>,
->({
-  binding,
+/**
+ * Opens the menu that edits what a category has budgeted for a month.
+ *
+ * Lifted out of the upstream `BudgetCell` unchanged so the approved row can
+ * raise the same menu from a different control. Every action it dispatches — the amount, last
+ * month's figure, the three averages, the templates, the notes — is the one
+ * that was already here; nothing was added, removed or re-ordered in the move.
+ *
+ * Keeping it a hook rather than copying the handler is the point: there is one
+ * definition of "edit this category's budget" in the mobile app, and a change
+ * to it cannot reach one row type and miss the other.
+ */
+export function useCategoryBudgetMenu({
   category,
   month,
   onBudgetAction,
-  children,
-  ...props
-}: BudgetCellProps<SheetFieldName>) {
+}: UseCategoryBudgetMenuProps) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const columnWidth = getColumnWidth();
   const dispatch = useDispatch();
   const format = useFormat();
   const { showUndoNotification } = useUndo();
@@ -58,7 +49,7 @@ export function BudgetCell<
   }, []);
 
   const onEditNotes = useCallback(
-    (id: string, month: string) => {
+    (id: string, notesMonth: string) => {
       dispatch(
         pushModal({
           modal: {
@@ -68,7 +59,7 @@ export function BudgetCell<
               name:
                 category.name +
                 ' - ' +
-                monthUtils.format(month, "MMMM ''yy", locale),
+                monthUtils.format(notesMonth, "MMMM ''yy", locale),
               onSave: onSaveNotes,
             },
           },
@@ -78,7 +69,7 @@ export function BudgetCell<
     [category.name, locale, dispatch, onSaveNotes],
   );
 
-  const onOpenCategoryBudgetMenu = useCallback(() => {
+  return useCallback(() => {
     const sharedOptions = {
       categoryId: category.id,
       month,
@@ -170,54 +161,4 @@ export function BudgetCell<
     format,
     t,
   ]);
-
-  return (
-    <CellValue
-      binding={binding}
-      type="financial"
-      aria-label={t('Budgeted amount for {{categoryName}} category', {
-        categoryName: category.name,
-      })}
-      {...props}
-    >
-      {({ type, name, value }) =>
-        children?.({
-          type,
-          name,
-          value,
-        }) || (
-          <Button
-            variant="bare"
-            style={{
-              ...PILL_STYLE,
-              maxWidth: columnWidth,
-              ...makeAmountGrey(value),
-            }}
-            onPress={onOpenCategoryBudgetMenu}
-            aria-label={t('Open budget menu for {{categoryName}} category', {
-              categoryName: category.name,
-            })}
-          >
-            <PrivacyFilter>
-              <AutoTextSize
-                key={value}
-                as={Text}
-                minFontSizePx={6}
-                maxFontSizePx={12}
-                mode="oneline"
-                style={{
-                  ...styles.tnum,
-                  maxWidth: columnWidth,
-                  textAlign: 'right',
-                  fontSize: 12,
-                }}
-              >
-                {format(value, type)}
-              </AutoTextSize>
-            </PrivacyFilter>
-          </Button>
-        )
-      }
-    </CellValue>
-  );
 }

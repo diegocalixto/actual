@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
@@ -17,6 +16,7 @@ import { useSelector } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
 
 import { Account } from './Account';
+import { sidebarHairline } from './Item';
 import { SecondaryItem } from './SecondaryItem';
 
 const fontWeight = 600;
@@ -83,7 +83,7 @@ export function Accounts() {
       <View
         style={{
           height: 1,
-          backgroundColor: theme.sidebarItemBackgroundHover,
+          backgroundColor: sidebarHairline,
           marginTop: 15,
           flexShrink: 0,
         }}

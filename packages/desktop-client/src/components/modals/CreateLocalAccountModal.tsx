@@ -6,6 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { FormError } from '@actual-app/components/form-error';
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { InlineField } from '@actual-app/components/inline-field';
 import { Input } from '@actual-app/components/input';
@@ -37,6 +38,10 @@ export function CreateLocalAccountModal() {
   const dispatch = useDispatch();
   const isUsingServer = useSyncServerStatus() !== 'no-server';
   const { data: accounts = [] } = useAccounts();
+  const { isNarrowWidth } = useResponsive();
+  // On a phone the form's two actions are hit with a finger: 44px tall, where
+  // the button's own 28px were easy to miss.
+  const actionStyle = isNarrowWidth ? { minHeight: 44 } : undefined;
   const [name, setName] = useState('');
   const [offbudget, setOffbudget] = useState(false);
   const [balance, setBalance] = useState('0');
@@ -225,13 +230,13 @@ export function CreateLocalAccountModal() {
               )}
 
               <ModalButtons>
-                <Button onPress={() => state.close()}>
+                <Button style={actionStyle} onPress={() => state.close()}>
                   {isUsingServer ? <Trans>Back</Trans> : <Trans>Cancel</Trans>}
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
-                  style={{ marginLeft: 10 }}
+                  style={{ ...actionStyle, marginLeft: 10 }}
                 >
                   <Trans>Create</Trans>
                 </Button>

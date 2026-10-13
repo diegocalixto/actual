@@ -94,7 +94,7 @@ function EditableBudgetName() {
           style={{
             maxWidth: 'calc(100% - 23px)',
             fontSize: 16,
-            fontWeight: 500,
+            fontWeight: 600,
           }}
           defaultValue={budgetName}
           onEnter={newBudgetName => {
@@ -117,7 +117,7 @@ function EditableBudgetName() {
       style={{
         color: theme.sidebarBudgetName,
         fontSize: 16,
-        fontWeight: 500,
+        fontWeight: 600,
         marginLeft: -5,
         flex: '0 auto',
       }}

@@ -7,6 +7,7 @@ import { SvgCheveronLeft } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 
+import { mobileHeaderLabelButtonStyle } from '#components/Page';
 import { useNavigate } from '#hooks/useNavigate';
 
 type MobileBackButtonProps = ComponentPropsWithoutRef<typeof Button>;
@@ -21,7 +22,7 @@ export function MobileBackButton({
     <Button
       variant="bare"
       style={{
-        margin: 10,
+        ...mobileHeaderLabelButtonStyle,
         ...style,
       }}
       onPress={onPress || (() => navigate(-1))}

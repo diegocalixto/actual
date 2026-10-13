@@ -112,7 +112,7 @@ export function TransferModal({
               </InitialFocus>
             </View>
 
-            <FieldLabel title="To:" />
+            <FieldLabel title={t('To:', { context: 'transfer' })} />
             <TapField value={toCategory?.name} onPress={openCategoryModal} />
 
             <View
@@ -129,7 +129,15 @@ export function TransferModal({
                   marginLeft: styles.mobileEditingPadding,
                   marginRight: styles.mobileEditingPadding,
                 }}
+                // Nothing is transferred with no amount, and nothing to
+                // nowhere: the form says so instead of closing as though it
+                // had been done.
+                isDisabled={!amount}
                 onPress={() => {
+                  if (!toCategoryId) {
+                    openCategoryModal();
+                    return;
+                  }
                   _onSubmit(amount, toCategoryId);
                   state.close();
                 }}

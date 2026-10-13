@@ -129,12 +129,13 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
       addNotification({
         notification: {
           type: 'error',
-          title: 'Unable to save changes',
+          title: t('Unable to save changes'),
           sticky: true,
-          message:
+          message: t(
             'This browser only supports using the app in one tab at a time, ' +
-            'and another tab has opened the app. No changes will be saved ' +
-            'from this tab; please close it and continue working in the other one.',
+              'and another tab has opened the app. No changes will be saved ' +
+              'from this tab; please close it and continue working in the other one.',
+          ),
         },
       }),
     );

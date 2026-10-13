@@ -285,11 +285,14 @@ function recalculate(
     const displayFormat =
       ReportOptions.intervalFormat.get(interval) ?? "MMM ''yy";
 
+    // Localized date tokens: a literal `MMMM d, yyyy` renders the month name
+    // in the active locale but keeps English word order, so pt-BR read
+    // "agosto 24, 2026" instead of "24 de agosto de 2026".
     const tooltipFormat =
       interval === 'Daily'
-        ? 'MMMM d, yyyy'
+        ? 'PPP'
         : interval === 'Weekly'
-          ? 'MMM d, yyyy'
+          ? 'PP'
           : interval === 'Yearly'
             ? 'yyyy'
             : 'MMMM yyyy';

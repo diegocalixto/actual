@@ -31,6 +31,7 @@ import { Checkbox } from '#components/forms';
 import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { calculateTimeRange } from '#components/reports/reportRanges';
@@ -50,12 +51,15 @@ import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
 
 export function Summary() {
   const params = useParams();
-  const { data: widget, isPending } = useDashboardWidget<SummaryWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<SummaryWidget>({
     id: params.id,
     type: 'summary-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, and the disabled query for one stays pending for good — a spinner
+  // that never left. See `CashFlow`.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 
@@ -227,7 +231,9 @@ function SummaryInner({ widget }: SummaryInnerProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
-  const title = widget?.meta?.name || t('Summary');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'summary-card', t) ||
+    t('Summary');
 
   const updateDashboardWidgetMutation = useUpdateDashboardWidgetMutation();
 

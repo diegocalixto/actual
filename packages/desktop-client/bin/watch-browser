@@ -3,7 +3,17 @@
 ROOT=`dirname $0`
 cd "$ROOT/.."
 
-export PORT=3001
+# This is the V2 worktree. Port 3001 belongs to the V1 worktree at
+# /workspaces/actual — that is the port Tailscale serves to the phone — so
+# nothing here may bind it. Default to 3002 and still honour an explicit PORT
+# for a one-off run, but refuse 3001 outright rather than quietly taking over
+# the workspace someone is relying on.
+PORT="${PORT:-3002}"
+if [ "$PORT" = "3001" ]; then
+  echo "watch-browser: refusing to start on port 3001 — it belongs to the V1 worktree at /workspaces/actual." >&2
+  exit 1
+fi
+export PORT
 export REACT_APP_BACKEND_WORKER_HASH="dev"
 
 yarn start --mode=browser

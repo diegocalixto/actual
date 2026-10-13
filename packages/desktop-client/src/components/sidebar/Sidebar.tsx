@@ -92,6 +92,20 @@ export function Sidebar() {
         <View
           innerRef={containerRef}
           className={css({
+            // Sidebar-local palette. `sidebarItemBackgroundHover` still
+            // resolves to the pre-refresh navy ramp, which on the current
+            // dark sidebar paints a bright slab instead of a hover; and the
+            // budget name resolves dimmer than the nav items below it,
+            // inverting the hierarchy at the top of the sidebar. Both are
+            // corrected here rather than in `dark.css`, so every other
+            // screen keeps the global tokens. Nothing outside this subtree
+            // inherits them: the desktop sidebar is not rendered at narrow
+            // widths, and no component in this folder is used elsewhere.
+            // The hover is blended against the sidebar background so Light —
+            // whose sidebar is navy — lifts by the same amount that Dark does.
+            '--color-sidebarItemBackgroundHover':
+              'color-mix(in srgb, var(--color-sidebarItemText) 9%, var(--color-sidebarBackground))',
+            '--color-sidebarBudgetName': theme.sidebarItemText,
             color: theme.sidebarItemText,
             height: '100%',
             backgroundColor: theme.sidebarBackground,

@@ -22,8 +22,13 @@ import type {
   MarkdownWidget,
 } from '@actual-app/core/types/models';
 
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
-import { MobilePageHeader, Page } from '#components/Page';
+import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
+import {
+  mobileHeaderIconButtonStyle,
+  MobilePageHeader,
+  Page,
+} from '#components/Page';
 import { useAccounts } from '#hooks/useAccounts';
 import {
   useDashboardPages,
@@ -51,8 +56,9 @@ import {
 
 import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
 import { DashboardHeader } from './DashboardHeader';
-import './overview.scss';
 import { DashboardSelector } from './DashboardSelector';
+import './overview.scss';
+import { localizeDefaultDashboardPageName } from './defaultDashboardText';
 import { LoadingIndicator } from './LoadingIndicator';
 import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
 import { BalanceForecastCard } from './reports/BalanceForecastCard';
@@ -486,8 +492,12 @@ export function Overview({ dashboard }: OverviewProps) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  <Trans>Reports</Trans>: {dashboard.name}
+                  <Trans>Reports</Trans>:{' '}
+                  {localizeDefaultDashboardPageName(dashboard.name, t)}
                 </View>
+              }
+              rightContent={
+                <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
               }
             />
             <View
@@ -761,7 +771,7 @@ export function Overview({ dashboard }: OverviewProps) {
           <View
             data-testid="reports-overview"
             innerRef={containerRef}
-            style={{ userSelect: 'none', paddingBottom: MOBILE_NAV_HEIGHT }}
+            style={{ userSelect: 'none', paddingBottom: MOBILE_NAV_SPACER }}
           >
             {isMounted && (
               <ReactGridLayout

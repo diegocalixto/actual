@@ -7,6 +7,7 @@ import { Menu } from '@actual-app/components/menu';
 import { View } from '@actual-app/components/view';
 
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
+import { localizeDefaultDashboardPageName } from '#components/reports/defaultDashboardText';
 import { useDashboardPages } from '#hooks/useDashboardPages';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 
@@ -22,8 +23,12 @@ export function CopyWidgetToDashboardModal({
   const { data: dashboardPages = [] } = useDashboardPages();
 
   const items: ComponentProps<typeof Menu<string>>['items'] = useMemo(
-    () => dashboardPages.map(d => ({ name: d.id, text: d.name })),
-    [dashboardPages],
+    () =>
+      dashboardPages.map(d => ({
+        name: d.id,
+        text: localizeDefaultDashboardPageName(d.name, t),
+      })),
+    [dashboardPages, t],
   );
 
   return (

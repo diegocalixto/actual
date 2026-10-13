@@ -1,6 +1,6 @@
 // @ts-strict-ignore
 import React from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -10,16 +10,19 @@ import { View } from '@actual-app/components/view';
 
 import { useNavigate } from '#hooks/useNavigate';
 
-function getErrorMessage(reason) {
+function getErrorMessage(reason, t: (key: string) => string) {
   switch (reason) {
     case 'network-failure':
-      return 'Unable to access server. Make sure the configured URL for the server is accessible.';
+      return t(
+        'Unable to access server. Make sure the configured URL for the server is accessible.',
+      );
     default:
-      return 'Server returned an error while checking its status.';
+      return t('Server returned an error while checking its status.');
   }
 }
 
 export function Error() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { error } = (location.state || {}) as { error? };
@@ -37,7 +40,7 @@ export function Error() {
           lineHeight: 1.4,
         }}
       >
-        {getErrorMessage(error)}
+        {getErrorMessage(error, t)}
       </Text>
       <Button onPress={onTryAgain} style={{ marginTop: 20 }}>
         <Trans>Try again</Trans>

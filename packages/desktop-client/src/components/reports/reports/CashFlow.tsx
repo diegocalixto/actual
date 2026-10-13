@@ -25,6 +25,7 @@ import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { CashFlowGraph } from '#components/reports/graphs/CashFlowGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -51,12 +52,16 @@ export const defaultTimeFrame = {
 
 export function CashFlow() {
   const params = useParams();
-  const { data: widget, isPending } = useDashboardWidget<CashFlowWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<CashFlowWidget>({
     id: params.id,
     type: 'cash-flow-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, the query for one is disabled, and a disabled query stays pending
+  // for good. Read as "pending", that was a spinner that never left for anyone
+  // who had not passed through the dashboard first.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 
@@ -223,7 +228,9 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     );
   }
 
-  const title = widget?.meta?.name || t('Cash Flow');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'cash-flow-card', t) ||
+    t('Cash Flow');
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');

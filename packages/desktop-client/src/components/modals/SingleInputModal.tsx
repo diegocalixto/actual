@@ -33,16 +33,18 @@ export function SingleInputModal({
   const [value, setValue] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
 
+  /** Submits what was typed, and says whether it was fit to be. */
   const _onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const error = onValidate?.(value);
     if (error) {
       setErrorMessage(error);
-      return;
+      return false;
     }
 
     onSubmit?.(value);
+    return true;
   };
 
   return (
@@ -54,8 +56,11 @@ export function SingleInputModal({
           />
           <Form
             onSubmit={e => {
-              _onSubmit(e);
-              state.close();
+              // Only what was accepted closes the modal. Closing it on a
+              // refusal too took the reason away before it could be read.
+              if (_onSubmit(e)) {
+                state.close();
+              }
             }}
           >
             <View>

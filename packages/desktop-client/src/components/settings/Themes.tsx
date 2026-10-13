@@ -17,6 +17,7 @@ import { useGlobalPref } from '#hooks/useGlobalPref';
 import {
   darkThemeOptions,
   themeOptions,
+  translateThemeName,
   usePreferredDarkTheme,
   useTheme,
 } from '#style';
@@ -64,7 +65,9 @@ export function ThemeSettings() {
 
   const buildOptions = useCallback(() => {
     const options: Array<readonly [string, string] | typeof Menu.line> = [
-      ...themeOptions,
+      ...themeOptions.map(
+        ([key, name]) => [key, translateThemeName(key, name, t)] as const,
+      ),
     ];
 
     if (theme !== 'auto' && installedCustomLightTheme) {
@@ -96,7 +99,9 @@ export function ThemeSettings() {
 
   const buildDarkOptions = useCallback(() => {
     const options: Array<readonly [string, string] | typeof Menu.line> = [
-      ...darkThemeOptions,
+      ...darkThemeOptions.map(
+        ([key, name]) => [key, translateThemeName(key, name, t)] as const,
+      ),
     ];
     if (installedCustomDarkTheme) {
       options.push([

@@ -74,7 +74,7 @@ function CustomTooltip({
       <div>
         <div style={{ marginBottom: 10 }}>
           <strong>
-            {d.format(data.date, isConcise ? 'MMMM yyyy' : 'MMMM dd, yyyy', {
+            {d.format(data.date, isConcise ? 'MMMM yyyy' : 'PPP', {
               locale,
             })}
           </strong>

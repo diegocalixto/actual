@@ -37,6 +37,7 @@ import {
   onBudgetAccountBalance,
 } from '#spreadsheet/bindings';
 
+import { localizeDefaultDashboardPageName } from './reports/defaultDashboardText';
 import { CellValue, CellValueText } from './spreadsheet/CellValue';
 import { useTour } from './tour/TourProvider';
 
@@ -226,6 +227,7 @@ export function CommandBar() {
       heading: t('Reports'),
       items: dashboardPages.map(dashboardPage => ({
         ...dashboardPage,
+        name: localizeDefaultDashboardPageName(dashboardPage.name, t),
         Icon: SvgReports,
       })),
       onSelect: ({ id }) => handleNavigate(`/reports/${id}`),
