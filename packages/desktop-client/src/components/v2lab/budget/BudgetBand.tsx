@@ -9,7 +9,7 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { fittedFontSize } from '#components/v2lab/LabStyle';
 
-import { formatBRL, formatPercent } from './budgetMoney';
+import { formatCurrency, formatPercent } from './budgetMoney';
 import { BudgetRing } from './BudgetRing';
 
 type BudgetBandProps = {
@@ -64,7 +64,7 @@ export function BudgetBand({
     floor: '15px',
     letterSpacing: FIGURE_TRACKING,
     figures: [toDistribute, budgeted, spent, available].map(value =>
-      value === null ? null : formatBRL(value),
+      value === null ? null : formatCurrency(value),
     ),
   });
 
@@ -106,7 +106,7 @@ export function BudgetBand({
           </>
         )}
         <Metric
-          label={<Trans>Planejado</Trans>}
+          label={<Trans>Orçado</Trans>}
           value={budgeted}
           figureSize={figureSize}
           share={shareOf(budgeted)}
@@ -216,7 +216,7 @@ function Metric({ label, value, figureSize, share, color }: MetricProps) {
           textShadow: '0 1px 18px rgba(120, 170, 235, 0.22)',
         }}
       >
-        <PrivacyFilter>{formatBRL(value)}</PrivacyFilter>
+        <PrivacyFilter>{formatCurrency(value)}</PrivacyFilter>
       </FinancialText>
       <Text
         style={{
@@ -226,9 +226,9 @@ function Metric({ label, value, figureSize, share, color }: MetricProps) {
         }}
       >
         {shareLabel === null ? (
-          <Trans>Sem renda neste mês</Trans>
+          <Trans>Sem receitas neste mês</Trans>
         ) : (
-          <Trans>{{ shareLabel }} da renda do mês</Trans>
+          <Trans>{{ shareLabel }} das receitas do mês</Trans>
         )}
       </Text>
     </View>

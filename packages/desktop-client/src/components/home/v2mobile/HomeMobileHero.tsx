@@ -13,7 +13,7 @@ import { useNavigate } from '#hooks/useNavigate';
 
 import { HomeMobileHeroLight } from './HomeMobileHeroLight';
 import { HomeMobileMoney } from './HomeMobileMoney';
-import { CURRENCY, formatAmount } from './mobileMoneyFormat';
+import { currencySymbol, formatAmount } from './mobileMoneyFormat';
 
 /** The symbol is set smaller than the figure it introduces. */
 const SYMBOL_SIZE = 20;
@@ -59,7 +59,7 @@ export function HomeMobileHero({
   const navigate = useNavigate();
 
   const isOverdrawn = available !== null && available < 0;
-  const symbol = isOverdrawn ? `-${CURRENCY}` : CURRENCY;
+  const symbol = isOverdrawn ? `-${currencySymbol()}` : currencySymbol();
   // A positive balance is the ordinary state, so the headline stays in the
   // page's own ink; only an overdrawn budget — a real alert — takes the
   // negative tone.

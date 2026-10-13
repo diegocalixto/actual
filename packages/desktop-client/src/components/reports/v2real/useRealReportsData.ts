@@ -263,8 +263,11 @@ export function useRealReportsData(): ReportsViewData {
       greeting: greeting(t),
       periodLabel,
       scopeLabel: t('Contas no orçamento'),
-      previousPeriodLabel: capitalise(
-        monthUtils.format(monthKeys[previousIndex] ?? month, 'MMMM', ptBR),
+      // After "vs.", so in the lower case Portuguese gives a month's name.
+      previousPeriodLabel: monthUtils.format(
+        monthKeys[previousIndex] ?? month,
+        'MMMM',
+        ptBR,
       ),
       kpis,
       series,
@@ -417,8 +420,4 @@ function greeting(t: (key: string) => string): string {
     return t('Boa tarde');
   }
   return t('Boa noite');
-}
-
-function capitalise(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

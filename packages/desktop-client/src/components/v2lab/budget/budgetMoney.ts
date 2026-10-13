@@ -1,26 +1,24 @@
 /**
- * Money formatting for the Budget laboratory.
+ * Money formatting for the Budget.
  *
  * Amounts are integer minor units, exactly as Actual stores them, so component
- * props already speak the application's language; only the formatter is local.
- * The Budget reference prints the `R$` prefix, which the Overview did not, so
- * this lives here instead of borrowing the Overview's helper.
+ * props already speak the application's language. The Budget reference prints
+ * the currency symbol, which the Overview did not, so this lives here instead
+ * of borrowing the Overview's helper. The symbol, the separators and the
+ * decimals follow the budget file's own preferences — see `../regionalFormat`.
  */
-const brl = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { currencySymbol, formatDigits } from '#components/v2lab/LabStyle';
 
 /** The sign leads the symbol, as pt-BR writes it: "-R$ 1.528,20". */
-export function formatBRL(value: number): string {
+export function formatCurrency(value: number): string {
   const sign = value < 0 ? '-' : '';
-  return `${sign}R$ ${brl.format(Math.abs(value) / 100)}`;
+  return `${sign}${currencySymbol()} ${formatDigits(Math.abs(value))}`;
 }
 
 /** Same, with an explicit sign — for movements, where direction is the point. */
-export function formatSignedBRL(value: number): string {
+export function formatSignedCurrency(value: number): string {
   const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-  return `${sign}R$ ${brl.format(Math.abs(value) / 100)}`;
+  return `${sign}${currencySymbol()} ${formatDigits(Math.abs(value))}`;
 }
 
 /**
@@ -29,7 +27,7 @@ export function formatSignedBRL(value: number): string {
  */
 export function formatPlain(value: number): string {
   const sign = value < 0 ? '-' : '';
-  return `${sign}${brl.format(Math.abs(value) / 100)}`;
+  return `${sign}${formatDigits(Math.abs(value))}`;
 }
 
 /** Whole percent, for shares. Rounded once so the column always adds up. */

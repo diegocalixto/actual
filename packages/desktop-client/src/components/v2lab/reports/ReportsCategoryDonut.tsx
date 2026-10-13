@@ -9,6 +9,7 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { currencySymbol } from '#components/v2lab/LabStyle';
 
 import { CardHeading, LabCard } from './LabCard';
 import { LabPill } from './LabPill';
@@ -154,7 +155,7 @@ export function ReportsCategoryDonut({
                   color: 'var(--dfl-text-3)',
                 }}
               >
-                R$
+                {currencySymbol()}
               </Text>
               <FinancialText
                 style={{
@@ -219,7 +220,7 @@ export function ReportsCategoryDonut({
                     color: 'var(--dfl-text-3)',
                   }}
                 >
-                  R$
+                  {currencySymbol()}
                 </Text>
                 <FinancialText
                   style={{

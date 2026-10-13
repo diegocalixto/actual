@@ -11,7 +11,7 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { amountWidthInEm, fittedFontSize } from '#components/v2lab/LabStyle';
 
-import { CURRENCY, formatAmount, PENDING } from './budgetMobileMoney';
+import { currencySymbol, formatAmount, PENDING } from './budgetMobileMoney';
 import { BudgetMobileRing } from './BudgetMobileRing';
 
 /** The symbol is set smaller than the figure it introduces. */
@@ -61,7 +61,7 @@ export function BudgetMobileHero({
   ariaLabel,
 }: BudgetMobileHeroProps) {
   const isNegative = amount !== null && amount < 0;
-  const symbol = isNegative ? `-${CURRENCY}` : CURRENCY;
+  const symbol = isNegative ? `-${currencySymbol()}` : currencySymbol();
   const figure = amount === null ? null : formatAmount(Math.abs(amount));
   // What the symbol and the space after it take out of the line.
   const symbolRoom =
@@ -208,7 +208,7 @@ export function BudgetMobileHero({
                   color: 'var(--dfmb-hero-sub)',
                 }}
               >
-                <Trans>do planejado</Trans>
+                <Trans>do orçado</Trans>
               </Text>
             </View>
           </View>

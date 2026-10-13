@@ -12,7 +12,7 @@ import { PrivacyFilter } from '#components/PrivacyFilter';
 import { CardHeading, LabCard } from './LabCard';
 import { CardLink } from './ReportsCategoryDonut';
 import type { ExpenseCategory } from './reportsFixtures';
-import { formatBRL, formatPercent } from './reportsMoney';
+import { formatCurrency, formatPercent } from './reportsMoney';
 import { CATEGORY_HUE } from './reportsTokens';
 
 type RankedCategory = ExpenseCategory & { share: number };
@@ -189,7 +189,7 @@ function Row({ category, ratio }: { category: RankedCategory; ratio: number }) {
           color: 'var(--dfl-text)',
         }}
       >
-        <PrivacyFilter>{formatBRL(category.amount)}</PrivacyFilter>
+        <PrivacyFilter>{formatCurrency(category.amount)}</PrivacyFilter>
       </FinancialText>
 
       <Text

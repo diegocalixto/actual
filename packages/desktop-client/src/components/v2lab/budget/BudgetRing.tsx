@@ -7,7 +7,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
-import { formatBRL } from './budgetMoney';
+import { formatCurrency } from './budgetMoney';
 
 type BudgetRingProps = {
   income: number;
@@ -114,7 +114,7 @@ export function BudgetRing({ income, budgeted }: BudgetRingProps) {
             color: 'var(--dfl-text-3)',
           }}
         >
-          <Trans>Renda</Trans>
+          <Trans>Receitas</Trans>
         </Text>
         <FinancialText
           style={{
@@ -125,7 +125,7 @@ export function BudgetRing({ income, budgeted }: BudgetRingProps) {
             whiteSpace: 'nowrap',
           }}
         >
-          <PrivacyFilter>{formatBRL(income)}</PrivacyFilter>
+          <PrivacyFilter>{formatCurrency(income)}</PrivacyFilter>
         </FinancialText>
       </View>
     </View>

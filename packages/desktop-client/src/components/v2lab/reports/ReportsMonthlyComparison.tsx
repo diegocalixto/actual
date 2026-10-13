@@ -14,7 +14,7 @@ import { ChangeChip } from './ChangeChip';
 import { CardHeading, LabCard } from './LabCard';
 import { LabPill } from './LabPill';
 import { CardLink } from './ReportsCategoryDonut';
-import { formatBRL, formatChange } from './reportsMoney';
+import { formatChange, formatCurrency } from './reportsMoney';
 import { SERIES } from './reportsTokens';
 
 type Comparison = {
@@ -56,7 +56,7 @@ export function ReportsMonthlyComparison({
     floor: '11px',
     letterSpacing: VALUE_TRACKING,
     figures: [monthly.income, monthly.expenses, monthly.net].map(comparison =>
-      formatBRL(comparison.average),
+      formatCurrency(comparison.average),
     ),
   });
 
@@ -67,7 +67,9 @@ export function ReportsMonthlyComparison({
           title={<Trans>Monthly comparison</Trans>}
           action={
             <LabPill>
-              <Trans>Last {{ monthCount }} months</Trans>
+              <Trans count={monthCount}>
+                Last {{ count: monthCount }} months
+              </Trans>
             </LabPill>
           }
         />
@@ -174,7 +176,7 @@ function Block({
           color: tintValue ? color : '#ffffff',
         }}
       >
-        <PrivacyFilter>{formatBRL(data.average)}</PrivacyFilter>
+        <PrivacyFilter>{formatCurrency(data.average)}</PrivacyFilter>
       </FinancialText>
 
       <View

@@ -14,6 +14,7 @@ import {
   MobilePageHeader,
   Page,
 } from '#components/Page';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 
 import { useHomeBalances, useMonthTotals } from './homeData';
 import { HomeMobileAccounts } from './HomeMobileAccounts';
@@ -79,6 +80,8 @@ export function HomeMobilePage({
   sheetName,
   budgetType,
 }: HomeMobilePageProps) {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const { onBudget, offBudget, total, toBudget } = useHomeBalances(
     sheetName,
     budgetType,
@@ -107,6 +110,7 @@ export function HomeMobilePage({
       style={{ backgroundColor: chromeCanvas }}
     >
       <View
+        key={regionalFormat}
         className={HOME_MOBILE_ROOT_CLASS}
         style={{
           width: '100%',

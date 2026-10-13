@@ -12,7 +12,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
-import { formatBRL, formatPercent } from './accountsMoney';
+import { formatCurrency, formatPercent } from './accountsMoney';
 
 type AccountsHeroProps = {
   /** `null` while the balances load; the figure is never guessed at. */
@@ -93,7 +93,7 @@ export function AccountsHero({
             {total === null ? (
               '—'
             ) : (
-              <PrivacyFilter>{formatBRL(total)}</PrivacyFilter>
+              <PrivacyFilter>{formatCurrency(total)}</PrivacyFilter>
             )}
           </FinancialText>
 

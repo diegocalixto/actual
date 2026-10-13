@@ -4,20 +4,16 @@
  * Amounts arrive as the integer minor units Actual stores, straight from the
  * spreadsheet cells, and are formatted here and nowhere else on this screen.
  *
- * The screen formats in pt-BR with the real symbol. That is a presentation
- * choice scoped to this route: it does not read `numberFormat` or
- * `defaultCurrencyCode`, and it changes no preference, no locale and no other
- * screen. Every figure it prints is still a real cell — only the separators and
- * the symbol are decided here.
+ * The screen was drawn in pt-BR with `R$`, and prints that for a budget file
+ * that states nothing else; a number format or a default currency chosen in
+ * the settings is obeyed (see `v2lab/regionalFormat`). Every figure it prints
+ * is still a real cell — only the separators and the symbol are decided there.
  */
-const brl = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { currencySymbol, formatDigits } from '#components/v2lab/LabStyle';
 
 /** Digits only — "30.643,56". */
 export function formatAmount(minorUnits: number): string {
-  return brl.format(minorUnits / 100);
+  return formatDigits(minorUnits);
 }
 
 /**
@@ -30,7 +26,7 @@ export function formatAmount(minorUnits: number): string {
  */
 export function formatCurrency(minorUnits: number): string {
   const sign = minorUnits < 0 ? '-' : '';
-  return `${sign}${CURRENCY} ${formatAmount(Math.abs(minorUnits))}`;
+  return `${sign}${currencySymbol()} ${formatAmount(Math.abs(minorUnits))}`;
 }
 
 /**
@@ -43,9 +39,9 @@ export function formatCurrency(minorUnits: number): string {
 export const PENDING = '—';
 
 /**
- * Rendered as its own element wherever the symbol sits at a different size from
- * the digits, which is most places: the hero prints it small beside a very
- * large number, and the account column keeps it out of the right-aligned string
- * so every row's digits line up.
+ * The symbol, rendered as its own element wherever it sits at a different size
+ * from the digits, which is most places: the hero prints it small beside a
+ * very large number, and the account column keeps it out of the right-aligned
+ * string so every row's digits line up.
  */
-export const CURRENCY = 'R$';
+export { currencySymbol };

@@ -7,19 +7,35 @@ import resourcesToBackend from 'i18next-resources-to-backend';
 import { languages } from './languages';
 import { localeOverrides } from './locale-overrides';
 
+const catalogPath = (language: string) => `/locale/${language}.json`;
+
+const hasCatalog = (language: string) =>
+  Object.hasOwn(languages, catalogPath(language));
+
+const catalogLanguages = Object.keys(languages).map(
+  path => path.split('/')[2].split('.')[0],
+);
+
+// A language this fork translates itself (see `./locale-overrides`) is offered
+// even where the upstream catalog was never downloaded: `locale/` is
+// git-ignored and only a release build fetches it, so a fresh checkout has
+// none. The fork's own screens are then fully translated from the overrides,
+// and upstream text falls back to English until the catalog is there.
 export const availableLanguages = Platform.isPlaywright
   ? []
-  : Object.keys(languages).map(path => path.split('/')[2].split('.')[0]);
+  : [...new Set([...catalogLanguages, ...Object.keys(localeOverrides)])];
 
 const isLanguageAvailable = (language: string) =>
-  Object.hasOwn(languages, `/locale/${language}.json`);
+  hasCatalog(language) || Object.hasOwn(localeOverrides, language);
 
 const loadLanguage = async (language: string) => {
   if (!isLanguageAvailable(language)) {
     throw new Error(`Unknown locale ${language}`);
   }
 
-  const { default: resources } = await languages[`/locale/${language}.json`]();
+  const resources = hasCatalog(language)
+    ? (await languages[catalogPath(language)]()).default
+    : {};
 
   const overrides = localeOverrides[language];
   return overrides ? { ...resources, ...overrides } : resources;
@@ -43,6 +59,13 @@ void i18n
       transSupportBasicHtmlNodes: false,
     },
   });
+
+// The document says which language its text is in. A screen reader picks its
+// voice from this attribute, and left at the markup's "en" it reads Portuguese
+// with English phonetics.
+i18n.on('languageChanged', language => {
+  document.documentElement.lang = language;
+});
 
 const resolveLanguage = (language: string) => {
   // English is always available since we use natural-language keys.

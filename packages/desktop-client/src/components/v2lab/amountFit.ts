@@ -18,7 +18,9 @@
  * Measured on the app's face with tabular figures, which is how
  * `FinancialText` sets every amount. Tabular figures are the reason an
  * estimate is enough: the ten digits and the minus share one width at every
- * weight, and so do the point, the comma and the space.
+ * weight, and so do the point, the comma and the space. The apostrophe some
+ * number formats group thousands with is counted with those marks rather than
+ * with the letters: it was not measured, and it is the narrower of the two.
  *
  * It is exact where characters are placed between pixels, which is every phone
  * and every dense display. An engine that sets each character on a whole pixel
@@ -39,7 +41,7 @@ export function amountWidthInEm(figure: string): number {
   for (const character of figure) {
     if (/[\d\-−]/.test(character)) {
       width += DIGIT;
-    } else if (/[.,\s]/.test(character)) {
+    } else if (/[.,\s'\u2019]/.test(character)) {
       width += SEPARATOR;
     } else if (character === '%') {
       width += PERCENT;

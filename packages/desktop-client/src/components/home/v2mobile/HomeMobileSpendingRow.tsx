@@ -9,7 +9,7 @@ import { PrivacyFilter } from '#components/PrivacyFilter';
 import { iconForCategory } from '#components/v2lab/LabStyle';
 
 import { HomeMobileIconTile } from './HomeMobileIconTile';
-import { CURRENCY, formatAmount } from './mobileMoneyFormat';
+import { currencySymbol, formatAmount } from './mobileMoneyFormat';
 
 type HomeMobileSpendingRowProps = {
   entry: HomeCategorySpending;
@@ -46,7 +46,7 @@ export function HomeMobileSpendingRow({
   const percent =
     share !== null && share >= 0 && share <= 1 ? Math.round(share * 100) : null;
 
-  const amount = `${CURRENCY} ${formatAmount(Math.abs(entry.amount))}`;
+  const amount = `${currencySymbol()} ${formatAmount(Math.abs(entry.amount))}`;
 
   return (
     <View

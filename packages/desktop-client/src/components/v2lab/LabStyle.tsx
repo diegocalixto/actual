@@ -11,6 +11,15 @@ export { LAB_ROOT_CLASS } from './labTokens';
  */
 export { tokensCssFor } from './labTokens';
 export { amountWidthInEm, fittedFontSize } from './amountFit';
+export {
+  currencySymbol,
+  formatDecimal,
+  formatDigits,
+  formatNumber,
+  parseDigits,
+  toMajorUnits,
+} from './regionalFormat';
+export { useRegionalFormatKey } from './useRegionalFormat';
 export { iconForAccount, iconForCategory } from './entityIcons';
 export type { EntityIcon } from './entityIcons';
 

@@ -360,7 +360,7 @@ function capitalise(text: string): string {
 const TIPS: LabTip[] = [
   {
     id: 'variaveis',
-    title: 'Revise os variáveis',
+    title: 'Revise os gastos variáveis',
     body: 'Gastos como delivery e transporte mudam rápido ao longo do mês.',
     Icon: SvgSearch,
     hue: 'blue',
@@ -374,7 +374,7 @@ const TIPS: LabTip[] = [
   },
   {
     id: 'recorrencias',
-    title: 'Cheque recorrências',
+    title: 'Confira as recorrências',
     body: 'Assinaturas e pequenos débitos merecem revisão frequente.',
     Icon: SvgRefresh,
     hue: 'amber',

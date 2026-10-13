@@ -30,7 +30,10 @@ export function getPrettyPayee({
         })
       : t('Transfer to {{accountName}}', { accountName: transferAccount.name });
   } else if (transaction.is_parent) {
-    return t('Split');
+    // Here "Split" names the transaction, where the button of the same word
+    // asks to split one. The context lets a language tell the two apart —
+    // "Transação dividida" and "Dividir" — and leaves English as it was.
+    return t('Split', { context: 'label' });
   } else if (payee) {
     return payee.name;
   }

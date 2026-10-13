@@ -67,7 +67,7 @@ export function HomeMobileMonthSummary({
       }}
     >
       <HomeMobileMonthMetric
-        label={<Trans>Entradas</Trans>}
+        label={<Trans>Receitas</Trans>}
         value={income}
         flow="in"
         figureSize={figureSize}
@@ -81,7 +81,7 @@ export function HomeMobileMonthSummary({
         }}
       />
       <HomeMobileMonthMetric
-        label={<Trans>Saídas</Trans>}
+        label={<Trans>Despesas</Trans>}
         value={spent}
         flow="out"
         figureSize={figureSize}

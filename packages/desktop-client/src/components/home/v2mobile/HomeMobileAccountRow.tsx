@@ -15,7 +15,7 @@ import type { HomeAccount } from './homeData';
 import { useAccountBalance } from './homeData';
 import { HomeMobileIconTile } from './HomeMobileIconTile';
 import { HomeMobileMoney } from './HomeMobileMoney';
-import { CURRENCY } from './mobileMoneyFormat';
+import { currencySymbol } from './mobileMoneyFormat';
 
 type HomeMobileAccountRowProps = {
   homeAccount: HomeAccount;
@@ -128,7 +128,7 @@ export function HomeMobileAccountRow({
                 color: balanceColor,
               }}
             >
-              {isNegative ? `-${CURRENCY}` : CURRENCY}
+              {isNegative ? `-${currencySymbol()}` : currencySymbol()}
             </Text>
           )}
           <HomeMobileMoney

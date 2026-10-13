@@ -58,7 +58,7 @@ export function HomeMobileSpending({
     >
       <Button
         variant="bare"
-        aria-label={t('Ver os gastos no orçamento')}
+        aria-label={t('Ver as despesas no orçamento')}
         onPress={() => void navigate('/budget')}
         className={css({
           width: '100%',
@@ -90,7 +90,7 @@ export function HomeMobileSpending({
               color: 'var(--dfl-text-2)',
             }}
           >
-            <Trans>Gastos do mês</Trans>
+            <Trans>Despesas do mês</Trans>
           </Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -125,9 +125,9 @@ export function HomeMobileSpending({
             }}
           >
             {isLoading ? (
-              <Trans>Carregando gastos…</Trans>
+              <Trans>Carregando despesas…</Trans>
             ) : (
-              <Trans>Nenhum gasto registrado neste mês.</Trans>
+              <Trans>Nenhuma despesa registrada neste mês.</Trans>
             )}
           </Text>
         </View>

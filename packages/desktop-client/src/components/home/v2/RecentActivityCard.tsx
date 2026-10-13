@@ -90,7 +90,7 @@ export function RecentActivityCard() {
 
   return (
     <SectionHeading
-      title={<Trans>Atividade recente</Trans>}
+      title={<Trans>Transações recentes</Trans>}
       action={
         rows.length > 0 ? (
           <Button

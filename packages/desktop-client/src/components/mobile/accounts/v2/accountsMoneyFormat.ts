@@ -6,18 +6,12 @@
  * nowhere else on this screen. Nothing in this module computes a financial
  * figure: it decides separators and a symbol, and that is all.
  *
- * pt-BR with the real symbol, the same choice the mobile Home and the mobile
- * Budget already made. It is a presentation decision scoped to this route: it
- * reads no `numberFormat` preference, changes none, and touches no other
- * screen.
+ * Drawn in pt-BR with `R$`, which is what it prints for a budget file that
+ * states nothing else; a number format or a default currency chosen in the
+ * settings is obeyed, as on the mobile Home and the mobile Budget (see
+ * `v2lab/regionalFormat`).
  */
-const brl = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-/** The symbol, kept separate wherever it is set at its own size. */
-export const CURRENCY = 'R$';
+import { currencySymbol, formatDigits } from '#components/v2lab/LabStyle';
 
 /**
  * What a figure shows before its cell resolves.
@@ -30,7 +24,7 @@ export const PENDING = '—';
 
 /** Digits only — "43.108,00". */
 export function formatAmount(minorUnits: number): string {
-  return brl.format(minorUnits / 100);
+  return formatDigits(minorUnits);
 }
 
 /**
@@ -43,7 +37,7 @@ export function formatAmount(minorUnits: number): string {
  */
 export function formatCurrency(minorUnits: number): string {
   const sign = minorUnits < 0 ? '-' : '';
-  return `${sign}${CURRENCY} ${formatAmount(Math.abs(minorUnits))}`;
+  return `${sign}${currencySymbol()} ${formatAmount(Math.abs(minorUnits))}`;
 }
 
 /**
@@ -57,7 +51,7 @@ export function formatCurrency(minorUnits: number): string {
  * sign is not printed twice.
  */
 export function currencyWithSign(minorUnits: number): string {
-  return minorUnits < 0 ? `-${CURRENCY}` : CURRENCY;
+  return minorUnits < 0 ? `-${currencySymbol()}` : currencySymbol();
 }
 
 /** The figure without its sign, for the call sites `currencyWithSign` serves. */

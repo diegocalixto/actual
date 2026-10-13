@@ -9,8 +9,9 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { currencySymbol } from '#components/v2lab/LabStyle';
 
-import { formatBRL, formatPlain } from './accountsMoney';
+import { formatCurrency, formatPlain } from './accountsMoney';
 import { ACCOUNT_HUE } from './accountsTokens';
 import type { ViewAccount } from './accountsViewModel';
 import { AccountTile } from './AccountTile';
@@ -88,7 +89,7 @@ export function AccountGroup({
               color: subtotal < 0 ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
             }}
           >
-            <PrivacyFilter>{formatBRL(subtotal)}</PrivacyFilter>
+            <PrivacyFilter>{formatCurrency(subtotal)}</PrivacyFilter>
           </FinancialText>
         )}
       </View>
@@ -177,7 +178,7 @@ function Row({ account }: { account: ViewAccount }) {
         {/* An overdrawn account takes the negative tone. In a column of white
             figures a leading minus is the only thing separating a debt from an
             asset, and at this size it is one glyph wide. The minus leads the
-            symbol, as `formatBRL` writes it everywhere else on this page:
+            symbol, as `formatCurrency` writes it everywhere else on this page:
             "R$ -312.500,00" was a second convention for the same fact. */}
         <Text
           style={{
@@ -186,7 +187,7 @@ function Row({ account }: { account: ViewAccount }) {
             color: isNegative ? 'var(--dfl-negative)' : 'var(--dfl-text-2)',
           }}
         >
-          {isNegative ? '-R$' : 'R$'}
+          {isNegative ? `-${currencySymbol()}` : currencySymbol()}
         </Text>
         <FinancialText
           style={{

@@ -69,7 +69,7 @@ export function BudgetMobileMetrics({
   return (
     <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 8 }}>
       <BudgetMobileMetric
-        label={<Trans>Planejado</Trans>}
+        label={<Trans>Orçado</Trans>}
         value={planned}
         figureSize={figureSize}
         Icon={SvgTarget}

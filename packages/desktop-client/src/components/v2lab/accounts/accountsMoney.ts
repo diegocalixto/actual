@@ -1,27 +1,28 @@
 /**
- * Money formatting for the Accounts laboratory.
+ * Money formatting for the Accounts.
  *
  * Amounts are integer minor units, exactly as Actual stores them, so component
- * props already speak the application's language; only the formatter is local.
+ * props already speak the application's language. The symbol, the separators
+ * and the decimals follow the budget file's own preferences — see
+ * `../regionalFormat`.
  */
-const brl = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const compact = new Intl.NumberFormat('pt-BR', {
-  maximumFractionDigits: 0,
-});
+import {
+  currencySymbol,
+  formatDecimal,
+  formatDigits,
+  formatNumber,
+  toMajorUnits,
+} from '#components/v2lab/LabStyle';
 
 /** The sign leads the symbol, as pt-BR writes it: "-R$ 1.528,20". */
-export function formatBRL(value: number): string {
+export function formatCurrency(value: number): string {
   const sign = value < 0 ? '-' : '';
-  return `${sign}R$ ${brl.format(Math.abs(value) / 100)}`;
+  return `${sign}${currencySymbol()} ${formatDigits(Math.abs(value))}`;
 }
 
 /** Without the prefix — for the two-line label inside the donut. */
 export function formatPlain(value: number): string {
-  return brl.format(value / 100);
+  return formatDigits(value);
 }
 
 /**
@@ -30,16 +31,18 @@ export function formatPlain(value: number): string {
  * Below ten thousand the thousands form starts rounding a real figure into a
  * wrong one — R$ 500 is not "R$ 1K" — so small axes are printed in full.
  */
-const AXIS_COMPACT_FLOOR = 1_000_000;
+const AXIS_COMPACT_FLOOR = 10_000;
 
 export function formatAxis(value: number): string {
+  const symbol = currencySymbol();
   if (value === 0) {
-    return 'R$ 0';
+    return `${symbol} 0`;
   }
-  if (Math.abs(value) < AXIS_COMPACT_FLOOR) {
-    return `R$ ${compact.format(value / 100)}`;
+  const units = toMajorUnits(value);
+  if (Math.abs(units) < AXIS_COMPACT_FLOOR) {
+    return `${symbol} ${formatNumber(units, 0)}`;
   }
-  return `R$ ${compact.format(value / 100000)}K`;
+  return `${symbol} ${formatNumber(units / 1000, 0)}K`;
 }
 
 /** One decimal, as the reference prints its shares. */
@@ -47,7 +50,7 @@ export function formatShare(ratio: number): string {
   if (!Number.isFinite(ratio)) {
     return '—';
   }
-  return `${(ratio * 100).toFixed(1).replace('.', ',')}%`;
+  return `${formatDecimal(ratio * 100, 1)}%`;
 }
 
 /** The hero's month-over-month chip. Two decimals, as the reference prints it. */
@@ -55,5 +58,5 @@ export function formatPercent(ratio: number): string {
   if (!Number.isFinite(ratio)) {
     return '—';
   }
-  return `${(ratio * 100).toFixed(2).replace('.', ',')}%`;
+  return `${formatDecimal(ratio * 100, 2)}%`;
 }

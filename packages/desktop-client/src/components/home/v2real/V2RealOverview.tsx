@@ -3,6 +3,7 @@ import React from 'react';
 import { viewStyles } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { OverviewView } from '#components/v2lab/OverviewView';
 
 import { Greeting } from './Greeting';
@@ -21,6 +22,8 @@ const AUTHOR = 'Diego Calixto';
  * the two routes is a difference in the data, never in the design.
  */
 export function V2RealOverview() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const {
     balances,
     monthTotals,
@@ -38,6 +41,7 @@ export function V2RealOverview() {
     // are drawn outside it, and without one a screen reader has no way to jump
     // past the navigation to the content.
     <main
+      key={regionalFormat}
       className={cx(
         viewStyles,
         OVERVIEW_ROOT_CLASS,

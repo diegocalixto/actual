@@ -13,7 +13,12 @@ import { css } from '@emotion/css';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
-import { fittedFontSize } from '#components/v2lab/LabStyle';
+import {
+  currencySymbol,
+  fittedFontSize,
+  formatDigits,
+  parseDigits,
+} from '#components/v2lab/LabStyle';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { BudgetBar } from './BudgetBar';
@@ -43,7 +48,6 @@ const ACTIONS_COLUMN = 20;
 /** How the three money columns set their figures. */
 const AMOUNT_SIZE = 14.5;
 const AMOUNT_TRACKING = -0.2;
-const AMOUNT_SYMBOL = 'R$';
 /**
  * The gap between the symbol and the figure — and two points to spare, because
  * the editable column is a field, and a field cuts the last digit of a line
@@ -68,7 +72,7 @@ function columnFigureSize(figures: number[]): string {
     room: `100cqi - ${AMOUNT_GAP + AMOUNT_SPARE}px`,
     floor: '10px',
     letterSpacing: AMOUNT_TRACKING,
-    figures: figures.map(figure => AMOUNT_SYMBOL + formatPlain(figure)),
+    figures: figures.map(figure => currencySymbol() + formatPlain(figure)),
   });
 }
 
@@ -354,7 +358,7 @@ function Amount({
           color: tone,
         }}
       >
-        {AMOUNT_SYMBOL}
+        {currencySymbol()}
       </Text>
       <FinancialText
         style={{
@@ -416,7 +420,7 @@ function BudgetedInput({
   label: string;
   onCommit: (amount: number) => void;
 }) {
-  const [draft, setDraft] = useState(() => toEditable(value));
+  const [draft, setDraft] = useState(() => formatDigits(value));
   const [isEditing, setIsEditing] = useState(false);
   const isPrivate = usePrivacyMode();
   // Like `PrivacyFilter`, redaction is desktop-only.
@@ -424,17 +428,17 @@ function BudgetedInput({
 
   useEffect(() => {
     if (!isEditing) {
-      setDraft(toEditable(value));
+      setDraft(formatDigits(value));
     }
   }, [value, isEditing]);
 
   const commit = () => {
     setIsEditing(false);
-    const parsed = fromEditable(draft);
+    const parsed = parseDigits(draft);
     if (parsed !== null && parsed !== value) {
       onCommit(parsed);
     } else {
-      setDraft(toEditable(value));
+      setDraft(formatDigits(value));
     }
   };
 
@@ -461,7 +465,7 @@ function BudgetedInput({
           color: 'var(--dfl-text-2)',
         }}
       >
-        {AMOUNT_SYMBOL}
+        {currencySymbol()}
       </Text>
       <input
         value={draft}
@@ -481,7 +485,7 @@ function BudgetedInput({
             event.currentTarget.blur();
           }
           if (event.key === 'Escape') {
-            setDraft(toEditable(value));
+            setDraft(formatDigits(value));
             setIsEditing(false);
             event.currentTarget.blur();
           }
@@ -506,21 +510,4 @@ function BudgetedInput({
       />
     </View>
   );
-}
-
-/** Minor units to the string a person edits, and back. */
-function toEditable(value: number): string {
-  return (value / 100).toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function fromEditable(text: string): number | null {
-  const normalised = text
-    .replace(/\s|R\$/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.');
-  const parsed = Number(normalised);
-  return Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
 }

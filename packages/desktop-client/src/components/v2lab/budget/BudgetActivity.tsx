@@ -9,7 +9,7 @@ import { DatePill } from '#components/v2lab/DatePill';
 import { LabPanel } from '#components/v2lab/LabPanel';
 
 import type { LabMovement } from './budgetFixtures';
-import { formatSignedBRL } from './budgetMoney';
+import { formatSignedCurrency } from './budgetMoney';
 import { BudgetTile } from './BudgetTile';
 
 type BudgetActivityProps = {
@@ -85,7 +85,9 @@ export function BudgetActivity({ movements }: BudgetActivityProps) {
                   : 'var(--dfl-positive)',
             }}
           >
-            <PrivacyFilter>{formatSignedBRL(movement.amount)}</PrivacyFilter>
+            <PrivacyFilter>
+              {formatSignedCurrency(movement.amount)}
+            </PrivacyFilter>
           </FinancialText>
         </View>
       ))}

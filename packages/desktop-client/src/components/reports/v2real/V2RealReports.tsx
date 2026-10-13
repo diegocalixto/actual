@@ -3,6 +3,7 @@ import React from 'react';
 import { viewStyles } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { ReportsView } from '#components/v2lab/reports/ReportsView';
 
 import { REPORTS_ROOT_CLASS, ReportsStyle } from './ReportsStyle';
@@ -20,6 +21,8 @@ const AUTHOR = 'Diego Calixto';
  * routes is a difference in the data, never in the design.
  */
 export function V2RealReports() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const data = useRealReportsData();
 
   return (
@@ -27,6 +30,7 @@ export function V2RealReports() {
     // are drawn outside it, and without one a screen reader has no way to jump
     // past the navigation to the content.
     <main
+      key={regionalFormat}
       className={cx(
         viewStyles,
         REPORTS_ROOT_CLASS,

@@ -8,6 +8,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { LabPanel } from '#components/v2lab/LabPanel';
+import { currencySymbol } from '#components/v2lab/LabStyle';
 
 import { formatPlain, formatShare } from './accountsMoney';
 import { ACCOUNT_HUE, ACCOUNT_HUE_LITERAL } from './accountsTokens';
@@ -196,7 +197,7 @@ export function AccountDistribution({ accounts }: AccountDistributionProps) {
                   color: 'var(--dfl-text-3)',
                 }}
               >
-                R$
+                {currencySymbol()}
               </Text>
               <FinancialText
                 style={{
@@ -260,7 +261,7 @@ export function AccountDistribution({ accounts }: AccountDistributionProps) {
                     color: 'var(--dfl-text-3)',
                   }}
                 >
-                  R$
+                  {currencySymbol()}
                 </Text>
                 <FinancialText
                   style={{

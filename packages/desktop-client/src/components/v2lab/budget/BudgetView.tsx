@@ -225,13 +225,13 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
             </View>
 
             <View style={{ flex: `1 1 ${CONTEXT_PANEL_BASIS}px`, minWidth: 0 }}>
-              <LabSection label={<Trans>Atividade recente</Trans>}>
+              <LabSection label={<Trans>Transações recentes</Trans>}>
                 {data.movements.length === 0 ? (
                   <EmptyPanel>
                     {data.isActivityLoading ? (
-                      <Trans>Carregando atividade…</Trans>
+                      <Trans>Carregando transações…</Trans>
                     ) : (
-                      <Trans>Nenhuma movimentação neste mês.</Trans>
+                      <Trans>Nenhuma transação neste mês.</Trans>
                     )}
                   </EmptyPanel>
                 ) : (

@@ -33,6 +33,7 @@ import { prewarmMonth } from '#components/budget/util';
 import { FinancialText } from '#components/FinancialText';
 import { Page } from '#components/Page';
 import { SyncRefresh } from '#components/SyncRefresh';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { useCategories } from '#hooks/useCategories';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useFormat } from '#hooks/useFormat';
@@ -67,6 +68,8 @@ function isBudgetType(input?: string): input is 'envelope' | 'tracking' {
 }
 
 export function BudgetPage() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const locale = useLocale();
   const {
     data: { list: categories, grouped: categoryGroups } = {
@@ -581,6 +584,7 @@ export function BudgetPage() {
       }
     >
       <View
+        key={regionalFormat}
         className={BUDGET_MOBILE_ROOT_CLASS}
         style={{
           flex: 1,
@@ -682,7 +686,7 @@ function UncategorizedTransactionsBanner(props) {
 
   return (
     <GridListItem
-      textValue="Uncategorized transactions banner"
+      textValue={t('Uncategorized transactions banner')}
       style={BANNER_ROW_STYLE}
       {...props}
     >
@@ -772,7 +776,7 @@ function OverbudgetedBanner({ month, onBudgetAction, ...props }) {
 
   return (
     <GridListItem
-      textValue="Overbudgeted banner"
+      textValue={t('Overbudgeted banner')}
       style={BANNER_ROW_STYLE}
       {...props}
     >
@@ -918,7 +922,7 @@ function OverspendingBanner({ month, onBudgetAction, budgetType, ...props }) {
 
   return (
     <GridListItem
-      textValue="Overspent banner"
+      textValue={t('Overspent banner')}
       style={BANNER_ROW_STYLE}
       {...props}
     >

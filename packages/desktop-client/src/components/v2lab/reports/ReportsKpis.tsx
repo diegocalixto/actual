@@ -18,8 +18,8 @@ import { fittedFontSize } from '#components/v2lab/LabStyle';
 import { ChangeChip } from './ChangeChip';
 import { LabCard } from './LabCard';
 import {
-  formatBRL,
   formatChange,
+  formatCurrency,
   formatPercent,
   formatPoints,
 } from './reportsMoney';
@@ -60,9 +60,9 @@ const FIGURE_TRACKING = -0.9;
  * its card.
  */
 export function ReportsKpis({ kpis, previousPeriodLabel }: ReportsKpisProps) {
-  const income = formatBRL(kpis.income.value);
-  const expenses = formatBRL(kpis.expenses.value);
-  const net = formatBRL(kpis.net.value);
+  const income = formatCurrency(kpis.income.value);
+  const expenses = formatCurrency(kpis.expenses.value);
+  const net = formatCurrency(kpis.net.value);
   const savingsRate = formatPercent(kpis.savingsRate.value);
 
   const valueSize = fittedFontSize({
@@ -245,7 +245,7 @@ function Kpi({
                 color: 'var(--dfl-text-3)',
               }}
             >
-              <Trans>vs</Trans> {previousPeriodLabel}
+              <Trans>vs {{ previousPeriodLabel }}</Trans>
             </Text>
           </View>
         </View>

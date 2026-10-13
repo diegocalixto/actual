@@ -11,7 +11,12 @@
 export const localeOverrides: Record<string, Record<string, string>> = {
   'pt-BR': {
     // Terminology decided for this fork, replacing the catalog wording.
-    'To Budget': 'A orçar',
+    // "Para distribuir" is what the V2 Budget and the phone's Home already
+    // print for the money not yet given to a category; the catalog's "Para
+    // Orçar" and the earlier "A orçar" were a second and a third name for it,
+    // one tap away from the first.
+    'To Budget': 'Para distribuir',
+    'To Budget:': 'Para distribuir:',
     'On budget': 'No orçamento',
     'Closed accounts': 'Contas fechadas',
     'Closed accounts...': 'Contas fechadas...',
@@ -25,29 +30,29 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Good evening': 'Boa noite',
     Overview: 'Visão geral',
     Available: 'Disponível',
-    'Sum of on-budget accounts': 'Somatório das contas no orçamento',
+    'Sum of on-budget accounts': 'Soma das contas no orçamento',
     'Total balance': 'Saldo total',
     'Loading accounts…': 'Carregando contas…',
     'No accounts yet': 'Nenhuma conta ainda',
     'Add an account to start tracking your money.':
       'Adicione uma conta para começar a acompanhar seu dinheiro.',
     'View transactions for {{name}}': 'Ver transações de {{name}}',
-    'Money in': 'Entradas',
-    'Money out': 'Saídas',
-    'Monthly net': 'Resultado',
-    'Spending by category': 'Gastos por categoria',
-    'Loading spending…': 'Carregando gastos…',
-    'No spending recorded this month.': 'Nenhum gasto registrado neste mês.',
-    'Recent transactions': 'Movimentações recentes',
-    'Loading transactions…': 'Carregando movimentações…',
-    'No transactions recorded yet.': 'Nenhuma movimentação registrada ainda.',
-    'Open transaction {{title}}': 'Abrir movimentação {{title}}',
+    'Money in': 'Receitas',
+    'Money out': 'Despesas',
+    'Monthly net': 'Saldo do mês',
+    'Spending by category': 'Despesas por categoria',
+    'Loading spending…': 'Carregando despesas…',
+    'No spending recorded this month.': 'Nenhuma despesa registrada neste mês.',
+    'Recent transactions': 'Transações recentes',
+    'Loading transactions…': 'Carregando transações…',
+    'No transactions recorded yet.': 'Nenhuma transação registrada ainda.',
+    'Open transaction {{title}}': 'Abrir transação {{title}}',
 
     // Home dashboard V2 — strings introduced by the new Overview composition.
     'Available balance': 'Saldo disponível',
-    'New transaction': 'Novo lançamento',
-    'Spending this month': 'Gastos do mês',
-    'Recent activity': 'Movimentações recentes',
+    'New transaction': 'Nova transação',
+    'Spending this month': 'Despesas do mês',
+    'Recent activity': 'Transações recentes',
 
     // Budget on a phone — the switch that decides which of a category's two
     // plan figures its row prints. These strings exist only in this fork.
@@ -236,6 +241,11 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // Onboarding — server bar at the bottom of the manager screens.
     'Using this device only': 'Usando apenas este dispositivo',
     'Set up sync': 'Configurar sincronização',
+    // The two strings of the welcome screen the catalog does carry, so the
+    // screen reads whole on a checkout without it.
+    'Import my budget': 'Importar meu orçamento',
+    'App: v{{appVersion}} | Server: {{serverVersion}}':
+      'App: v{{appVersion}} | Servidor: {{serverVersion}}',
 
     // Server configuration — also part of the onboarding redesign.
     'Connect to a server': 'Conectar a um servidor',
@@ -381,7 +391,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'This summary compares your income and expenses to show how much you saved this month. Rather than rolling funds over, a tracking budget plans each month on its own.':
       'Este resumo compara suas receitas e despesas para mostrar quanto você economizou neste mês. Em vez de transportar saldos, o orçamento de acompanhamento planeja cada mês separadamente.',
     'The <1>To Budget</1> amount shows the money you have not assigned to a category yet. Aim to bring it to zero, so that all of your money has a job.':
-      'O valor <1>A orçar</1> mostra o dinheiro que você ainda não destinou a nenhuma categoria. Procure zerá-lo, para que todo o seu dinheiro tenha uma função.',
+      'O valor <1>Para distribuir</1> mostra o dinheiro que você ainda não destinou a nenhuma categoria. Procure zerá-lo, para que todo o seu dinheiro tenha uma função.',
     Categories: 'Categorias',
     'Each row in the budget is a category. Click the <2>Budgeted</2> amount to assign money to a category, and keep an eye on the <4>Balance</4> column to see how much is left to spend.':
       'Cada linha do orçamento é uma categoria. Clique no valor <2>Orçado</2> para destinar dinheiro a uma categoria e acompanhe a coluna <4>Saldo</4> para ver quanto ainda há para gastar.',
@@ -558,5 +568,168 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Light: 'Claro',
     Dark: 'Escuro',
     Midnight: 'Meia-noite',
+
+    // ---- Etapa 10 — as quatro páginas V2 ----
+
+    // What the V2 shell and its four pages print is listed here even where the
+    // upstream catalog has a translation. These screens belong to the fork and
+    // so does their wording — "Receitas" and "Despesas", where the catalog has
+    // "Receita" and "Gastos" — and listing it is also what lets them read in
+    // Portuguese on a checkout that never downloaded the catalog (see
+    // `./i18n`).
+
+    // Shell — rail, header and their menus.
+    // The rail names the first destination as the phone's bar does, in one word
+    // that fits its tile; the page under it keeps the title "Visão geral".
+    Overview_nav: 'Início',
+    Budget: 'Orçamento',
+    Accounts: 'Contas',
+    Reports: 'Relatórios',
+    More: 'Mais',
+    Schedules: 'Agendamentos',
+    Payees: 'Beneficiários',
+    Rules: 'Regras',
+    Settings: 'Configurações',
+    Help: 'Ajuda',
+    'Budget file options': 'Opções do arquivo de orçamento',
+    'Rename budget': 'Renomear orçamento',
+    'Switch file': 'Trocar arquivo',
+    Unnamed: 'Sem nome',
+    'No server': 'Sem servidor',
+    // The header's shortcut to them. The catalog says "não categorizadas" here
+    // and "sem categoria" everywhere else, which is what the V2 pages say.
+    '{{count}} uncategorized transactions_one':
+      '{{count}} transação sem categoria',
+    '{{count}} uncategorized transactions_many':
+      '{{count}} transações sem categoria',
+    '{{count}} uncategorized transactions_other':
+      '{{count}} transações sem categoria',
+    'Switch theme': 'Trocar tema',
+    'Enable privacy mode': 'Habilitar modo de privacidade',
+    'Disable privacy mode': 'Desabilitar modo de privacidade',
+    Documentation: 'Documentação',
+    'Keyboard shortcuts': 'Atalhos de teclado',
+    'Community support (Discord)': 'Suporte da comunidade (Discord)',
+    'A new version of Actual is available!':
+      'Uma nova versão do Actual está disponível!',
+    'Version {{latestVersion}} of Actual was recently released.':
+      'A versão {{latestVersion}} do Actual foi lançada recentemente.',
+    'Open changelog': 'Abrir histórico de mudanças',
+    Close: 'Fechar',
+    'Modal dialog': 'Caixa de diálogo modal',
+
+    // Home.
+    'This month': 'Este mês',
+    'Loading this month…': 'Carregando o mês…',
+    'Nothing recorded this month.': 'Nada registrado neste mês.',
+    'No accounts yet.': 'Nenhuma conta ainda.',
+    'Off budget': 'Fora do orçamento',
+    // A split transaction, named in the list where a payee would be: one word,
+    // because the Budget's column for it is a narrow one. The bare `Split` key
+    // stays the catalog's "Dividir", which is right for the button.
+    Split_label: 'Dividida',
+
+    // Accounts.
+    'Add account': 'Adicionar conta',
+    'All transactions': 'Todas as transações',
+    'vs last month': 'vs. mês anterior',
+    'Last update': 'Última atualização',
+    'Balance over time': 'Evolução do saldo',
+    'Not enough history yet': 'Ainda não há histórico suficiente',
+    'The curve appears once this period has more than one day of movement.':
+      'A curva aparece quando o período tiver mais de um dia com transações.',
+    'Account distribution': 'Distribuição das contas',
+    'The ring, its total and its shares cover positive balances only.':
+      'O anel, o total e as participações consideram apenas os saldos positivos.',
+
+    // Reports.
+    'Analyze your financial performance and discover insights to make better decisions.':
+      'Acompanhe seu desempenho financeiro e encontre informações para decidir melhor.',
+    Income: 'Receitas',
+    Expenses: 'Despesas',
+    // What is left of the income once the expenses are out: "Saldo do mês" on
+    // the Home and on the Budget, and the same word here for the period.
+    'Net Result': 'Saldo',
+    'Savings Rate': 'Taxa de poupança',
+    'vs {{previousPeriodLabel}}': 'vs. {{previousPeriodLabel}}',
+    'Income, Expenses & Net Result': 'Receitas, despesas e saldo',
+    'Total income': 'Total de receitas',
+    'Total expenses': 'Total de despesas',
+    // Not "Saldo total", which on the Accounts page is the sum of the balances.
+    'Total net result': 'Saldo do período',
+    'Top categories': 'Principais categorias',
+    'Where your money went': 'Para onde foi o seu dinheiro',
+    Category: 'Categoria',
+    Amount: 'Valor',
+    '% of total': '% do total',
+    'View all spending': 'Ver todas as despesas',
+    'Expenses by category': 'Despesas por categoria',
+    'View all categories': 'Ver todas as categorias',
+    'Monthly comparison': 'Comparativo mensal',
+    'Income (avg)': 'Receitas (média)',
+    'Expenses (avg)': 'Despesas (média)',
+    'Net Result (avg)': 'Saldo (média)',
+    'View full comparison': 'Ver comparativo completo',
+    'Loading the period…': 'Carregando o período…',
+    'No transactions in this period.': 'Nenhuma transação neste período.',
+    'Loading categories…': 'Carregando categorias…',
+    'No spending recorded in this period.':
+      'Nenhuma despesa registrada neste período.',
+    'No spending to break down.': 'Nenhuma despesa para detalhar.',
+
+    // Budget — what the actions of a category and of a month open, on the
+    // desktop and on a phone. "Rollover" was "Rolar gasto excedente" in the
+    // catalog, a word-for-word rendering that says nothing about where the
+    // overspending goes.
+    'Transfer to another category': 'Transferir para outra categoria',
+    'Cover overspending': 'Cobrir gastos excedentes',
+    'Rollover overspending': 'Levar o gasto excedente para o próximo mês',
+    'Remove overspending rollover':
+      'Não levar o gasto excedente para o próximo mês',
+    Budgeted: 'Orçado',
+    Balance: 'Saldo',
+    Actions: 'Ações',
+    'No notes': 'Sem notas',
+    'Edit notes': 'Editar notas',
+    'Add category': 'Adicionar categoria',
+    'Add category group': 'Adicionar grupo de categorias',
+    'Show hidden categories': 'Exibir categorias ocultas',
+    // The catalog reads "Mostrar/ocultar categorias" for both states.
+    'Hide hidden categories': 'Não exibir categorias ocultas',
+    'Switch budget file': 'Trocar de arquivo de orçamento',
+    'Available funds': 'Recursos disponíveis',
+    'Overspent in {{prevMonthName}}': 'Gasto excedente em {{prevMonthName}}',
+
+    // Budget on a phone — what a screen reader calls the lists and each notice.
+    'Expense category groups': 'Grupos de categorias de despesas',
+    '{{categoryGroupName}} expense group categories':
+      'Categorias do grupo de despesas {{categoryGroupName}}',
+    'Income categories': 'Categorias de receitas',
+    'Overspent banner': 'Aviso de categorias que passaram do orçado',
+    'Uncategorized transactions banner': 'Aviso de transações sem categoria',
+    'Overbudgeted banner': 'Aviso de orçamento acima do disponível',
+
+    // Accounts on a phone — the names of its lists. The catalog's "Contas
+    // dentro do orçamento" was a second wording for the fork's "No orçamento".
+    'Account list': 'Lista de contas',
+    'On budget accounts': 'Contas no orçamento',
+    'Off budget accounts': 'Contas fora do orçamento',
+
+    // The form the Accounts pages open to add an account.
+    Name: 'Nome',
+    Cancel: 'Cancelar',
+    Create: 'Criar',
+    'This cannot be changed later. See <2>Accounts Overview</2> for more information.':
+      'Isto não pode ser alterado depois. Veja <2>Visão geral das contas</2> para mais informações.',
+
+    // What the V2 pages open. The catalog's wording, corrected where it was a
+    // title in title case ("Nova Transação"), a misspelling ("transacão"), a
+    // phrase short of its preposition or a sentence left in English.
+    'New Transaction': 'Nova transação',
+    'Add transaction': 'Adicionar transação',
+    'Budget Summary': 'Resumo do orçamento',
+    'For next month': 'Guardado para o próximo mês',
+    'Once the account is created, you can also <2>import QIF/OFX/QFX files</2> into it.':
+      'Depois de criar a conta, você também pode <2>importar arquivos QIF/OFX/QFX</2> para ela.',
   },
 };

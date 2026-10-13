@@ -7,6 +7,7 @@ import { viewStyles } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
 import { AccountsView } from '#components/v2lab/accounts/AccountsView';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { useNavigate } from '#hooks/useNavigate';
 
 import { ACCOUNTS_ROOT_CLASS, AccountsStyle } from './AccountsStyle';
@@ -31,6 +32,8 @@ const AUTHOR = 'Diego Calixto';
  * otherwise hold an inert menu.
  */
 export function V2RealAccounts() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const { t } = useTranslation();
   const data = useRealAccountsData();
   const navigate = useNavigate();
@@ -40,6 +43,7 @@ export function V2RealAccounts() {
     // are drawn outside it, and without one a screen reader has no way to jump
     // past the navigation to the content.
     <main
+      key={regionalFormat}
       className={cx(
         viewStyles,
         ACCOUNTS_ROOT_CLASS,

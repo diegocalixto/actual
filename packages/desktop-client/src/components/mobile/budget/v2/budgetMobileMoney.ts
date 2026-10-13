@@ -6,20 +6,16 @@
  * screen. Nothing in this module computes a financial figure: it decides
  * separators, a symbol and a month's name, and that is all.
  *
- * pt-BR with the real symbol, the same choice the mobile Home already made in
- * `home/v2mobile/mobileMoneyFormat`. It is a presentation decision scoped to
- * this route: it reads no `numberFormat` preference, changes none, and touches
- * no other screen.
+ * Drawn in pt-BR with `R$`, which is what it prints for a budget file that
+ * states nothing else; a number format or a default currency chosen in the
+ * settings is obeyed, as on the mobile Home (see `v2lab/regionalFormat`).
  */
-const brl = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { currencySymbol, formatDigits } from '#components/v2lab/LabStyle';
 
 const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
 
 /** The symbol, kept separate wherever it is set at its own size. */
-export const CURRENCY = 'R$';
+export { currencySymbol };
 
 /**
  * What a figure shows before its cell resolves.
@@ -31,7 +27,7 @@ export const PENDING = '—';
 
 /** Digits only — "9.850,00". */
 export function formatAmount(minorUnits: number): string {
-  return brl.format(minorUnits / 100);
+  return formatDigits(minorUnits);
 }
 
 /**
@@ -44,7 +40,7 @@ export function formatAmount(minorUnits: number): string {
  */
 export function formatCurrency(minorUnits: number): string {
   const sign = minorUnits < 0 ? '-' : '';
-  return `${sign}${CURRENCY} ${formatAmount(Math.abs(minorUnits))}`;
+  return `${sign}${currencySymbol()} ${formatAmount(Math.abs(minorUnits))}`;
 }
 
 /**

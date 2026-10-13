@@ -15,7 +15,7 @@ import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { LabCard } from './LabCard';
 import type { DayPoint } from './reportsFixtures';
-import { formatAxis, formatBRL } from './reportsMoney';
+import { formatAxis, formatCurrency } from './reportsMoney';
 import { SERIES } from './reportsTokens';
 import type { SeriesKey } from './reportsTokens';
 
@@ -555,7 +555,7 @@ function ChartTooltip({ point, left }: { point: DayPoint; left: number }) {
               color: 'var(--dfl-text)',
             }}
           >
-            <PrivacyFilter>{formatBRL(point[key])}</PrivacyFilter>
+            <PrivacyFilter>{formatCurrency(point[key])}</PrivacyFilter>
           </FinancialText>
         </View>
       ))}
@@ -609,7 +609,7 @@ function Total({
           color,
         }}
       >
-        <PrivacyFilter>{formatBRL(value)}</PrivacyFilter>
+        <PrivacyFilter>{formatCurrency(value)}</PrivacyFilter>
       </FinancialText>
     </View>
   );

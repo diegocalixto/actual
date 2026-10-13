@@ -45,7 +45,15 @@ export function usePrimaryNav(): NavItem[] {
   const { t } = useTranslation();
 
   return [
-    { id: 'overview', label: t('Overview'), to: '/home', Icon: SvgHome },
+    {
+      id: 'overview',
+      // The context lets a language name the destination apart from the page
+      // it opens — "Início" in the rail, "Visão geral" as the title — and
+      // leaves English, which uses one word for both, as it was.
+      label: t('Overview', { context: 'nav' }),
+      to: '/home',
+      Icon: SvgHome,
+    },
     { id: 'budget', label: t('Budget'), to: '/budget', Icon: SvgWallet },
     {
       id: 'accounts',

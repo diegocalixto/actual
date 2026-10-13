@@ -24,6 +24,7 @@ import {
   MobilePageHeader,
   Page,
 } from '#components/Page';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { useAccountBalances } from '#hooks/useAccountBalances';
 import { useAccounts } from '#hooks/useAccounts';
 import { useLocalPref } from '#hooks/useLocalPref';
@@ -72,6 +73,8 @@ const CLOSED_HUE = 'var(--dfma-hue-closed)';
  * bank-sync state and the highlight on a freshly synced account.
  */
 export function AccountsPage() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -179,6 +182,7 @@ export function AccountsPage() {
       style={{ backgroundColor: chromeCanvas }}
     >
       <View
+        key={regionalFormat}
         className={ACCOUNTS_MOBILE_ROOT_CLASS}
         style={{
           flex: 1,

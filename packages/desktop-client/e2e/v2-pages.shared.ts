@@ -179,7 +179,7 @@ export function describeV2Pages(layout: V2Layout) {
           'Este mês',
           'Contas',
           'Evolução do saldo',
-          'Atividade recente',
+          'Transações recentes',
         ]) {
           await expect(
             shell.main.getByRole('heading', {

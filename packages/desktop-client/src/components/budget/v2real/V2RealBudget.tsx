@@ -4,6 +4,7 @@ import { viewStyles } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
 import { BudgetView } from '#components/v2lab/budget/BudgetView';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 
 import { BUDGET_ROOT_CLASS, BudgetStyle } from './BudgetStyle';
 import { EnvelopeActionsPopover } from './EnvelopeActionsPopover';
@@ -24,6 +25,8 @@ const AUTHOR = 'Diego Calixto';
  * laboratory has no categories to act on.
  */
 export function V2RealBudget() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const data = useRealBudgetData();
 
   return (
@@ -31,6 +34,7 @@ export function V2RealBudget() {
     // are drawn outside it, and without one a screen reader has no way to jump
     // past the navigation to the content.
     <main
+      key={regionalFormat}
       className={cx(
         viewStyles,
         BUDGET_ROOT_CLASS,
