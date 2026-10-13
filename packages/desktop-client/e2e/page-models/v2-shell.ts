@@ -136,8 +136,8 @@ export class V2Shell {
   }
 
   async waitForPage(name: V2PageName) {
-    // The phone's Reports arrives as a separate chunk that then queries the
-    // file, so its first paint is the slowest wait in the suite.
+    // A page that queries the file on arrival — the Reports run six — is the
+    // slowest first paint in the suite.
     await expect(this.title).toHaveText(this.titleOf(name), {
       timeout: 45_000,
     });

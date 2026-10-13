@@ -10,10 +10,10 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { fittedFontSize } from '#components/v2lab/LabStyle';
 
+import { CardLink } from './CardLink';
 import { ChangeChip } from './ChangeChip';
 import { CardHeading, LabCard } from './LabCard';
 import { LabPill } from './LabPill';
-import { CardLink } from './ReportsCategoryDonut';
 import { formatChange, formatCurrency } from './reportsMoney';
 import { SERIES } from './reportsTokens';
 
@@ -32,6 +32,17 @@ type Comparison = {
 type ReportsMonthlyComparisonProps = {
   monthly: { income: Comparison; expenses: Comparison; net: Comparison };
   monthCount: number;
+  /**
+   * Opens the report this card is a summary of. Absent ⇒ there is none to
+   * open, and the card closes without a link.
+   */
+  onOpenFullComparison?: () => void;
+  /**
+   * The phone's arrangement: the three readings one under the other, each on
+   * a line of its own. Side by side, a third of a phone is narrower than the
+   * words "Net Result (avg)".
+   */
+  compact?: boolean;
 };
 
 /**
@@ -49,6 +60,8 @@ type ReportsMonthlyComparisonProps = {
 export function ReportsMonthlyComparison({
   monthly,
   monthCount,
+  onOpenFullComparison,
+  compact = false,
 }: ReportsMonthlyComparisonProps) {
   const valueSize = fittedFontSize({
     designSize: `${VALUE_SIZE}px`,
@@ -62,7 +75,10 @@ export function ReportsMonthlyComparison({
 
   return (
     <LabCard>
-      <View style={{ padding: '16px 20px 14px', gap: 13 }}>
+      {/* The phone's scope restates the padding, so its cards share one edge. */}
+      <View
+        style={{ padding: 'var(--dfr-card-padding, 16px 20px 14px)', gap: 13 }}
+      >
         <CardHeading
           title={<Trans>Monthly comparison</Trans>}
           action={
@@ -74,13 +90,14 @@ export function ReportsMonthlyComparison({
           }
         />
 
-        <View style={{ flexDirection: 'row', gap: 0 }}>
+        <View style={{ flexDirection: compact ? 'column' : 'row', gap: 0 }}>
           <Block
             label={<Trans>Income (avg)</Trans>}
             data={monthly.income}
             valueSize={valueSize}
             color={SERIES.income}
             isGoodWhenUp
+            compact={compact}
           />
           <Divider />
           <Block
@@ -90,6 +107,7 @@ export function ReportsMonthlyComparison({
             color={SERIES.expenses}
             isGoodWhenUp={false}
             tintValue
+            compact={compact}
           />
           <Divider />
           <Block
@@ -98,17 +116,21 @@ export function ReportsMonthlyComparison({
             valueSize={valueSize}
             color={SERIES.net}
             isGoodWhenUp
+            compact={compact}
           />
         </View>
 
-        <CardLink>
-          <Trans>View full comparison</Trans>
-        </CardLink>
+        {onOpenFullComparison && (
+          <CardLink onPress={onOpenFullComparison}>
+            <Trans>View full comparison</Trans>
+          </CardLink>
+        )}
       </View>
     </LabCard>
   );
 }
 
+/** One pixel across whichever way the blocks run: a rule between columns, or between lines. */
 function Divider() {
   return (
     <View
@@ -133,6 +155,7 @@ type BlockProps = {
   color: string;
   isGoodWhenUp: boolean;
   tintValue?: boolean;
+  compact: boolean;
 };
 
 function Block({
@@ -142,8 +165,68 @@ function Block({
   color,
   isGoodWhenUp,
   tintValue,
+  compact,
 }: BlockProps) {
   const isUp = (data.change ?? 0) >= 0;
+
+  if (compact) {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          padding: '11px 0',
+        }}
+      >
+        {/* The same share of every line, so the three trends start on one
+            edge; and the width the average is fitted to. */}
+        <View
+          style={{
+            flex: '0 0 45%',
+            minWidth: 0,
+            gap: 4,
+            containerType: 'inline-size',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11.5,
+              whiteSpace: 'nowrap',
+              color: 'var(--dfl-text-3)',
+            }}
+          >
+            {label}
+          </Text>
+          <FinancialText
+            style={{
+              fontSize: [`${VALUE_SIZE}px`, valueSize],
+              fontWeight: 600,
+              letterSpacing: VALUE_TRACKING,
+              whiteSpace: 'nowrap',
+              color: tintValue ? color : '#ffffff',
+            }}
+          >
+            <PrivacyFilter>{formatCurrency(data.average)}</PrivacyFilter>
+          </FinancialText>
+        </View>
+
+        <Sparkline values={data.spark} color={color} />
+
+        {/* Kept as wide as the longest change, so the trends also end on one
+            edge whether or not a line has a change to print. */}
+        <View style={{ flex: `0 0 ${CHANGE_ROOM}px`, alignItems: 'flex-end' }}>
+          {data.change !== null && (
+            <ChangeChip
+              label={formatChange(data.change)}
+              isUp={isUp}
+              isGood={isUp === isGoodWhenUp}
+            />
+          )}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View

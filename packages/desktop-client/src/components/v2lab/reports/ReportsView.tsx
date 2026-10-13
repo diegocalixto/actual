@@ -6,6 +6,9 @@ import { SvgCalendar3, SvgFilter2 } from '@actual-app/components/icons/v2';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import { MonthChip } from '#components/v2lab/MonthChip';
+
+import { EmptyPanel } from './EmptyPanel';
 import { LabPill } from './LabPill';
 import { ReportsCategoryDonut } from './ReportsCategoryDonut';
 import type { DayPoint, ExpenseCategory } from './reportsFixtures';
@@ -13,9 +16,18 @@ import { ReportsHeroChart } from './ReportsHeroChart';
 import { ReportsInsights } from './ReportsInsights';
 import { ReportsKpis } from './ReportsKpis';
 import { ReportsMonthlyComparison } from './ReportsMonthlyComparison';
+import { capitaliseMonth } from './reportsPeriodControl';
+import type {
+  ReportsDetailLink,
+  ReportsPeriodControl,
+} from './reportsPeriodControl';
 import { ReportsTopCategories } from './ReportsTopCategories';
 
 export type { DayPoint, ExpenseCategory } from './reportsFixtures';
+export type {
+  ReportsDetailLink,
+  ReportsPeriodControl,
+} from './reportsPeriodControl';
 export type { CategoryHue } from './reportsTokens';
 
 /**
@@ -69,11 +81,21 @@ export type ReportsViewData = {
   isLoading: boolean;
   /** Bottom-right note: the laboratory's caveat, or production's byline. */
   footnote?: ReactNode;
+  /**
+   * The period's controls. Absent ⇒ the laboratory, which has one month of
+   * fixtures and so states its period instead of offering one.
+   */
+  period?: ReportsPeriodControl;
+  /** The detailed reports the chart's "more" opens. Absent ⇒ no menu. */
+  detailReports?: ReportsDetailLink[];
+  /** Opens the report the monthly comparison summarises. Absent ⇒ no link. */
+  onOpenFullComparison?: () => void;
 };
 
 export function ReportsView({ data }: { data: ReportsViewData }) {
   const hasSeries = data.series.length > 1;
   const hasCategories = data.categories.length > 0;
+  const { period } = data;
 
   return (
     <View
@@ -134,7 +156,19 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <LabPill Icon={SvgCalendar3}>{data.periodLabel}</LabPill>
+            {/* With months to step through, the period is the Budget's own
+                chip; stated in a pill where there is only one. */}
+            {period ? (
+              <MonthChip
+                label={data.periodLabel}
+                onPrevious={period.onPrevious}
+                onNext={period.onNext}
+                canGoPrevious={period.canGoPrevious}
+                canGoNext={period.canGoNext}
+              />
+            ) : (
+              <LabPill Icon={SvgCalendar3}>{data.periodLabel}</LabPill>
+            )}
             <LabPill Icon={SvgFilter2}>{data.scopeLabel}</LabPill>
           </View>
         </View>
@@ -151,6 +185,11 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
           <View style={{ flex: '1.62 1 0', minWidth: 0, gap: 16 }}>
             {hasSeries ? (
               <ReportsHeroChart
+                // A new period is a new plot: the day last pointed at may not
+                // exist in a shorter month.
+                key={period?.month}
+                period={period}
+                detailReports={data.detailReports}
                 series={data.series}
                 axisMin={data.axisMin}
                 axisMax={data.axisMax}
@@ -189,6 +228,12 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
               <ReportsCategoryDonut
                 categories={data.categories}
                 total={data.totals.expenses}
+                // "This month" is true of the current month alone.
+                periodLabel={
+                  period && !period.isCurrentMonth
+                    ? capitaliseMonth(period.monthLabel)
+                    : undefined
+                }
               />
             ) : (
               <EmptyPanel>
@@ -203,6 +248,7 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
             <ReportsMonthlyComparison
               monthly={data.monthly}
               monthCount={data.monthCount}
+              onOpenFullComparison={data.onOpenFullComparison}
             />
 
             {/* Only when every figure behind it is real. */}
@@ -231,34 +277,6 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
           </Text>
         )}
       </View>
-    </View>
-  );
-}
-
-/** What a panel shows when it has nothing to show. */
-function EmptyPanel({
-  children,
-  minHeight = 120,
-}: {
-  children: ReactNode;
-  minHeight?: number;
-}) {
-  return (
-    <View
-      style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight,
-        padding: '22px 24px',
-        backgroundColor: 'var(--dfl-surface-raised)',
-        border: '1px solid var(--dfl-line)',
-        borderRadius: 'var(--dfl-radius)',
-        boxShadow: 'var(--dfl-shadow)',
-      }}
-    >
-      <Text style={{ fontSize: 13, color: 'var(--dfl-text-3)' }}>
-        {children}
-      </Text>
     </View>
   );
 }

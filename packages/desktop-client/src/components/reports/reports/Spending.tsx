@@ -57,12 +57,16 @@ import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
 
 export function Spending() {
   const params = useParams();
-  const { data: widget, isPending } = useDashboardWidget<SpendingWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<SpendingWidget>({
     id: params.id,
     type: 'spending-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, the query for one is disabled, and a disabled query stays pending
+  // for good. Read as "pending", that was a spinner that never left for anyone
+  // who had not passed through the dashboard first.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 

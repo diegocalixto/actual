@@ -40,7 +40,7 @@ export type HomeBooks = {
   balances: Record<string, number>;
 };
 
-/** The desktop Reports' indicators for the period, in integer cents. */
+/** The Reports' indicators for the period on screen, in integer cents. */
 export type ReportsBooks = {
   income: number;
   expenses: number;
@@ -368,7 +368,7 @@ export class V2Books {
     };
   }
 
-  /** The desktop Reports: the indicators that lead the page. */
+  /** The Reports: the indicators that lead the page, on either layout. */
   async reports(): Promise<ReportsBooks> {
     const found = await this.beside(Object.values(REPORTS_LABELS));
 

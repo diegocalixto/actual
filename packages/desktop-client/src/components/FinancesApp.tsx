@@ -38,6 +38,7 @@ import { TransactionEdit } from './mobile/transactions/TransactionEdit';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
 import { Reports } from './reports';
+import { V2MobileReports } from './reports/v2real/V2MobileReports';
 import { V2RealReports } from './reports/v2real/V2RealReports';
 import { NarrowAlternate, WideComponent } from './responsive';
 import { useMultiuserEnabled } from './ServerContext';
@@ -89,14 +90,16 @@ function AccountsRoute() {
 }
 
 /**
- * `/reports` on the desktop is the approved Reports reading real queries; the
- * narrow layout keeps the existing mobile dashboard untouched, and every other
- * `/reports/*` path still reaches the dashboard router.
+ * `/reports` is the V2 Reports on both layouts: the approved composition on
+ * the desktop, and the same panels arranged in one column on a phone. Both
+ * read the month from the address and the same queries. Every other
+ * `/reports/*` path still reaches the dashboard router — the detailed reports,
+ * and the dashboard of widgets under its own id.
  */
 function ReportsRoute() {
   const { isNarrowWidth } = useResponsive();
 
-  return isNarrowWidth ? <Reports /> : <V2RealReports />;
+  return isNarrowWidth ? <V2MobileReports /> : <V2RealReports />;
 }
 
 function NarrowNotSupported({

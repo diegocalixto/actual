@@ -245,21 +245,19 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
     test('Reports is labelled in Portuguese', async () => {
       await goTo('Relatórios');
 
-      if (layout === 'mobile') {
-        // The phone keeps the dashboard, whose cards are named by the fork.
-        for (const card of ['Receita total (no ano)', 'Média por mês']) {
-          await expect(
-            main.getByRole('heading', { level: 2, name: card }),
-          ).toBeVisible();
-        }
-        return;
-      }
-
-      for (const card of [
-        'Principais categorias',
-        'Despesas por categoria',
-        'Comparativo mensal',
-      ]) {
+      // One page in two arrangements: the phone leaves the ranked list to
+      // the ring's legend and lists the detailed reports instead.
+      for (const card of layout === 'desktop'
+        ? [
+            'Principais categorias',
+            'Despesas por categoria',
+            'Comparativo mensal',
+          ]
+        : [
+            'Despesas por categoria',
+            'Comparativo mensal',
+            'Relatórios detalhados',
+          ]) {
         await expect(
           main.getByRole('heading', { level: 2, name: card, exact: true }),
         ).toBeVisible();
@@ -270,17 +268,44 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         'Saldo',
         'Taxa de poupança',
         'Receitas, despesas e saldo',
-        'Total de receitas',
-        'Total de despesas',
-        'Saldo do período',
-        'Para onde foi o seu dinheiro',
-        'Categoria',
-        'Valor',
-        '% do total',
         'Receitas (média)',
         'Despesas (média)',
         'Saldo (média)',
       ]);
+      if (layout === 'desktop') {
+        await expectLabels([
+          'Total de receitas',
+          'Total de despesas',
+          'Saldo do período',
+          'Para onde foi o seu dinheiro',
+          'Categoria',
+          'Valor',
+          '% do total',
+        ]);
+        await expect(
+          page.getByRole('button', { name: 'Relatórios detalhados' }),
+        ).toBeVisible();
+      } else {
+        await expectLabels([
+          'Relatório de fluxo de caixa',
+          'Relatório de patrimônio líquido',
+          'Relatório de despesas',
+          'Painel personalizável',
+          'Abra um relatório com filtros próprios',
+        ]);
+      }
+      // The period is named in Portuguese, and so is its menu.
+      const period = page.getByRole('button', { name: /^Período: / });
+      await expect(period).toHaveText('Este mês');
+      await period.click();
+      await expect(
+        page.getByRole('menu').getByRole('button').first(),
+      ).toHaveText('Este mês');
+      await expect(
+        page.getByRole('menu').getByRole('button').nth(1),
+      ).toHaveText(/^[A-ZÇ][a-zç]+ de \d{4}$/);
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('menu')).toHaveCount(0);
       // A comparison names the month it is against, in lower case.
       await expect(main.getByText(/^vs\. [a-zç]+$/).first()).toBeVisible();
       // A count of months takes the plural the language gives it.
@@ -305,6 +330,11 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         'Expenses by category',
         'Monthly comparison',
         'This month',
+        'Detailed reports',
+        'Cash flow report',
+        'Net worth report',
+        'Spending report',
+        'Custom dashboard',
       ]);
     });
   });

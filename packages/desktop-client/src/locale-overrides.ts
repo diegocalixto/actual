@@ -686,6 +686,19 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'No spending recorded in this period.':
       'Nenhuma despesa registrada neste período.',
     'No spending to break down.': 'Nenhuma despesa para detalhar.',
+    // Reports — the period's menu, the links that open the rest of a list or
+    // lead to a detailed report, and the phone's arrangement of the page.
+    'Period: {{period}}': 'Período: {{period}}',
+    'Show fewer': 'Ver menos',
+    'Running totals for the period, day by day, in on-budget accounts. Transfers between accounts are not counted.':
+      'Acumulado do período, dia a dia, nas contas no orçamento. Transferências entre contas não entram.',
+    'Cash flow report': 'Relatório de fluxo de caixa',
+    'Net worth report': 'Relatório de patrimônio líquido',
+    'Spending report': 'Relatório de despesas',
+    'Custom dashboard': 'Painel personalizável',
+    'Detailed reports': 'Relatórios detalhados',
+    'Open a report with its own filters':
+      'Abra um relatório com filtros próprios',
 
     // Budget — what the actions of a category and of a month open, on the
     // desktop and on a phone. "Rollover" was "Rolar gasto excedente" in the

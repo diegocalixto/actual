@@ -1,16 +1,12 @@
 import React from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
-import {
-  SvgCheveronLeft,
-  SvgCheveronRight,
-} from '@actual-app/components/icons/v1';
-import { SvgCalendar3 } from '@actual-app/components/icons/v2';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { LabSection } from '#components/v2lab/LabPanel';
+import { MonthChip } from '#components/v2lab/MonthChip';
 
 import { BudgetActivity } from './BudgetActivity';
 import { BudgetBand } from './BudgetBand';
@@ -258,117 +254,6 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
         )}
       </View>
     </View>
-  );
-}
-
-type MonthChipProps = {
-  label: string;
-  onPrevious?: () => void;
-  onNext?: () => void;
-};
-
-/**
- * The month this page is about.
- *
- * The arrows appear only when there is somewhere to go: in the laboratory there
- * is one month of fixtures, and a chevron that changed the caption without
- * changing a single number would be worse than no chevron at all.
- */
-function MonthChip({ label, onPrevious, onNext }: MonthChipProps) {
-  const { t } = useTranslation();
-  const steppable = onPrevious != null && onNext != null;
-
-  return (
-    <View
-      style={{
-        flex: '0 0 auto',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: steppable ? 4 : 9,
-        padding: steppable ? '5px 8px' : '9px 16px',
-        borderRadius: 999,
-        backgroundColor: 'var(--dfl-surface-raised)',
-        border: '1px solid var(--dfl-line-strong)',
-        boxShadow: 'var(--dfl-shadow)',
-      }}
-    >
-      {steppable && (
-        <StepButton
-          Icon={SvgCheveronLeft}
-          label={t('Mês anterior')}
-          onPress={onPrevious}
-        />
-      )}
-
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 9,
-          padding: steppable ? '0 6px' : 0,
-        }}
-      >
-        <SvgCalendar3
-          aria-hidden="true"
-          width={15}
-          height={15}
-          style={{ color: 'var(--dfl-blue)' }}
-        />
-        <Text
-          style={{
-            fontSize: 13.5,
-            fontWeight: 600,
-            letterSpacing: -0.1,
-            whiteSpace: 'nowrap',
-            color: 'var(--dfl-text)',
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-
-      {steppable && (
-        <StepButton
-          Icon={SvgCheveronRight}
-          label={t('Próximo mês')}
-          onPress={onNext}
-        />
-      )}
-    </View>
-  );
-}
-
-function StepButton({
-  Icon,
-  label,
-  onPress,
-}: {
-  Icon: typeof SvgCheveronLeft;
-  /** The button is a bare glyph, so this is the only name it has. */
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onPress}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 28,
-        height: 28,
-        padding: 0,
-        border: 'none',
-        borderRadius: 999,
-        cursor: 'pointer',
-        color: 'var(--dfl-text-2)',
-        background: 'transparent',
-      }}
-    >
-      <Icon aria-hidden="true" width={16} height={16} />
-    </button>
   );
 }
 

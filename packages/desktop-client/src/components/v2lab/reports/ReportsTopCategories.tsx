@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Trans } from 'react-i18next';
 
@@ -9,8 +9,8 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
+import { CardLink } from './CardLink';
 import { CardHeading, LabCard } from './LabCard';
-import { CardLink } from './ReportsCategoryDonut';
 import type { ExpenseCategory } from './reportsFixtures';
 import { formatCurrency, formatPercent } from './reportsMoney';
 import { CATEGORY_HUE } from './reportsTokens';
@@ -28,12 +28,18 @@ type ReportsTopCategoriesProps = {
  * The bar length is the category's amount as a fraction of the largest one —
  * real magnitude, normalised so the biggest fills the track. Nothing here is a
  * decorative length: two bars can be compared by eye and the comparison holds.
+ *
+ * It opens on the largest few and its link brings in the rest, in place: the
+ * whole ranking is already here, so there is nowhere else to send the reader.
+ * With nothing more to list there is no link.
  */
 export function ReportsTopCategories({
   categories,
   limit = 5,
 }: ReportsTopCategoriesProps) {
-  const shown = categories.slice(0, limit);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasMore = categories.length > limit;
+  const shown = isExpanded ? categories : categories.slice(0, limit);
   const largest = shown[0]?.amount ?? 1;
 
   return (
@@ -74,9 +80,18 @@ export function ReportsTopCategories({
           ))}
         </View>
 
-        <CardLink>
-          <Trans>View all spending</Trans>
-        </CardLink>
+        {hasMore && (
+          <CardLink
+            isExpanded={isExpanded}
+            onPress={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <Trans>Show fewer</Trans>
+            ) : (
+              <Trans>View all spending</Trans>
+            )}
+          </CardLink>
+        )}
       </View>
     </LabCard>
   );

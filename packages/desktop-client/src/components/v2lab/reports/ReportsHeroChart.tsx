@@ -2,20 +2,25 @@ import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import {
-  SvgCheveronDown,
-  SvgDotsHorizontalTriple,
-} from '@actual-app/components/icons/v1';
 import { SvgInformationCircle } from '@actual-app/components/icons/v2';
+import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
+import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { fittedFontSize } from '#components/v2lab/LabStyle';
 
 import { LabCard } from './LabCard';
 import type { DayPoint } from './reportsFixtures';
 import { formatAxis, formatCurrency } from './reportsMoney';
+import { ReportsMoreMenu } from './ReportsMoreMenu';
+import type {
+  ReportsDetailLink,
+  ReportsPeriodControl,
+} from './reportsPeriodControl';
+import { ReportsPeriodMenu } from './ReportsPeriodMenu';
 import { SERIES } from './reportsTokens';
 import type { SeriesKey } from './reportsTokens';
 
@@ -32,11 +37,25 @@ type ReportsHeroChartProps = {
    * showing — the laboratory has one fixed month and falls back to it.
    */
   formatXTick?: (day: number) => string;
+  /** The period's menu. Absent ⇒ the period is not on offer here. */
+  period?: ReportsPeriodControl;
+  /** What the chart's "more" opens. Absent or empty ⇒ no menu is drawn. */
+  detailReports?: ReportsDetailLink[];
+  /**
+   * The phone's arrangement. The curves are the same; what changes is how a
+   * day is read. A finger covers what it points at, and a box floating beside
+   * it would cover half of a plot this narrow — so the day under the finger
+   * is printed on a line of its own above the plot, which also names the three
+   * series. The period's totals are not repeated under it: on a phone the
+   * indicators sit directly above this card.
+   */
+  compact?: boolean;
 };
 
 const VW = 1000;
 const VH = 420;
 const PLOT_HEIGHT = 212;
+const COMPACT_PLOT_HEIGHT = 168;
 
 const ORDER: SeriesKey[] = ['income', 'expenses', 'net'];
 
@@ -68,9 +87,21 @@ export function ReportsHeroChart({
   totals,
   defaultHoverIndex,
   formatXTick,
+  period,
+  detailReports,
+  compact = false,
 }: ReportsHeroChartProps) {
   const { t } = useTranslation();
   const [hover, setHover] = useState<number | null>(defaultHoverIndex);
+  const plotHeight = compact ? COMPACT_PLOT_HEIGHT : PLOT_HEIGHT;
+
+  /** The day a pointer is over, from where it is across the plot. */
+  const dayAt = (clientX: number, plot: Element) => {
+    const box = plot.getBoundingClientRect();
+    const ratio = (clientX - box.left) / box.width;
+    const index = Math.round(ratio * (series.length - 1));
+    return Math.max(0, Math.min(series.length - 1, index));
+  };
 
   const span = axisMax - axisMin;
   const toX = (index: number) => (index / (series.length - 1)) * VW;
@@ -90,28 +121,43 @@ export function ReportsHeroChart({
 
   return (
     <LabCard>
-      <View style={{ padding: '16px 22px 14px', gap: 13 }}>
-        <Header />
+      <View
+        style={{
+          padding: compact ? '14px 16px 12px' : '16px 22px 14px',
+          gap: 13,
+        }}
+      >
+        <Header
+          period={period}
+          detailReports={detailReports}
+          compact={compact}
+        />
 
-        <Legend />
+        {compact ? (
+          // With no day under a finger, the last one: the period so far.
+          <Readout point={active ?? series[series.length - 1]} />
+        ) : (
+          <Legend />
+        )}
 
         <View style={{ flexDirection: 'row' }}>
           {/* Axis labels live outside the SVG so the non-uniform scale never
-              touches the type. */}
+              touches the type. On a phone the column is as wide as its
+              longest label, so none of them is cut by the card's edge. */}
           <View
             style={{
-              flex: '0 0 66px',
-              height: PLOT_HEIGHT,
+              flex: compact ? '0 0 auto' : '0 0 66px',
+              height: plotHeight,
               justifyContent: 'space-between',
               alignItems: 'flex-end',
-              paddingRight: 12,
+              paddingRight: compact ? 8 : 12,
             }}
           >
             {axisTicks.map(tick => (
               <Text
                 key={tick}
                 style={{
-                  fontSize: 11,
+                  fontSize: compact ? 10 : 11,
                   lineHeight: 1,
                   whiteSpace: 'nowrap',
                   color: 'var(--dfl-text-3)',
@@ -124,207 +170,247 @@ export function ReportsHeroChart({
             ))}
           </View>
 
-          <View style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-            <svg
-              viewBox={`0 0 ${VW} ${VH}`}
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              style={{ width: '100%', height: PLOT_HEIGHT, display: 'block' }}
-              onMouseLeave={() => setHover(null)}
-              onMouseMove={event => {
-                const box = event.currentTarget.getBoundingClientRect();
-                const ratio = (event.clientX - box.left) / box.width;
-                const index = Math.round(ratio * (series.length - 1));
-                setHover(Math.max(0, Math.min(series.length - 1, index)));
-              }}
-            >
-              <defs>
-                {ORDER.map(key => (
-                  <linearGradient
-                    key={key}
-                    id={`dfrFill-${key}`}
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={SERIES[key]}
-                      stopOpacity="0.34"
-                    />
-                    <stop
-                      offset="58%"
-                      stopColor={SERIES[key]}
-                      stopOpacity="0.08"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor={SERIES[key]}
-                      stopOpacity="0"
-                    />
-                  </linearGradient>
-                ))}
-                <filter
-                  id="dfrGlow"
-                  x="-6%"
-                  y="-30%"
-                  width="112%"
-                  height="160%"
-                >
-                  <feGaussianBlur stdDeviation="6" />
-                </filter>
-              </defs>
-
-              {/* Grid: present, never assertive. Zero reads a shade stronger,
-                  because a negative result has to be legible as negative. */}
-              {axisTicks.map(tick => (
-                <line
-                  key={tick}
-                  x1="0"
-                  y1={toY(tick)}
-                  x2={VW}
-                  y2={toY(tick)}
-                  stroke={
-                    tick === 0 ? 'var(--dfl-line-strong)' : 'var(--dfl-line)'
+          {/* The plot, and under it the days it runs across. */}
+          <View style={{ flex: '1 1 0', minWidth: 0, gap: 13 }}>
+            <View style={{ position: 'relative' }}>
+              <svg
+                viewBox={`0 0 ${VW} ${VH}`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                style={{
+                  width: '100%',
+                  height: plotHeight,
+                  display: 'block',
+                  // A finger dragged across the plot reads it day by day; one
+                  // dragged down it still scrolls the page.
+                  touchAction: 'pan-y',
+                }}
+                // A mouse that leaves stops asking. A finger that lifts has
+                // only finished pointing: the day it chose stays.
+                onPointerLeave={event => {
+                  if (event.pointerType === 'mouse') {
+                    setHover(null);
                   }
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
+                }}
+                onPointerDown={event =>
+                  setHover(dayAt(event.clientX, event.currentTarget))
+                }
+                onPointerMove={event =>
+                  setHover(dayAt(event.clientX, event.currentTarget))
+                }
+              >
+                <defs>
+                  {ORDER.map(key => (
+                    <linearGradient
+                      key={key}
+                      id={`dfrFill-${key}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor={SERIES[key]}
+                        stopOpacity="0.34"
+                      />
+                      <stop
+                        offset="58%"
+                        stopColor={SERIES[key]}
+                        stopOpacity="0.08"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor={SERIES[key]}
+                        stopOpacity="0"
+                      />
+                    </linearGradient>
+                  ))}
+                  <filter
+                    id="dfrGlow"
+                    x="-6%"
+                    y="-30%"
+                    width="112%"
+                    height="160%"
+                  >
+                    <feGaussianBlur stdDeviation="6" />
+                  </filter>
+                </defs>
 
-              {paths.map(({ key, line }) => (
-                <path
-                  key={key}
-                  d={`${line} L ${VW} ${baseline} L 0 ${baseline} Z`}
-                  fill={`url(#dfrFill-${key})`}
-                />
-              ))}
+                {/* Grid: present, never assertive. Zero reads a shade stronger,
+                  because a negative result has to be legible as negative. */}
+                {axisTicks.map(tick => (
+                  <line
+                    key={tick}
+                    x1="0"
+                    y1={toY(tick)}
+                    x2={VW}
+                    y2={toY(tick)}
+                    stroke={
+                      tick === 0 ? 'var(--dfl-line-strong)' : 'var(--dfl-line)'
+                    }
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
 
-              {/* Halo, then the line. */}
-              {paths.map(({ key, line }) => (
-                <path
-                  key={`glow-${key}`}
-                  d={line}
-                  fill="none"
-                  stroke={SERIES[key]}
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                  filter="url(#dfrGlow)"
-                  opacity="0.6"
-                />
-              ))}
-              {paths.map(({ key, line }) => (
-                <path
-                  key={`line-${key}`}
-                  d={line}
-                  fill="none"
-                  stroke={SERIES[key]}
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
+                {paths.map(({ key, line }) => (
+                  <path
+                    key={key}
+                    d={`${line} L ${VW} ${baseline} L 0 ${baseline} Z`}
+                    fill={`url(#dfrFill-${key})`}
+                  />
+                ))}
 
-              {hover !== null && (
-                <line
-                  x1={toX(hover)}
-                  y1="0"
-                  x2={toX(hover)}
-                  y2={VH}
-                  stroke="rgba(170, 200, 240, 0.4)"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                  vectorEffect="non-scaling-stroke"
+                {/* Halo, then the line. */}
+                {paths.map(({ key, line }) => (
+                  <path
+                    key={`glow-${key}`}
+                    d={line}
+                    fill="none"
+                    stroke={SERIES[key]}
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    filter="url(#dfrGlow)"
+                    opacity="0.6"
+                  />
+                ))}
+                {paths.map(({ key, line }) => (
+                  <path
+                    key={`line-${key}`}
+                    d={line}
+                    fill="none"
+                    stroke={SERIES[key]}
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+
+                {hover !== null && (
+                  <line
+                    x1={toX(hover)}
+                    y1="0"
+                    x2={toX(hover)}
+                    y2={VH}
+                    stroke="rgba(170, 200, 240, 0.4)"
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+              </svg>
+
+              {/* Sample dots and the endpoint are HTML, not SVG: the plot scales
+                non-uniformly and a circle drawn inside it would flatten. */}
+              {paths.map(({ key, points }) =>
+                points.map((point, index) => {
+                  const isLast = index === points.length - 1;
+                  const isEmphasised = isLast || hover === index;
+                  // A month of samples on a phone's plot is a dot every nine
+                  // points: a necklace over the line it is meant to mark.
+                  if (compact && !isEmphasised) {
+                    return null;
+                  }
+
+                  return (
+                    <Dot
+                      key={`${key}-${index}`}
+                      color={SERIES[key]}
+                      left={(point.x / VW) * 100}
+                      top={(point.y / VH) * plotHeight}
+                      size={isLast ? 10 : hover === index ? 8 : 4.5}
+                      emphasised={isEmphasised}
+                    />
+                  );
+                }),
+              )}
+
+              {active && !compact && (
+                <ChartTooltip
+                  point={active}
+                  left={(toX(hover as number) / VW) * 100}
                 />
               )}
-            </svg>
+            </View>
 
-            {/* Sample dots and the endpoint are HTML, not SVG: the plot scales
-                non-uniformly and a circle drawn inside it would flatten. */}
-            {paths.map(({ key, points }) =>
-              points.map((point, index) => (
-                <Dot
-                  key={`${key}-${index}`}
-                  color={SERIES[key]}
-                  left={(point.x / VW) * 100}
-                  top={(point.y / VH) * PLOT_HEIGHT}
-                  size={
-                    index === points.length - 1 ? 10 : hover === index ? 8 : 4.5
-                  }
-                  emphasised={index === points.length - 1 || hover === index}
-                />
-              )),
-            )}
-
-            {active && (
-              <ChartTooltip
-                point={active}
-                left={(toX(hover as number) / VW) * 100}
-              />
-            )}
+            <View
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            >
+              {xTicks.map(day => (
+                <Text
+                  key={day}
+                  style={{
+                    fontSize: compact ? 10.5 : 11.5,
+                    whiteSpace: 'nowrap',
+                    color: 'var(--dfl-text-3)',
+                  }}
+                >
+                  {formatXTick ? formatXTick(day) : t('May {{ day }}', { day })}
+                </Text>
+              ))}
+            </View>
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ flex: '0 0 66px' }} />
+        {!compact && (
           <View
             style={{
-              flex: '1 1 0',
               flexDirection: 'row',
-              justifyContent: 'space-between',
+              marginTop: 4,
+              paddingTop: 12,
+              borderTop: '1px solid var(--dfl-line)',
             }}
           >
-            {xTicks.map(day => (
-              <Text
-                key={day}
-                style={{
-                  fontSize: 11.5,
-                  whiteSpace: 'nowrap',
-                  color: 'var(--dfl-text-3)',
-                }}
-              >
-                {formatXTick ? formatXTick(day) : t('May {{ day }}', { day })}
-              </Text>
-            ))}
+            <Total
+              label={<Trans>Total income</Trans>}
+              value={totals.income}
+              color={SERIES.income}
+            />
+            <Divider />
+            <Total
+              label={<Trans>Total expenses</Trans>}
+              value={totals.expenses}
+              color={SERIES.expenses}
+            />
+            <Divider />
+            <Total
+              label={<Trans>Total net result</Trans>}
+              value={totals.net}
+              color={SERIES.net}
+            />
           </View>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            marginTop: 4,
-            paddingTop: 12,
-            borderTop: '1px solid var(--dfl-line)',
-          }}
-        >
-          <Total
-            label={<Trans>Total income</Trans>}
-            value={totals.income}
-            color={SERIES.income}
-          />
-          <Divider />
-          <Total
-            label={<Trans>Total expenses</Trans>}
-            value={totals.expenses}
-            color={SERIES.expenses}
-          />
-          <Divider />
-          <Total
-            label={<Trans>Total net result</Trans>}
-            value={totals.net}
-            color={SERIES.net}
-          />
-        </View>
+        )}
       </View>
     </LabCard>
   );
 }
 
-function Header() {
+type HeaderProps = {
+  period?: ReportsPeriodControl;
+  detailReports?: ReportsDetailLink[];
+  compact: boolean;
+};
+
+/**
+ * The card's title, what the curves are, and the two things that can be done
+ * from here: choose the period, and open a detailed report.
+ *
+ * Each control is drawn only when it has something to do. The laboratory has
+ * one month of fixtures and nowhere to send a reader, so there the header is
+ * the title alone — a chevron or a "more" that answered nothing would be an
+ * affordance for an action that does not exist.
+ */
+function Header({ period, detailReports, compact }: HeaderProps) {
+  const { t } = useTranslation();
+  const about = t(
+    'Running totals for the period, day by day, in on-budget accounts. Transfers between accounts are not counted.',
+  );
+  const hasMore = detailReports !== undefined && detailReports.length > 0;
+
   return (
     <View
       style={{
@@ -334,66 +420,146 @@ function Header() {
         gap: 16,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            letterSpacing: -0.2,
-            color: 'var(--dfl-text)',
-          }}
-        >
-          <Trans>Income, Expenses &amp; Net Result</Trans>
-        </Text>
-        <SvgInformationCircle
-          aria-hidden="true"
-          width={14}
-          height={14}
-          style={{ color: 'var(--dfl-text-3)' }}
-        />
-      </View>
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 7,
-            padding: '6px 11px',
-            borderRadius: 'var(--dfl-radius-sm)',
-            backgroundColor: 'rgba(6, 10, 18, 0.75)',
-            border: '1px solid var(--dfl-line-strong)',
-          }}
-        >
+      <View style={{ minWidth: 0, gap: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text
             style={{
-              fontSize: 12.5,
-              whiteSpace: 'nowrap',
-              color: 'var(--dfl-text-2)',
+              fontSize: 15,
+              fontWeight: 600,
+              letterSpacing: -0.2,
+              color: 'var(--dfl-text)',
             }}
           >
-            <Trans>This month</Trans>
+            <Trans>Income, Expenses &amp; Net Result</Trans>
           </Text>
-          <SvgCheveronDown
-            aria-hidden="true"
-            width={13}
-            height={13}
-            style={{ color: 'var(--dfl-text-3)' }}
-          />
+          {/* A pointer gets the explanation on rest. */}
+          {!compact && (
+            <Tooltip
+              content={
+                <Text style={{ display: 'block', maxWidth: 260 }}>{about}</Text>
+              }
+              placement="top"
+              // The component's own surface, restated: a style given here
+              // replaces it instead of adding to it.
+              style={{ ...styles.tooltip, padding: '7px 10px' }}
+            >
+              {/* A note, and named: what the tooltip shows a pointer is what
+                  a screen reader is told here. */}
+              <span role="note" aria-label={about} style={{ display: 'flex' }}>
+                <SvgInformationCircle
+                  aria-hidden="true"
+                  width={14}
+                  height={14}
+                  style={{ color: 'var(--dfl-text-3)' }}
+                />
+              </span>
+            </Tooltip>
+          )}
         </View>
+        {/* A finger has no rest to give, so the phone prints it. */}
+        {compact && (
+          <Text
+            style={{
+              fontSize: 11.5,
+              lineHeight: 1.4,
+              color: 'var(--dfl-text-3)',
+            }}
+          >
+            {about}
+          </Text>
+        )}
+      </View>
+
+      {(period || hasMore) && (
         <View
           style={{
-            width: 30,
-            height: 30,
+            flex: '0 0 auto',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 'var(--dfl-radius-sm)',
-            color: 'var(--dfl-text-3)',
-            border: '1px solid var(--dfl-line)',
+            gap: 10,
           }}
         >
-          <SvgDotsHorizontalTriple aria-hidden="true" width={14} height={14} />
+          {period && <ReportsPeriodMenu period={period} />}
+          {hasMore && <ReportsMoreMenu reports={detailReports} />}
         </View>
+      )}
+    </View>
+  );
+}
+
+/**
+ * One day of the three series, on a line of its own: the phone's reading of
+ * the plot, and its legend. Each amount has a third of the card, and gives up
+ * size before it gives up a digit.
+ */
+function Readout({ point }: { point: DayPoint }) {
+  const figures = ORDER.map(key => formatCurrency(point[key]));
+  const valueSize = fittedFontSize({
+    designSize: '13.5px',
+    room: '100cqi',
+    floor: '10px',
+    figures,
+  });
+
+  return (
+    <View style={{ gap: 8 }}>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--dfl-text-2)',
+        }}
+      >
+        {point.label}
+      </Text>
+
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {ORDER.map((key, index) => (
+          <View
+            key={key}
+            style={{
+              flex: '1 1 0',
+              minWidth: 0,
+              gap: 4,
+              containerType: 'inline-size',
+            }}
+          >
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
+              <View
+                aria-hidden="true"
+                style={{
+                  width: 7,
+                  height: 7,
+                  flexShrink: 0,
+                  borderRadius: 999,
+                  backgroundColor: SERIES[key],
+                  boxShadow: `0 0 7px -1px ${SERIES[key]}`,
+                }}
+              />
+              <Text
+                style={{
+                  fontSize: 11.5,
+                  whiteSpace: 'nowrap',
+                  color: 'var(--dfl-text-2)',
+                }}
+              >
+                {LABEL[key]}
+              </Text>
+            </View>
+            <FinancialText
+              style={{
+                fontSize: ['13.5px', valueSize],
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                color: 'var(--dfl-text)',
+              }}
+            >
+              <PrivacyFilter>{figures[index]}</PrivacyFilter>
+            </FinancialText>
+          </View>
+        ))}
       </View>
     </View>
   );

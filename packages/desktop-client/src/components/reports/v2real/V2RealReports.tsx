@@ -8,6 +8,8 @@ import { ReportsView } from '#components/v2lab/reports/ReportsView';
 
 import { REPORTS_ROOT_CLASS, ReportsStyle } from './ReportsStyle';
 import { useRealReportsData } from './useRealReportsData';
+import { useReportsDetailLinks } from './useReportsDetailLinks';
+import { useReportsPeriod } from './useReportsPeriod';
 
 /** A person's name. Not copy, so never a translation key. */
 const AUTHOR = 'Diego Calixto';
@@ -19,11 +21,19 @@ const AUTHOR = 'Diego Calixto';
  * composition, shared with `/v2-lab/reports`, and this file only supplies real
  * data and the token scope. Anything that looks different between the two
  * routes is a difference in the data, never in the design.
+ *
+ * It is also what gives the composition's controls something to do: the month
+ * comes from the address, and the links lead to the application's own detailed
+ * reports. The laboratory supplies neither, and draws none of them.
  */
 export function V2RealReports() {
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
-  const data = useRealReportsData();
+  const period = useReportsPeriod();
+  const data = useRealReportsData(period.month);
+  const detailReports = useReportsDetailLinks();
+  // The monthly comparison is the cash-flow report, six months of it.
+  const cashFlow = detailReports.find(report => report.id === 'cash-flow');
 
   return (
     // The page's landmark. The upstream pages get theirs from `Page`; these
@@ -42,7 +52,15 @@ export function V2RealReports() {
         Authorship goes in the slot the approved composition already ends with:
         small, muted, right-aligned, in the normal flow of the page.
       */}
-      <ReportsView data={{ ...data, footnote: AUTHOR }} />
+      <ReportsView
+        data={{
+          ...data,
+          period,
+          detailReports,
+          onOpenFullComparison: cashFlow?.onOpen,
+          footnote: AUTHOR,
+        }}
+      />
     </main>
   );
 }

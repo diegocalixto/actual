@@ -16,6 +16,7 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { ConfigurationPage } from './page-models/configuration-page';
+import { V2Books } from './page-models/v2-books';
 import {
   V2_NARROWER as NARROWER,
   V2_PAGES,
@@ -275,64 +276,228 @@ export function describeV2Pages(layout: V2Layout) {
     test('Reports shows the indicators and the charts', async () => {
       await shell.goTo('reports');
 
-      if (layout === 'desktop') {
-        for (const card of [
-          'Top categories',
-          'Expenses by category',
-          'Monthly comparison',
-        ]) {
-          await expect(
-            shell.main.getByRole('heading', {
-              level: 2,
-              name: card,
-              exact: true,
-            }),
-          ).toBeVisible();
-        }
-        for (const indicator of [
-          'Income',
-          'Expenses',
-          'Net Result',
-          'Savings Rate',
-        ]) {
-          await expect(
-            shell.main.getByText(indicator, { exact: true }).first(),
-          ).toBeVisible();
-        }
-        // The period has transactions, so the chart is drawn and not its
-        // empty state.
+      // One page in two arrangements. The phone leaves the ranked list to
+      // the ring's legend, and lists the detailed reports the desktop keeps
+      // behind the chart's menu.
+      for (const card of layout === 'desktop'
+        ? ['Top categories', 'Expenses by category', 'Monthly comparison']
+        : ['Expenses by category', 'Monthly comparison', 'Detailed reports']) {
         await expect(
-          shell.main.getByText('Income, Expenses & Net Result'),
+          shell.main.getByRole('heading', {
+            level: 2,
+            name: card,
+            exact: true,
+          }),
         ).toBeVisible();
-        await expect(
-          shell.main.getByText('No transactions in this period.'),
-        ).toHaveCount(0);
-      } else {
-        await expect(page.getByTestId('reports-overview')).toBeVisible();
-        for (const indicator of [
-          'Total Income (YTD)',
-          'Total Expenses (YTD)',
-          'Avg Per Month',
-          'Avg Per Transaction',
-        ]) {
-          await expect(
-            shell.main.getByRole('heading', { level: 2, name: indicator }),
-          ).toBeVisible();
-        }
       }
+      for (const indicator of [
+        'Income',
+        'Expenses',
+        'Net Result',
+        'Savings Rate',
+      ]) {
+        await expect(
+          shell.main.getByText(indicator, { exact: true }).first(),
+        ).toBeVisible();
+      }
+      // The period has transactions, so the chart is drawn and not its
+      // empty state.
+      await expect(
+        shell.main.getByText('Income, Expenses & Net Result'),
+      ).toBeVisible();
+      await expect(
+        shell.main.getByText('No transactions in this period.'),
+      ).toHaveCount(0);
+      // The phone no longer opens on the dashboard of widgets.
+      await expect(page.getByTestId('reports-overview')).toHaveCount(0);
 
       await expect
         .poll(async () => (await shell.figures()).readable.length)
         .toBeGreaterThan(0);
-
-      // The dashboard draws a card when it comes on screen, so the first
-      // chart is one scroll below the indicators on a phone.
-      if (layout === 'mobile') {
-        await shell.main.getByRole('button').nth(4).scrollIntoViewIfNeeded();
-      }
       await expect(shell.main.locator('svg').first()).toBeVisible({
         timeout: 30_000,
       });
+    });
+
+    test('Reports steps between months, jumps to one and comes back', async () => {
+      await shell.goTo('reports');
+
+      const previous = page.getByRole('button', { name: 'Mês anterior' });
+      const next = page.getByRole('button', { name: 'Próximo mês' });
+      const period = page.getByRole('button', { name: /^Period: / });
+
+      // It opens on the current month, which is as far forward as it goes.
+      await expect(period).toHaveAttribute('data-month', '2017-01');
+      await expect(period).toHaveText('This month');
+      await expect(next).toBeDisabled();
+      await expect(previous).toBeEnabled();
+      const thisMonth = await shell.settledFigures();
+
+      // A step back: the month is in the address and on the control, and the
+      // figures are another month's.
+      await previous.click();
+      await expect(period).toHaveAttribute('data-month', '2016-12');
+      await expect(period).toHaveText('Dezembro de 2016');
+      await expect(page).toHaveURL(/\/reports\?month=2016-12$/);
+      await expect(next).toBeEnabled();
+      await expect(
+        shell.main.getByText('1 dez – 31 dez de 2016', { exact: false }),
+      ).toBeVisible();
+      await expect
+        .poll(async () => (await shell.settledFigures()).readable)
+        .not.toEqual(thisMonth.readable);
+
+      // Every indicator is now measured against the month before that one.
+      await expect(
+        shell.main.getByText('vs novembro', { exact: true }).first(),
+      ).toBeVisible();
+
+      // The menu lists the months there is something to show for, and the
+      // first of them is the way back.
+      await period.click();
+      const months = page.getByRole('menu').getByRole('button');
+      await expect(months.first()).toHaveText('This month');
+      await expect(months.nth(1)).toHaveText('Dezembro de 2016');
+      expect(await months.count()).toBeGreaterThan(2);
+      await months.nth(2).click();
+      await expect(period).toHaveAttribute('data-month', '2016-11');
+      await expect(page.getByRole('menu')).toHaveCount(0);
+
+      await period.click();
+      await page
+        .getByRole('menu')
+        .getByRole('button', { name: 'This month', exact: true })
+        .click();
+      await expect(period).toHaveAttribute('data-month', '2017-01');
+      // Asked for nothing, the address says nothing.
+      await expect(page).toHaveURL(/\/reports$/);
+      await expect
+        .poll(async () => (await shell.settledFigures()).readable)
+        .toEqual(thisMonth.readable);
+    });
+
+    test('the links of the Reports open what they name', async () => {
+      await shell.goTo('reports');
+      // December has more categories than a card opens on.
+      await page.getByRole('button', { name: 'Mês anterior' }).click();
+      await expect(
+        page.getByRole('button', { name: /^Period: / }),
+      ).toHaveAttribute('data-month', '2016-12');
+      await shell.settledFigures();
+
+      // "View all…" brings in the rest of a card's own list, and puts it
+      // away again. December has six categories, one more than a ranking
+      // opens on — which is the desktop's ranked list, and the phone's ring.
+      const [title, link] =
+        layout === 'desktop'
+          ? ['Top categories', 'View all spending']
+          : ['Expenses by category', 'View all categories'];
+      const card = shell.main
+        .getByRole('heading', { level: 2, name: title })
+        .locator('xpath=ancestor::div[3]');
+      // A row ends on its share of the total.
+      const rows = card.getByText(/^\d+,\d%$/);
+      const viewAll = card.getByRole('button', { name: link });
+      await viewAll.scrollIntoViewIfNeeded();
+      await expect(viewAll).toHaveAttribute('aria-expanded', 'false');
+      await expect(rows).toHaveCount(5);
+      await viewAll.click();
+      const fewer = card.getByRole('button', { name: 'Show fewer' });
+      await expect(fewer).toHaveAttribute('aria-expanded', 'true');
+      await expect(rows).toHaveCount(6);
+      await fewer.click();
+      await expect(rows).toHaveCount(5);
+
+      if (layout === 'desktop') {
+        // The ring's legend opens on six: in a month of six it has nothing
+        // more to bring in, and offers no link that would do nothing.
+        await expect(
+          shell.main.getByRole('button', { name: 'View all categories' }),
+        ).toHaveCount(0);
+
+        // The comparison's link is the cash-flow report — which opens, though
+        // nothing here has been to the dashboard first: reached on its own
+        // address it used to wait for a widget it was never going to get.
+        await shell.main
+          .getByRole('button', { name: 'View full comparison' })
+          .click();
+        await expect(page).toHaveURL(/\/reports\/cash-flow$/);
+        await expect(
+          page.getByTestId('reports-page').getByText('Cash Flow', {
+            exact: true,
+          }),
+        ).toBeVisible({ timeout: 45_000 });
+        // Back is this page again, on the month it was left on.
+        await page.goBack();
+        await expect(page).toHaveURL(/\/reports\?month=2016-12$/);
+        await shell.waitForPage('reports');
+
+        // The chart's menu names the four detailed reports.
+        await page.getByRole('button', { name: 'Detailed reports' }).click();
+        const reports = page.getByRole('menu').getByRole('button');
+        await expect(reports).toHaveText([
+          'Cash flow report',
+          'Net worth report',
+          'Spending report',
+          'Custom dashboard',
+        ]);
+        await reports.nth(2).click();
+        await expect(page).toHaveURL(/\/reports\/spending$/);
+        await expect(
+          page.getByTestId('reports-page').getByText('Monthly Spending', {
+            exact: true,
+          }),
+        ).toBeVisible({ timeout: 45_000 });
+        await page.goBack();
+        await shell.waitForPage('reports');
+      } else {
+        // The phone lists them, each a row a finger can hit.
+        const detailed = shell.main
+          .getByRole('heading', { level: 2, name: 'Detailed reports' })
+          .locator('xpath=ancestor::div[4]');
+        const rows = detailed.getByRole('button');
+        await expect(rows).toHaveText([
+          'Cash flow report',
+          'Net worth report',
+          'Spending report',
+          'Custom dashboard',
+        ]);
+        for (const row of await rows.all()) {
+          await row.scrollIntoViewIfNeeded();
+          expect((await row.boundingBox())?.height).toBeGreaterThanOrEqual(
+            TOUCH_TARGET,
+          );
+        }
+
+        // A detailed report opens — though nothing here has been to the
+        // dashboard first: reached on its own address it used to wait for a
+        // widget it was never going to get — and its own back button
+        // returns here.
+        await rows.first().click();
+        await expect(page).toHaveURL(/\/reports\/cash-flow$/);
+        await expect(shell.title).toHaveText('Cash Flow', { timeout: 45_000 });
+        await page.getByRole('button', { name: 'Back' }).click();
+        await shell.waitForPage('reports');
+
+        // The dashboard the phone used to open on is one row away.
+        await rows.nth(3).click();
+        await expect(page.getByTestId('reports-overview')).toBeVisible({
+          timeout: 45_000,
+        });
+        await page.goBack();
+        await shell.waitForPage('reports');
+      }
+
+      // Left as it was found: the current month.
+      const period = page.getByRole('button', { name: /^Period: / });
+      if ((await period.getAttribute('data-month')) !== '2017-01') {
+        await period.click();
+        await page
+          .getByRole('menu')
+          .getByRole('button', { name: 'This month', exact: true })
+          .click();
+      }
+      await expect(period).toHaveAttribute('data-month', '2017-01');
     });
 
     test('privacy mode hides every amount on the four pages and gives them back', async () => {
@@ -420,7 +585,7 @@ export function describeV2Pages(layout: V2Layout) {
     if (layout === 'mobile') {
       test('the top bar can be read in a light and in a dark appearance', async () => {
         // A phone follows its owner's appearance and the application follows
-        // the phone, but these three pages paint their bar on a ground that is
+        // the phone, but these four pages paint their bar on a ground that is
         // dark either way. What is drawn on it has to be light either way.
         const BAR = {
           home: ['Ocultar valores'],
@@ -431,12 +596,13 @@ export function describeV2Pages(layout: V2Layout) {
             'Ocultar valores',
           ],
           accounts: ['Adicionar conta', 'Ocultar valores'],
+          reports: ['Ocultar valores'],
         } as const;
 
         for (const colorScheme of ['light', 'dark'] as const) {
           await page.emulateMedia({ colorScheme });
 
-          for (const name of ['home', 'budget', 'accounts'] as const) {
+          for (const name of V2_PAGES) {
             await shell.goTo(name);
 
             // 4.5:1 is what WCAG asks of text this size; the glyphs, which
@@ -518,6 +684,57 @@ export function describeV2Pages(layout: V2Layout) {
       });
     }
 
+    if (layout === 'mobile') {
+      test('the Reports give a finger something to hit', async () => {
+        await shell.goTo('reports');
+
+        for (const name of [
+          'Mês anterior',
+          'Próximo mês',
+          /^Period: /,
+          'Ocultar valores',
+        ]) {
+          const control = page.getByRole('button', { name }).first();
+          const box = await control.boundingBox();
+          expect(box?.height, String(name)).toBeGreaterThanOrEqual(
+            TOUCH_TARGET,
+          );
+          expect(box?.width, String(name)).toBeGreaterThanOrEqual(TOUCH_TARGET);
+        }
+
+        // The months of the period's menu are rows of that height too.
+        await page.getByRole('button', { name: /^Period: / }).click();
+        const months = page.getByRole('menu').getByRole('button');
+        await expect(months.first()).toBeVisible();
+        for (const month of await months.all()) {
+          expect((await month.boundingBox())?.height).toBeGreaterThanOrEqual(
+            TOUCH_TARGET,
+          );
+        }
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('menu')).toHaveCount(0);
+
+        // A finger on the plot reads the day under it, on the line above.
+        const plot = shell.main.locator('svg[viewBox="0 0 1000 420"]');
+        await plot.scrollIntoViewIfNeeded();
+        const box = await plot.boundingBox();
+        if (!box) {
+          throw new Error('The chart is not on screen.');
+        }
+        await page.touchscreen.tap(box.x + 2, box.y + box.height / 2);
+        await expect(
+          shell.main.getByText('1 de janeiro de 2017', { exact: true }),
+        ).toBeVisible();
+        await page.touchscreen.tap(
+          box.x + box.width - 2,
+          box.y + box.height / 2,
+        );
+        await expect(
+          shell.main.getByText('31 de janeiro de 2017', { exact: true }),
+        ).toBeVisible();
+      });
+    }
+
     test('an amount in the millions is still printed whole', async () => {
       // The one test that writes. A plan of R$ 1.234.567,89 reaches the
       // Budget's headline, its indicators, its group and its row, and the
@@ -564,6 +781,95 @@ export function describeV2Pages(layout: V2Layout) {
       }
 
       await page.setViewportSize(VIEWPORTS[layout].viewport);
+    });
+  });
+
+  /**
+   * The Reports of a file nothing has been entered in. It has its own page:
+   * the group above reads the test file, and this needs the opposite of one.
+   */
+  test.describe(`V2 Reports with nothing to report (${layout})`, () => {
+    let page: Page;
+    let shell: V2Shell;
+
+    test.beforeAll(async ({ browser }, testInfo) => {
+      testInfo.setTimeout(120_000);
+
+      page = await browser.newPage(VIEWPORTS[layout]);
+      await page.goto('/');
+      await new ConfigurationPage(page).startFresh();
+      shell = new V2Shell(page, layout);
+    });
+
+    test.afterAll(async () => {
+      await page?.close();
+    });
+
+    test('an empty file is said to be empty, and offers no month to go to', async () => {
+      await shell.goTo('reports');
+
+      // The indicators are there and read nothing, rather than not arriving.
+      await expect(async () => {
+        expect(await new V2Books(shell).reports()).toEqual({
+          income: 0,
+          expenses: 0,
+          net: 0,
+        });
+      }).toPass();
+      await expect(
+        shell.main.getByText('0,0%', { exact: true }).first(),
+      ).toBeVisible();
+
+      if (layout === 'mobile') {
+        // The phone says it in words, once, where the chart would be.
+        await expect(
+          shell.main.getByText('No transactions in this period.'),
+        ).toBeVisible();
+        await expect(
+          shell.main.getByText('Income, Expenses & Net Result'),
+        ).toHaveCount(0);
+        await expect(
+          shell.main.getByRole('heading', {
+            level: 2,
+            name: 'Expenses by category',
+          }),
+        ).toHaveCount(0);
+        // With no plot there is no scale either: every amount left is a zero.
+        for (const figure of (await shell.settledFigures()).readable) {
+          expect(figure, figure).toMatch(/^R\$\s?0,00$/);
+        }
+      } else {
+        // The desktop keeps its plot, empty, on the scale it gives a period
+        // nothing has happened in — and names the two lists it cannot draw.
+        await expect(
+          shell.main.getByText('No spending recorded in this period.'),
+        ).toBeVisible();
+        await expect(
+          shell.main.getByText('No spending to break down.'),
+        ).toBeVisible();
+      }
+      await expect(shell.main.getByText(/^(Carregando|Loading)\b/)).toHaveCount(
+        0,
+      );
+
+      // Without a transaction there is no earlier month, and none later.
+      await expect(
+        page.getByRole('button', { name: 'Mês anterior' }),
+      ).toBeDisabled();
+      await expect(
+        page.getByRole('button', { name: 'Próximo mês' }),
+      ).toBeDisabled();
+      const period = page.getByRole('button', { name: /^Period: / });
+      await expect(period).toHaveText('This month');
+      await period.click();
+      await expect(page.getByRole('menu').getByRole('button')).toHaveText([
+        'This month',
+      ]);
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('menu')).toHaveCount(0);
+
+      // A row of zeros is still a row of amounts: each inside its box.
+      expect(await shell.figuresOutOfBounds()).toEqual([]);
     });
   });
 }

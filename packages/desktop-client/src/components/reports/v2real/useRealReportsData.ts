@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -34,11 +34,17 @@ type CategorySum = { category: string | null; amount: number };
  * between your accounts never counts as income or as spending.
  *
  * Dates are formatted in pt-BR because this screen's own copy is Portuguese.
+ *
+ * `month` is the period, as `YYYY-MM`: the curve and the categories are that
+ * month's, the indicators compare it with the one before, and the comparison
+ * window ends on it. The desktop and the phone both call this with the month
+ * in the address, which is why their figures cannot differ.
  */
-export function useRealReportsData(): ReportsViewData {
+export function useRealReportsData(
+  month: string = monthUtils.currentMonth(),
+): ReportsViewData {
   const { t } = useTranslation();
 
-  const month = monthUtils.currentMonth();
   const monthStart = monthUtils.firstDayOfMonth(month);
   const monthEnd = monthUtils.lastDayOfMonth(month);
   const windowStart = monthUtils.subMonths(month, MONTH_WINDOW - 1);
@@ -156,7 +162,7 @@ export function useRealReportsData(): ReportsViewData {
     loadingIncomeMonths ||
     loadingExpenseMonths;
 
-  return useMemo(() => {
+  const view = useMemo(() => {
     // ---- the curve: a running total per day, so every point answers
     //      "so far this period", exactly as the approved chart reads ----------
     // `range` walks months; days need `dayRangeInclusive`.
@@ -307,6 +313,20 @@ export function useRealReportsData(): ReportsViewData {
     isLoading,
     t,
   ]);
+
+  // While another period's queries are out, the rows in hand are still the
+  // previous period's, and the five of them do not come back together. Drawn
+  // as they arrive, the page would spend a moment as a month that never was:
+  // the new period's days over the old one's categories, with zeros between.
+  // So the last period that arrived whole stays on screen, whole, until the
+  // next one has. This is the pattern React documents for keeping a value
+  // from an earlier render; nothing here is computed differently.
+  const [settled, setSettled] = useState<ReportsViewData | null>(null);
+  if (!isLoading && settled !== view) {
+    setSettled(view);
+  }
+
+  return isLoading && settled ? settled : view;
 }
 
 function sumByKey(rows: ReadonlyArray<DateSum> | null): Record<string, number> {

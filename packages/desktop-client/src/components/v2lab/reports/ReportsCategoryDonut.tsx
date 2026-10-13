@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Trans } from 'react-i18next';
 
-import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
@@ -11,6 +10,7 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { currencySymbol } from '#components/v2lab/LabStyle';
 
+import { CardLink } from './CardLink';
 import { CardHeading, LabCard } from './LabCard';
 import { LabPill } from './LabPill';
 import type { ExpenseCategory } from './reportsFixtures';
@@ -20,6 +20,13 @@ import { CATEGORY_HUE } from './reportsTokens';
 type ReportsCategoryDonutProps = {
   categories: (ExpenseCategory & { share: number })[];
   total: number;
+  /** How many categories the legend opens on. The ring always draws them all. */
+  limit?: number;
+  /**
+   * What the pill beside the title says the ring covers. Absent ⇒ the current
+   * month. `null` ⇒ no pill, for a page that states its period somewhere else.
+   */
+  periodLabel?: ReactNode;
 };
 
 const SIZE = 150;
@@ -36,22 +43,33 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
  * the rows so the eye crosses from a slice to its figure without travelling.
  * Slices meet edge to edge — the hues alone separate them — and every share is
  * computed from the amounts, which sum to the expenses total by construction.
+ *
+ * The legend opens on the largest few, as the approved card does, and its link
+ * brings in the rest in place. With nothing more to list there is no link.
  */
 export function ReportsCategoryDonut({
   categories,
   total,
+  limit = 6,
+  periodLabel,
 }: ReportsCategoryDonutProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasMore = categories.length > limit;
+  const listed = isExpanded ? categories : categories.slice(0, limit);
   let offset = 0;
 
   return (
     <LabCard>
-      <View style={{ padding: '16px 20px 14px', gap: 13 }}>
+      {/* The phone's scope restates the padding, so its cards share one edge. */}
+      <View
+        style={{ padding: 'var(--dfr-card-padding, 16px 20px 14px)', gap: 13 }}
+      >
         <CardHeading
           title={<Trans>Expenses by category</Trans>}
           action={
-            <LabPill>
-              <Trans>This month</Trans>
-            </LabPill>
+            periodLabel === null ? undefined : (
+              <LabPill>{periodLabel ?? <Trans>This month</Trans>}</LabPill>
+            )
           }
         />
 
@@ -183,7 +201,7 @@ export function ReportsCategoryDonut({
           <View
             style={{ flex: `1 1 ${LEGEND_MIN_WIDTH}px`, minWidth: 0, gap: 2 }}
           >
-            {categories.map(category => (
+            {listed.map(category => (
               <View
                 key={category.id}
                 style={{
@@ -250,43 +268,19 @@ export function ReportsCategoryDonut({
           </View>
         </View>
 
-        <CardLink>
-          <Trans>View all categories</Trans>
-        </CardLink>
+        {hasMore && (
+          <CardLink
+            isExpanded={isExpanded}
+            onPress={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <Trans>Show fewer</Trans>
+            ) : (
+              <Trans>View all categories</Trans>
+            )}
+          </CardLink>
+        )}
       </View>
     </LabCard>
-  );
-}
-
-/** The trailing link every side panel closes with. */
-export function CardLink({ children }: { children: ReactNode }) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        paddingTop: 12,
-        borderTop: '1px solid var(--dfl-line)',
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 12.5,
-          fontWeight: 600,
-          whiteSpace: 'nowrap',
-          color: 'var(--dfl-blue)',
-        }}
-      >
-        {children}
-      </Text>
-      <SvgCheveronRight
-        aria-hidden="true"
-        width={14}
-        height={14}
-        style={{ color: 'var(--dfl-blue)' }}
-      />
-    </View>
   );
 }

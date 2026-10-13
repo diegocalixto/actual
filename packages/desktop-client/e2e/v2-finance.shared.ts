@@ -278,14 +278,12 @@ export function describeV2Finance(layout: V2Layout) {
         expect(await books.home(ACCOUNTS)).toEqual(homeOf(file));
       }).toPass();
 
-      // The phone keeps the upstream dashboard under Reports; the indicators
-      // this suite can hold to the file are the desktop's.
-      if (layout === 'desktop') {
-        await shell.goTo('reports');
-        await expect(async () => {
-          expect(await books.reports()).toEqual(reportsOf(file));
-        }).toPass();
-      }
+      // One page on both layouts, reading one set of queries: the phone's
+      // indicators are held to the file exactly as the desktop's are.
+      await shell.goTo('reports');
+      await expect(async () => {
+        expect(await books.reports()).toEqual(reportsOf(file));
+      }).toPass();
     }
 
     test('the file under test is a throwaway with no way out', async () => {
@@ -346,6 +344,42 @@ export function describeV2Finance(layout: V2Layout) {
       ).toBe(opening.total);
 
       await expectPagesToAgree(opening);
+    });
+
+    test('the Reports of another month are that month of the file', async () => {
+      // The period is a filter like any other: the figures of December have
+      // to be December's cash flow, to the cent, and not this month's under
+      // another name.
+      const lastMonth = await ledger.read(LAST_MONTH);
+      expect(reportsOf(lastMonth)).not.toEqual(reportsOf(opening));
+      expect(lastMonth.month.cashIn).toBeGreaterThan(0);
+      expect(lastMonth.month.cashOut).toBeGreaterThan(0);
+
+      await shell.goTo('reports');
+      const period = page.getByRole('button', { name: /^Period: / });
+      await expect(period).toHaveAttribute('data-month', THIS_MONTH);
+
+      await page.getByRole('button', { name: 'Mês anterior' }).click();
+      await expect(period).toHaveAttribute('data-month', LAST_MONTH);
+      await expect(async () => {
+        expect(await books.reports()).toEqual(reportsOf(lastMonth));
+      }).toPass();
+
+      // The month survives a reload: it is in the address.
+      await reload();
+      await shell.waitForPage('reports');
+      await expect(period).toHaveAttribute('data-month', LAST_MONTH);
+      await expect(async () => {
+        expect(await books.reports()).toEqual(reportsOf(lastMonth));
+      }).toPass();
+
+      // And back, the page is this month's again. Looking wrote nothing.
+      await page.getByRole('button', { name: 'Próximo mês' }).click();
+      await expect(period).toHaveAttribute('data-month', THIS_MONTH);
+      await expect(async () => {
+        expect(await books.reports()).toEqual(reportsOf(opening));
+      }).toPass();
+      expect(await ledger.read(THIS_MONTH)).toEqual(opening);
     });
 
     test('a transaction cannot be entered without an account', async () => {

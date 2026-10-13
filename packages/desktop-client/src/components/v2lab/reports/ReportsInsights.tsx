@@ -8,7 +8,6 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { CardHeading, LabCard } from './LabCard';
-import { CardLink } from './ReportsCategoryDonut';
 import { formatChange, formatPercent } from './reportsMoney';
 import { SERIES } from './reportsTokens';
 
@@ -89,10 +88,6 @@ export function ReportsInsights({
             detail={<Trans>Net result over income.</Trans>}
           />
         </View>
-
-        <CardLink>
-          <Trans>View all insights</Trans>
-        </CardLink>
       </View>
     </LabCard>
   );
