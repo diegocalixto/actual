@@ -81,6 +81,13 @@ export function PageHeader({ title, style }: PageHeaderProps) {
 type MobilePageHeaderProps = {
   title: ReactNode;
   style?: CSSProperties;
+  /**
+   * The colour the bar's title and controls are drawn in. Absent ⇒ the
+   * shell's own ink, which is right on the shell's own ground. A page that
+   * paints the bar on a ground of its own, through `style`, has to bring the
+   * ink that reads on it: the theme cannot know what that ground is.
+   */
+  ink?: string;
   leftContent?: ReactNode;
   rightContent?: ReactNode;
 };
@@ -88,6 +95,7 @@ type MobilePageHeaderProps = {
 export function MobilePageHeader({
   title,
   style,
+  ink = shellColors.textPrimary,
   leftContent,
   rightContent,
 }: MobilePageHeaderProps) {
@@ -106,7 +114,7 @@ export function MobilePageHeader({
         backgroundColor: shellColors.canvas,
         borderBottom: `1px solid ${shellColors.railBorder}`,
         '& *': {
-          color: shellColors.textPrimary,
+          color: ink,
         },
         '& button[data-pressed]': {
           backgroundColor: shellColors.surfaceSunken,

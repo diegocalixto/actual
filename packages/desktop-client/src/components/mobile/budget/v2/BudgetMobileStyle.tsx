@@ -96,6 +96,18 @@ export const chromeCanvas = '#070a10';
 export const chromeLine = 'rgba(140, 172, 210, 0.10)';
 
 /**
+ * What is drawn on that ground: this scope's copies of `--dfl-text` and
+ * `--dfl-hue-violet`.
+ *
+ * The ground above is dark in every theme, so its ink cannot be the theme's.
+ * Left to the theme, the bar's title and controls came out as the light
+ * theme's dark ink on a phone set to a light appearance — 1.3:1, which is to
+ * say not there.
+ */
+export const chromeInk = '#e9eef6';
+export const chromeAccent = '#9b7bff';
+
+/**
  * Injects the tokens. Mounted with the page, so the rules leave the document
  * when the user navigates away and no other route is repainted.
  */

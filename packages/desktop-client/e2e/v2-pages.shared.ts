@@ -16,7 +16,12 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { ConfigurationPage } from './page-models/configuration-page';
-import { V2_PAGES, V2Shell } from './page-models/v2-shell';
+import {
+  V2_NARROWER as NARROWER,
+  V2_PAGES,
+  V2Shell,
+  V2_VIEWPORTS as VIEWPORTS,
+} from './page-models/v2-shell';
 import type { V2Layout } from './page-models/v2-shell';
 
 /** The accounts of the test file, in the order the file lists them. */
@@ -47,27 +52,6 @@ const EXPENSE_CATEGORIES = [
   'Water',
   'Power',
 ];
-
-const VIEWPORTS = {
-  desktop: { viewport: { width: 1440, height: 900 } },
-  // A phone, with a finger: privacy mode reveals by touch there, and a mouse
-  // would exercise the desktop's path instead.
-  mobile: {
-    viewport: { width: 428, height: 926 },
-    hasTouch: true,
-    isMobile: true,
-  },
-};
-
-/**
- * The second window each layout is used in. Nothing about a page may depend on
- * the first being the only one: a figure that fits a 428pt phone has to fit a
- * 390pt one.
- */
-const NARROWER = {
-  desktop: { width: 1280, height: 800 },
-  mobile: { width: 390, height: 844 },
-};
 
 /** The smallest side iOS asks of something a finger has to hit. */
 const TOUCH_TARGET = 44;
@@ -224,6 +208,13 @@ export function describeV2Pages(layout: V2Layout) {
           await expect(
             shell.main.getByRole('textbox', {
               name: `Orçado de ${category}`,
+              exact: true,
+            }),
+          ).toHaveCount(1);
+          // And one set of actions, which says whose it is.
+          await expect(
+            shell.main.getByRole('button', {
+              name: `Ações da categoria ${category}`,
               exact: true,
             }),
           ).toHaveCount(1);
@@ -427,6 +418,51 @@ export function describeV2Pages(layout: V2Layout) {
     });
 
     if (layout === 'mobile') {
+      test('the top bar can be read in a light and in a dark appearance', async () => {
+        // A phone follows its owner's appearance and the application follows
+        // the phone, but these three pages paint their bar on a ground that is
+        // dark either way. What is drawn on it has to be light either way.
+        const BAR = {
+          home: ['Ocultar valores'],
+          budget: [
+            'Mês anterior',
+            'Ações do mês',
+            'Próximo mês',
+            'Ocultar valores',
+          ],
+          accounts: ['Adicionar conta', 'Ocultar valores'],
+        } as const;
+
+        for (const colorScheme of ['light', 'dark'] as const) {
+          await page.emulateMedia({ colorScheme });
+
+          for (const name of ['home', 'budget', 'accounts'] as const) {
+            await shell.goTo(name);
+
+            // 4.5:1 is what WCAG asks of text this size; the glyphs, which
+            // need 3:1, are held to the same so nothing sits near the line.
+            const off = await shell.topBarContrast([...BAR[name]]);
+            for (const [what, ratio] of Object.entries(off)) {
+              expect(
+                ratio,
+                `${what} on ${name}, ${colorScheme}`,
+              ).toBeGreaterThanOrEqual(4.5);
+            }
+
+            // The eye is tinted while privacy mode is on, and still an eye.
+            await shell.setPrivacy(true);
+            const on = await shell.topBarContrast(['Ocultar valores']);
+            expect(
+              on['Ocultar valores'],
+              `the eye, on, on ${name}, ${colorScheme}`,
+            ).toBeGreaterThanOrEqual(4.5);
+            await shell.setPrivacy(false);
+          }
+        }
+
+        await page.emulateMedia({ colorScheme: null });
+      });
+
       test('the Budget and the menu give a finger something to hit', async () => {
         await shell.goTo('budget');
 

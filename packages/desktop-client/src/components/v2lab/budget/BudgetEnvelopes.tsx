@@ -294,7 +294,11 @@ function Row({
         <Button
           ref={triggerRef}
           variant="bare"
-          aria-label={t('Ações da categoria')}
+          // Named for its row: thirteen controls all called "Ações da
+          // categoria" left a screen reader's user counting to know whose.
+          aria-label={t('Ações da categoria {{name}}', {
+            name: envelope.name,
+          })}
           onPress={() => setIsOpen(open => !open)}
           style={{
             flex: `0 0 ${ACTIONS_COLUMN}px`,
@@ -422,6 +426,11 @@ function BudgetedInput({
 }) {
   const [draft, setDraft] = useState(() => formatDigits(value));
   const [isEditing, setIsEditing] = useState(false);
+  // Escape leaves the field by blurring it, and a blur is what commits. The
+  // commit that blur runs was built before Escape could put the stored amount
+  // back in the draft, so it still held what had been typed — and wrote it.
+  // The intention is carried here instead, where that commit can read it.
+  const isAbandoned = useRef(false);
   const isPrivate = usePrivacyMode();
   // Like `PrivacyFilter`, redaction is desktop-only.
   const { isNarrowWidth } = useResponsive();
@@ -434,7 +443,8 @@ function BudgetedInput({
 
   const commit = () => {
     setIsEditing(false);
-    const parsed = parseDigits(draft);
+    const parsed = isAbandoned.current ? null : parseDigits(draft);
+    isAbandoned.current = false;
     if (parsed !== null && parsed !== value) {
       onCommit(parsed);
     } else {
@@ -485,8 +495,7 @@ function BudgetedInput({
             event.currentTarget.blur();
           }
           if (event.key === 'Escape') {
-            setDraft(formatDigits(value));
-            setIsEditing(false);
+            isAbandoned.current = true;
             event.currentTarget.blur();
           }
         }}

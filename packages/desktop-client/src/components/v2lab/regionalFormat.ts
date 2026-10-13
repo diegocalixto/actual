@@ -20,7 +20,11 @@
  * page renders, so what is printed never depends on which render ran last.
  */
 import { getCurrency } from '@actual-app/core/shared/currencies';
-import { getNumberFormat, numberFormats } from '@actual-app/core/shared/util';
+import {
+  getNumberFormat,
+  MAX_SAFE_NUMBER,
+  numberFormats,
+} from '@actual-app/core/shared/util';
 import type { NumberFormats } from '@actual-app/core/shared/util';
 
 /** What the pages print for a file that states no preference. */
@@ -210,28 +214,69 @@ export function formatDecimal(value: number, fractionDigits: number): string {
  * What a person typed into a money field, as minor units — `null` when it is
  * not a number.
  *
- * It reads the same convention the field shows its value in: the grouping mark
- * is dropped wherever it appears and the decimal mark is the only one that
- * counts, so "1.234,56" and "1234,56" are the same amount in pt-BR.
+ * It reads the convention the field shows its value in, so "1.234,56" and
+ * "1234,56" are the same amount in pt-BR — and it reads a dot or a comma the
+ * way the application's own entry fields do (`currencyToAmount`): the last one
+ * typed is the decimal mark, unless it is this format's grouping mark with a
+ * whole group of three after it. A keypad that types a dot, or a figure pasted
+ * from a statement written the other way round, is therefore the amount it
+ * says: "12.34" is twelve and thirty-four, where dropping every dot made it
+ * one thousand two hundred and thirty-four.
  */
 export function parseDigits(text: string): number | null {
   const { thousandsSeparator } = currentSeparators();
 
-  let digits = text
-    .replace(/\s/g, '')
-    .split(current().symbol)
-    .join('')
-    .split(thousandsSeparator)
-    .join('');
+  let typed = text.replace(/\s/g, '').split(current().symbol).join('');
 
+  if (thousandsSeparator !== '.' && thousandsSeparator !== ',') {
+    // A grouping mark that is neither can only be grouping.
+    typed = typed.split(thousandsSeparator).join('');
+  }
   if (current().numberFormat === 'apostrophe-dot') {
     // An apostrophe is typed straight; the format prints the curly one.
-    digits = digits.replace(/'/g, '');
+    typed = typed.replace(/'/g, '');
   }
 
-  const parsed = Number(digits.replace(decimalSeparator(), '.'));
+  const sign = typed.startsWith('-') ? -1 : 1;
+  const unsigned = typed.replace(/^[-+]/, '');
+  if (unsigned === '') {
+    // An emptied field is zero; a sign with nothing behind it is not a number.
+    return typed === '' ? 0 : null;
+  }
 
-  return Number.isFinite(parsed)
-    ? Math.round(parsed * 10 ** current().decimalPlaces)
-    : null;
+  const markAt = Math.max(unsigned.lastIndexOf('.'), unsigned.lastIndexOf(','));
+  const mark = markAt === -1 ? null : unsigned[markAt];
+  const isGrouping =
+    mark === thousandsSeparator && unsigned.length - markAt - 1 >= 3;
+  const hasDecimals = mark !== null && !isGrouping;
+
+  // Left of the decimal mark the other of the two marks groups the digits.
+  const grouping = hasDecimals
+    ? mark === '.'
+      ? ','
+      : '.'
+    : thousandsSeparator;
+  const whole = (hasDecimals ? unsigned.slice(0, markAt) : unsigned)
+    .split(grouping)
+    .join('');
+  const fraction = hasDecimals ? unsigned.slice(markAt + 1) : '';
+
+  if (!/^\d*$/.test(whole) || !/^\d*$/.test(fraction)) {
+    return null;
+  }
+  if (whole === '' && fraction === '') {
+    return null;
+  }
+
+  const parsed = sign * Number(`${whole || '0'}.${fraction || '0'}`);
+  const minorUnits = Math.round(parsed * 10 ** current().decimalPlaces);
+
+  // Enough digits make a number the application cannot do arithmetic with —
+  // or no number at all. Its own bound is the one that counts here.
+  if (!Number.isFinite(minorUnits) || Math.abs(minorUnits) > MAX_SAFE_NUMBER) {
+    return null;
+  }
+
+  // `-0` is not an amount anyone typed.
+  return minorUnits === 0 ? 0 : minorUnits;
 }

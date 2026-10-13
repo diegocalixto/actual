@@ -183,6 +183,69 @@ describe('regional format of the V2 pages', () => {
       expect(parseDigits('  ')).toBe(0);
       expect(parseDigits('abc')).toBeNull();
       expect(parseDigits('1,2,3')).toBeNull();
+      expect(parseDigits('-')).toBeNull();
+      expect(parseDigits('.')).toBeNull();
+      expect(parseDigits('1e3')).toBeNull();
+      expect(parseDigits('1.234.56')).toBeNull();
+      expect(parseDigits('1,234.567')).toBeNull();
+    });
+
+    it('reads a dot typed for the decimal mark as the amount it says', () => {
+      // The keypad's dot, or a figure pasted from a statement written the
+      // other way round. Each of these used to be read as a hundred times, or
+      // a thousandth of, what was typed.
+      expect(parseDigits('12.34')).toBe(1234);
+      expect(parseDigits('50.5')).toBe(5050);
+      expect(parseDigits('0.05')).toBe(5);
+      expect(parseDigits('-12.30')).toBe(-1230);
+      expect(parseDigits('1,234.56')).toBe(123456);
+      expect(parseDigits('R$ 1,234.56')).toBe(123456);
+    });
+
+    it('still reads a dot before a whole group of three as grouping', () => {
+      expect(parseDigits('1.234')).toBe(123400);
+      expect(parseDigits('12.345')).toBe(1234500);
+      expect(parseDigits('1.234.567')).toBe(123456700);
+    });
+
+    it('reads a comma the same way where the dot is the decimal mark', () => {
+      givenPrefs({ numberFormat: 'comma-dot' });
+
+      expect(parseDigits('12,34')).toBe(1234);
+      expect(parseDigits('1,234')).toBe(123400);
+      expect(parseDigits('1.234,56')).toBe(123456);
+      expect(parseDigits('12.34')).toBe(1234);
+    });
+
+    it('refuses an amount the application could not do arithmetic with', () => {
+      // 2^51 - 1 minor units is the application's own bound.
+      expect(parseDigits('22517998136852,47')).toBe(2251799813685247);
+      expect(parseDigits('22517998136852,48')).toBeNull();
+      expect(parseDigits('-22517998136852,48')).toBeNull();
+      expect(parseDigits('9'.repeat(40))).toBeNull();
+      // Long enough to stop being a number at all.
+      expect(parseDigits('9'.repeat(400))).toBeNull();
+    });
+
+    it('rounds to whole units for a currency that has no decimals', () => {
+      givenPrefs({ currencyCode: 'JPY' });
+
+      expect(parseDigits('1234')).toBe(1234);
+      expect(parseDigits('1.234')).toBe(1234);
+      expect(parseDigits('¥1.234')).toBe(1234);
+      // A fraction of a yen is not kept: it is rounded as the application
+      // rounds an amount to its minor units, halves upwards.
+      expect(parseDigits('12,34')).toBe(12);
+      expect(parseDigits('12.34')).toBe(12);
+      expect(parseDigits('12,5')).toBe(13);
+      expect(parseDigits('0,5')).toBe(1);
+      expect(Object.is(parseDigits('-0,5'), 0)).toBe(true);
+      expect(parseDigits('-12,6')).toBe(-13);
+    });
+
+    it('never answers a negative zero', () => {
+      expect(Object.is(parseDigits('-0'), 0)).toBe(true);
+      expect(Object.is(parseDigits('-0,00'), 0)).toBe(true);
     });
 
     it.each([

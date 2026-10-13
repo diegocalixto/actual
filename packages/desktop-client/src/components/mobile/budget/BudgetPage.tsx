@@ -68,6 +68,7 @@ function isBudgetType(input?: string): input is 'envelope' | 'tracking' {
 }
 
 export function BudgetPage() {
+  const { t } = useTranslation();
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
   const locale = useLocale();
@@ -155,7 +156,7 @@ export function BudgetPage() {
         modal: {
           name: 'new-category-group',
           options: {
-            onValidate: name => (!name ? 'Name is required.' : null),
+            onValidate: name => (!name ? t('Name is required.') : null),
             onSubmit: async name => {
               createCategoryGroup.mutate(
                 { name },
@@ -172,7 +173,7 @@ export function BudgetPage() {
         },
       }),
     );
-  }, [dispatch, createCategoryGroup]);
+  }, [dispatch, createCategoryGroup, t]);
 
   const onOpenNewCategoryModal = useCallback(
     (groupId, isIncome) => {
@@ -181,7 +182,7 @@ export function BudgetPage() {
           modal: {
             name: 'new-category',
             options: {
-              onValidate: name => (!name ? 'Name is required.' : null),
+              onValidate: name => (!name ? t('Name is required.') : null),
               onSubmit: async name => {
                 createCategory.mutate(
                   {
@@ -206,7 +207,7 @@ export function BudgetPage() {
         }),
       );
     },
-    [dispatch, createCategory],
+    [dispatch, createCategory, t],
   );
 
   const onSaveGroup = useCallback(

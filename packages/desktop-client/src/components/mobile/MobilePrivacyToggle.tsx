@@ -13,6 +13,13 @@ type MobilePrivacyToggleProps = {
   /** The box the bar gives its icon buttons, so the eye lines up with them. */
   className?: string;
   style?: CSSProperties;
+  /**
+   * The colour the eye takes while it is on. Absent ⇒ the theme's accent,
+   * which is right on a bar the theme paints. The V2 pages paint their bar on
+   * a ground that is dark in every theme, and bring the accent that reads on
+   * it: the light theme's is 2.6:1 there.
+   */
+  accent?: string;
 };
 
 /**
@@ -30,6 +37,7 @@ type MobilePrivacyToggleProps = {
 export function MobilePrivacyToggle({
   className,
   style,
+  accent,
 }: MobilePrivacyToggleProps) {
   const { t } = useTranslation();
   const [isPrivacyEnabledPref, setPrivacyEnabledPref] =
@@ -54,9 +62,11 @@ export function MobilePrivacyToggle({
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: 999,
-          backgroundColor: isPrivacyEnabled
-            ? shellColors.accentSoft
-            : 'transparent',
+          backgroundColor: !isPrivacyEnabled
+            ? 'transparent'
+            : accent
+              ? `color-mix(in srgb, ${accent} 16%, transparent)`
+              : shellColors.accentSoft,
         }}
       >
         <Icon
@@ -65,7 +75,11 @@ export function MobilePrivacyToggle({
           height={19}
           // Inline, because the shared mobile header paints everything inside
           // it in one colour and a class would lose to that rule.
-          style={isPrivacyEnabled ? { color: shellColors.accent } : undefined}
+          style={
+            isPrivacyEnabled
+              ? { color: accent ?? shellColors.accent }
+              : undefined
+          }
         />
       </View>
     </Button>

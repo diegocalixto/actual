@@ -24,7 +24,9 @@ import { HomeMobileMonthSummary } from './HomeMobileMonthSummary';
 import { HomeMobileSectionLabel } from './HomeMobileSectionLabel';
 import { HomeMobileSpending } from './HomeMobileSpending';
 import {
+  chromeAccent,
   chromeCanvas,
+  chromeInk,
   chromeLine,
   HOME_MOBILE_ROOT_CLASS,
   HomeMobileStyle,
@@ -101,8 +103,13 @@ export function HomeMobilePage({
             backgroundColor: chromeCanvas,
             borderBottom: `1px solid ${chromeLine}`,
           }}
+          // The ground is this page's own, so the ink has to be too.
+          ink={chromeInk}
           rightContent={
-            <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
+            <MobilePrivacyToggle
+              style={mobileHeaderIconButtonStyle}
+              accent={chromeAccent}
+            />
           }
         />
       }

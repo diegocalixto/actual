@@ -41,6 +41,28 @@ const DESTINATIONS: Record<V2PageName, Destination> = {
 
 export const V2_PAGES: V2PageName[] = ['home', 'budget', 'accounts', 'reports'];
 
+/** The window each layout is first used in. */
+export const V2_VIEWPORTS = {
+  desktop: { viewport: { width: 1440, height: 900 } },
+  // A phone, with a finger: privacy mode reveals by touch there, and a mouse
+  // would exercise the desktop's path instead.
+  mobile: {
+    viewport: { width: 428, height: 926 },
+    hasTouch: true,
+    isMobile: true,
+  },
+};
+
+/**
+ * The second window each layout is used in. Nothing about a page may depend on
+ * the first being the only one: a figure that fits a 428pt phone has to fit a
+ * 390pt one.
+ */
+export const V2_NARROWER = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 390, height: 844 },
+};
+
 /** What the page prints as money, and how much of it a person can read. */
 export type Figures = {
   /** Amounts painted in a face a person can read. */
@@ -327,6 +349,78 @@ export class V2Shell {
 
       return out;
     });
+  }
+
+  /**
+   * How well the phone's top bar can be read: the WCAG contrast of the page's
+   * title, and of each control named, against the ground the bar paints.
+   *
+   * It measures what is on screen — the ink a glyph is actually drawn in and
+   * the first opaque surface behind it — so it holds whatever theme the
+   * application is in and however the bar came by its colours.
+   */
+  async topBarContrast(controls: string[]): Promise<Record<string, number>> {
+    return await this.page.evaluate(names => {
+      const parse = (color: string) =>
+        (color.match(/[\d.]+/g) ?? []).map(Number);
+      const luminance = ([red, green, blue]: number[]) => {
+        const linear = (value: number) => {
+          const channel = value / 255;
+          return channel <= 0.03928
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4;
+        };
+        return (
+          0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+        );
+      };
+      const contrast = (ink: number[], ground: number[]) => {
+        const [lighter, darker] = [luminance(ink), luminance(ground)].sort(
+          (a, b) => b - a,
+        );
+        return Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+      };
+      const groundBehind = (el: Element) => {
+        for (let node: Element | null = el; node; node = node.parentElement) {
+          const [red, green, blue, alpha = 1] = parse(
+            getComputedStyle(node).backgroundColor,
+          );
+          if (alpha > 0.9) return [red, green, blue];
+        }
+        return [255, 255, 255];
+      };
+      /** What a control is drawn with: its icon, or else its lettering. */
+      const glyphOf = (control: Element) => {
+        let glyph = control.querySelector('svg') ?? control;
+        while (glyph.tagName !== 'svg' && glyph.firstElementChild) {
+          glyph = glyph.firstElementChild;
+        }
+        return glyph;
+      };
+
+      const title = document.querySelector('h1');
+      if (!title) {
+        throw new Error('The page has no title.');
+      }
+      const ground = groundBehind(title);
+
+      const measured: Record<string, number> = {
+        title: contrast(parse(getComputedStyle(title).color), ground),
+      };
+      for (const name of names) {
+        const control = Array.from(document.querySelectorAll('button')).find(
+          button => button.getAttribute('aria-label') === name,
+        );
+        if (!control) {
+          throw new Error(`No control named "${name}" in the top bar.`);
+        }
+        measured[name] = contrast(
+          parse(getComputedStyle(glyphOf(control)).color),
+          ground,
+        );
+      }
+      return measured;
+    }, controls);
   }
 
   /**

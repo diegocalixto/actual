@@ -44,7 +44,9 @@ import {
   ACCOUNTS_MOBILE_ROOT_CLASS,
   accountsLayout,
   AccountsMobileStyle,
+  chromeAccent,
   chromeCanvas,
+  chromeInk,
   chromeLine,
 } from './v2/AccountsMobileStyle';
 
@@ -161,6 +163,8 @@ export function AccountsPage() {
             backgroundColor: chromeCanvas,
             borderBottom: `1px solid ${chromeLine}`,
           }}
+          // The ground is this page's own, so the ink has to be too.
+          ink={chromeInk}
           rightContent={
             <>
               <Button
@@ -173,7 +177,10 @@ export function AccountsPage() {
               </Button>
               {/* Last, as on every other top bar: the eye is found in the
                   same corner whichever page is open. */}
-              <MobilePrivacyToggle style={mobileHeaderIconButtonStyle} />
+              <MobilePrivacyToggle
+                style={mobileHeaderIconButtonStyle}
+                accent={chromeAccent}
+              />
             </>
           }
         />

@@ -141,8 +141,13 @@ export function useRealAccountsData(): AccountsViewData {
     // hero prints: the curve therefore ends exactly where the hero says it is.
     const opening = total === null ? null : total - sinceMonthStart;
 
+    // Until the month's history has arrived there is no change to state: the
+    // sum above is of nothing, and printing it would be "0,00%" beside the
+    // total for as long as the query takes.
     const monthChange =
-      opening === null || opening <= 0 ? null : sinceMonthStart / opening;
+      !dailySums || opening === null || opening <= 0
+        ? null
+        : sinceMonthStart / opening;
 
     const byDay = new Map<string, number>();
     for (const row of rows) {

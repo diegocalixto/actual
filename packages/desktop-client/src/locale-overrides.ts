@@ -58,6 +58,8 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // plan figures its row prints. These strings exist only in this fork.
     'Show spent per category': 'Mostrar gasto por categoria',
     'Show budgeted per category': 'Mostrar orçado por categoria',
+    // What a new category or group is told when it is given no name.
+    'Name is required.': 'O nome é obrigatório.',
 
     // Reports — date-range header and range presets.
     'Select by': 'Selecionar por',

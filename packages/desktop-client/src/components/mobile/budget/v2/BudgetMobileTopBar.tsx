@@ -16,7 +16,13 @@ import { BrandMark } from '#components/appshell/BrandMark';
 import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
 
 import { formatMonthLabel } from './budgetMobileMoney';
-import { budgetLayout, chromeCanvas, chromeLine } from './BudgetMobileStyle';
+import {
+  budgetLayout,
+  chromeAccent,
+  chromeCanvas,
+  chromeInk,
+  chromeLine,
+} from './BudgetMobileStyle';
 
 /**
  * The app opts into `viewport-fit=cover`, so on an iPhone the web content is
@@ -99,7 +105,9 @@ export function BudgetMobileTopBar({
     flexShrink: 0,
     padding: 0,
     borderRadius: 999,
-    color: 'var(--dfl-text-2)',
+    // A literal, like the bar's ground: the slot is outside the page's class,
+    // so a token here resolved to nothing and the glyph took the theme's ink.
+    color: chromeInk,
     '&[data-hovered]': { backgroundColor: HOVERED },
     '&[data-pressed]': { backgroundColor: PRESSED },
   });
@@ -160,7 +168,7 @@ export function BudgetMobileTopBar({
             fontWeight: 600,
             letterSpacing: -0.2,
             whiteSpace: 'nowrap',
-            color: '#e9eef6',
+            color: chromeInk,
           }}
         >
           <Trans>Orçamento</Trans>
@@ -183,7 +191,7 @@ export function BudgetMobileTopBar({
               fontSize: 12.5,
               fontWeight: 600,
               whiteSpace: 'nowrap',
-              color: '#9b7bff',
+              color: chromeAccent,
             }}
           >
             {formatMonthLabel(month)}
@@ -217,7 +225,7 @@ export function BudgetMobileTopBar({
           balances the mark and the arrow on the leading side, so on the
           current month the title sits on the bar's centre instead of to the
           right of it. */}
-      <MobilePrivacyToggle className={roundButton} />
+      <MobilePrivacyToggle className={roundButton} accent={chromeAccent} />
     </View>
   );
 }
