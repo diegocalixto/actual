@@ -18,6 +18,10 @@ import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
 import { categoryQueries } from './queries';
+import {
+  withStoredStarterCategoryName,
+  withStoredStarterGroupName,
+} from './starterCategories';
 
 function invalidateQueries(queryClient: QueryClient, queryKey?: QueryKey) {
   void queryClient.invalidateQueries({
@@ -185,7 +189,9 @@ export function useUpdateCategoryMutation() {
 
   return useMutation({
     mutationFn: async ({ category }: UpdateCategoryPayload) => {
-      await send('category-update', category);
+      // A starter category is shown translated and stored as it shipped: the
+      // translation is not what goes back to the file.
+      await send('category-update', withStoredStarterCategoryName(category, t));
     },
     onSuccess: () => invalidateQueries(queryClient),
     onError: error => {
@@ -427,7 +433,10 @@ export function useUpdateCategoryGroupMutation() {
       // Strip off the categories field if it exist. It's not a real db
       // field but groups have this extra field in the client most of the time
       const { categories: _, ...groupNoCategories } = group;
-      await send('category-group-update', groupNoCategories);
+      await send(
+        'category-group-update',
+        withStoredStarterGroupName(groupNoCategories, t),
+      );
     },
     onSuccess: () => invalidateQueries(queryClient),
     onError: error => {

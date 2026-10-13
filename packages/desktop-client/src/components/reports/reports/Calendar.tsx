@@ -76,12 +76,15 @@ const SUMMARY_HEIGHT = 140;
 export function Calendar() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const { data: widget, isPending } = useDashboardWidget<CalendarWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<CalendarWidget>({
     id: params.id,
     type: 'calendar-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, and the disabled query for one stays pending for good — a spinner
+  // that never left. See `CashFlow`.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 

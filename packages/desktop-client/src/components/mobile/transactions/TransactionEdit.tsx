@@ -929,6 +929,12 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
                   modal: {
                     name: 'account-autocomplete',
                     options: {
+                      // The other side of a transfer this form holds is not
+                      // an account the transaction can move to: it would be
+                      // a transfer from an account to itself.
+                      hiddenAccounts: transactions.flatMap(
+                        t => getTransferAccount(t)?.id ?? [],
+                      ),
                       onSelect: accountId => {
                         void onUpdateInner(transactionToEdit, name, accountId);
                       },
@@ -946,6 +952,7 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
                   modal: {
                     name: 'payee-autocomplete',
                     options: {
+                      transactionAccountId: transactionToEdit.account,
                       onSelect: payeeId => {
                         void onUpdateInner(transactionToEdit, name, payeeId);
                       },
@@ -994,6 +1001,7 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
       [
         categoryGroups,
         dispatch,
+        getTransferAccount,
         onUpdateInner,
         onClearActiveEdit,
         onRequestActiveEdit,

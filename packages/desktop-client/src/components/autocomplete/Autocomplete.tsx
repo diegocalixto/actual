@@ -6,6 +6,7 @@ import type {
   KeyboardEvent,
   ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -237,6 +238,7 @@ function SingleAutocomplete<T extends AutocompleteItem>({
   onClose,
   value: initialValue,
 }: SingleAutocompleteProps<T>) {
+  const { t } = useTranslation();
   const [selectedItem, setSelectedItem] = useState(() =>
     findItem(strict, suggestions, initialValue),
   );
@@ -461,10 +463,14 @@ function SingleAutocomplete<T extends AutocompleteItem>({
           (changes.type === Downshift.stateChangeTypes.keyDownArrowUp ||
             changes.type === Downshift.stateChangeTypes.keyDownArrowDown)
         ) {
+          // Against the list that is drawn. Until something is typed that is
+          // every suggestion, not the ones matching the name already in the
+          // field: read from those, an arrow highlighted one row and saved
+          // another.
           fireUpdate(
             onUpdate,
             strict,
-            filteredSuggestions || suggestions,
+            filtered,
             changes.highlightedIndex != null
               ? changes.highlightedIndex
               : highlightedIndex,
@@ -475,6 +481,27 @@ function SingleAutocomplete<T extends AutocompleteItem>({
         inst.lastChangeType = changes.type;
       }}
       labelId={labelProps?.id}
+      // What a screen reader is told as the list changes. Downshift's own
+      // wording is English and cannot be translated, so it is said here.
+      getA11yStatusMessage={({ isOpen, resultCount, previousResultCount }) => {
+        if (!isOpen) {
+          return '';
+        }
+        if (!resultCount) {
+          return t('No results are available.');
+        }
+        if (resultCount === previousResultCount) {
+          return '';
+        }
+        return resultCount === 1
+          ? t(
+              '1 result is available, use up and down arrow keys to navigate. Press Enter key to select.',
+            )
+          : t(
+              '{{resultCount}} results are available, use up and down arrow keys to navigate. Press Enter key to select.',
+              { resultCount },
+            );
+      }}
     >
       {({
         getInputProps,

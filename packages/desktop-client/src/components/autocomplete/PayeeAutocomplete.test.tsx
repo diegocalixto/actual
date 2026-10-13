@@ -491,6 +491,31 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
       );
     });
 
+    test('the transfer stays the pick when somebody nearby matches too', async () => {
+      vi.mocked(useNearbyPayees).mockReturnValue(
+        mockNearbyPayeesResult([makeNearbyPayee('Savings Cafe', 0.2)]),
+      );
+      const onUpdate = vi.fn();
+      await type('savings', { onUpdate });
+
+      expect(offered()).toStrictEqual([
+        'Transfer To/From-payee-item-group',
+        'Savings-payee-item',
+        'Savings Plus-payee-item',
+        'Nearby Payees-payee-item-group',
+        'Savings Cafe-payee-item',
+        'Payees-payee-item-group',
+        'Savings Bond-payee-item',
+        'create-payee-button',
+      ]);
+      // Near or not, what was typed is the name of an account.
+      expect(highlighted()).toStrictEqual(['Savings-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith(
+        savingsTransfer.id,
+        savingsTransfer.id,
+      );
+    });
+
     test('walking down the list saves the row it stops on', async () => {
       const onUpdate = vi.fn();
       await type('savings', { onUpdate });
@@ -557,6 +582,160 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
         'Payees-payee-item-group',
         'Alice-payee-item',
       ]);
+    });
+  });
+
+  // The list is drawn in groups and searched by rank. Enter takes the row
+  // that is highlighted and Tab saves what `onUpdate` was last told: these
+  // hold the two to being the same row.
+  describe('what is highlighted is what leaving the field saves', () => {
+    const checking = generateAccount('Checking', false, false);
+    const checkingTransfer: PayeeEntity = {
+      ...makePayee('Checking'),
+      id: 'checking-transfer-id',
+      transfer_acct: checking.id,
+    };
+    // In the order the application lists them: payees by name, then accounts.
+    const payees: PayeeEntity[] = [
+      makePayee('Bakery'),
+      makePayee('Uber'),
+      makePayee('Uber Eats'),
+      checkingTransfer,
+    ];
+
+    function highlighted() {
+      return [
+        ...screen
+          .getByTestId('autocomplete')
+          .querySelectorAll('[data-highlighted]'),
+      ].map(e => e.getAttribute('data-testid'));
+    }
+
+    function renderPicker({
+      onUpdate,
+      value = null,
+    }: {
+      onUpdate: PayeeAutocompleteProps['onUpdate'];
+      value?: string | null;
+    }) {
+      render(
+        <TestProviders queryClient={queryClient}>
+          <AuthProvider>
+            <div data-testid="autocomplete-test">
+              <PayeeAutocomplete
+                payees={payees}
+                accounts={[checking]}
+                onSelect={vi.fn()}
+                onUpdate={onUpdate}
+                type="single"
+                value={value}
+                embedded={false}
+                clearOnBlur={false}
+              />
+            </div>
+          </AuthProvider>
+        </TestProviders>,
+      );
+      return screen.getByTestId('autocomplete-test');
+    }
+
+    beforeEach(() => {
+      // "Uber Eats" is suggested, so its group is drawn above the payees.
+      queryClient.setQueryData(payeeQueries.listCommon().queryKey, [
+        makePayee('Uber Eats'),
+      ]);
+    });
+
+    test('the best match is highlighted where its group draws it', async () => {
+      const onUpdate = vi.fn();
+      const autocomplete = renderPicker({ onUpdate });
+      await clickAutocomplete(autocomplete);
+      await userEvent.type(autocomplete.querySelector('input')!, 'uber');
+      await waitForAutocomplete();
+
+      // The suggestion is drawn first and ranked second.
+      expect(extractPayeesAndHeaderNames(screen)).toStrictEqual([
+        'Suggested Payees',
+        'Uber Eats',
+        'Payees',
+        'Uber',
+      ]);
+      expect(highlighted()).toStrictEqual(['Uber-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('uber-id', 'uber-id');
+
+      // Wrapping round to the top of the list lands on the suggestion.
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Uber Eats-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('uber eats-id', 'uber eats-id');
+    });
+
+    test('the first letter highlights a payee, not the offer to create one', async () => {
+      const onUpdate = vi.fn();
+      const autocomplete = renderPicker({ onUpdate });
+      await clickAutocomplete(autocomplete);
+      await userEvent.type(autocomplete.querySelector('input')!, 'b');
+      await waitForAutocomplete();
+
+      expect(screen.getByTestId('create-payee-button')).toBeTruthy();
+      expect(highlighted()).toStrictEqual(['Bakery-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('bakery-id', 'bakery-id');
+    });
+
+    test('an arrow in a field that already names a payee saves the row it stops on', async () => {
+      const onUpdate = vi.fn();
+      const autocomplete = renderPicker({ onUpdate, value: 'uber-id' });
+      // Nothing typed: the list opens whole, whatever name the field holds.
+      await clickAutocomplete(autocomplete);
+      expect(extractPayeesAndHeaderNames(screen)).toStrictEqual([
+        'Suggested Payees',
+        'Uber Eats',
+        'Payees',
+        'Bakery',
+        'Uber',
+        'Transfer To/From',
+        'Checking',
+      ]);
+
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Uber Eats-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('uber eats-id', 'uber eats-id');
+
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Bakery-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('bakery-id', 'bakery-id');
+    });
+
+    test('somebody nearby is a row like any other: highlighted, it is what is saved', async () => {
+      vi.mocked(useNearbyPayees).mockReturnValue(
+        mockNearbyPayeesResult([makeNearbyPayee('Uber Garage', 0.4)]),
+      );
+      const onUpdate = vi.fn();
+      const autocomplete = renderPicker({ onUpdate });
+      await clickAutocomplete(autocomplete);
+      await userEvent.type(autocomplete.querySelector('input')!, 'ube');
+      await waitForAutocomplete();
+
+      // The nearby group is drawn above the others, under the offer to
+      // create, and it is in the list the keyboard is saved by.
+      expect(
+        extractPayeesAndHeaderNames(screen, ALL_PAYEE_ITEMS_SELECTOR),
+      ).toStrictEqual([
+        'Nearby Payees',
+        'Uber Garage',
+        'Suggested Payees',
+        'Uber Eats',
+        'Payees',
+        'Uber',
+      ]);
+      expect(highlighted()).toStrictEqual(['Uber Garage-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith(
+        'uber garage-id',
+        'uber garage-id',
+      );
+
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Uber Eats-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith('uber eats-id', 'uber eats-id');
     });
   });
 });

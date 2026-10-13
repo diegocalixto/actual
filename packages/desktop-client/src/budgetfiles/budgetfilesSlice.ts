@@ -158,7 +158,13 @@ export const createBudget = createAppAsyncThunk(
     if (demoMode) {
       await send('create-demo-budget');
     } else {
-      await send('create-budget', { testMode });
+      // The name a file starts with is the application's own word for it, so
+      // it is given in the user's language. Left out, the server names the
+      // file in English.
+      const budgetName = testMode
+        ? t('Test Budget')
+        : await send('unique-budget-name', { name: t('My Finances') });
+      await send('create-budget', { testMode, budgetName });
     }
 
     dispatch(closeModal());

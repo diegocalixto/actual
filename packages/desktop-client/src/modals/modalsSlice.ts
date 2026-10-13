@@ -311,6 +311,11 @@ export type Modal =
       name: 'payee-autocomplete';
       options: {
         onSelect: (payeeId: string) => void;
+        /**
+         * The account the transaction is in. A transfer needs another one, so
+         * this account is not offered as the other side of it.
+         */
+        transactionAccountId?: AccountEntity['id'];
         onClose?: () => void;
       };
     }

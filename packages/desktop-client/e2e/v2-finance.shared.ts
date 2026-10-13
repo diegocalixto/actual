@@ -992,6 +992,7 @@ export function describeV2Finance(layout: V2Layout) {
 
         await entries.openNewForm();
         await entries.enterAmount(-2550);
+        await entries.pick(entries.field('account'), SAVINGS);
         await entries.field('payee').click();
         await expect(entries.payeeKind('Payee')).toHaveAttribute(
           'aria-pressed',
@@ -1003,9 +1004,14 @@ export function describeV2Finance(layout: V2Layout) {
           'aria-pressed',
           'true',
         );
-        // Every account of the file, and nothing that is not one.
+        // Every other account of the file, and nothing that is not one. The
+        // account the transaction is in is not on the list: a transfer needs
+        // two accounts, and this one to itself would be none.
         const offered = await entries.options.allInnerTexts();
-        expect(offered).toEqual(expect.arrayContaining(ACCOUNTS));
+        expect(offered).toEqual(
+          expect.arrayContaining(ACCOUNTS.filter(name => name !== SAVINGS)),
+        );
+        expect(offered).not.toContain(SAVINGS);
         expect(offered).not.toContain('Kroger');
 
         // A name no account has finds nothing here — and no payee to make.
@@ -1023,6 +1029,22 @@ export function describeV2Finance(layout: V2Layout) {
         await expect(entries.field('payee')).toContainText(
           `Transfer to ${WALLET}`,
         );
+
+        // And the other way round: with the transfer named, the transaction
+        // cannot be moved into the account it transfers to.
+        await entries.field('account').click();
+        const accounts = page.getByTestId('autocomplete');
+        await expect(
+          accounts.getByText(CHECKING, { exact: true }),
+        ).toBeVisible();
+        await expect(accounts.getByText(WALLET, { exact: true })).toHaveCount(
+          0,
+        );
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Close' })
+          .click();
+        await expect(accounts).toHaveCount(0);
 
         // Left without adding: looking through the list wrote nothing.
         await entries.backToTheBar();

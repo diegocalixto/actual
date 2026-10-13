@@ -488,11 +488,15 @@ type ModalCloseButtonProps = {
 
 export function ModalCloseButton({ onPress, style }: ModalCloseButtonProps) {
   const { t } = useTranslation();
+  const { isNarrowWidth } = useResponsive();
   return (
     <Button
       variant="bare"
       onPress={onPress}
-      style={{ padding: '10px 10px' }}
+      // On a phone the cross is hit with a finger: 44px a side, where the
+      // 30px it is drawn in were easy to miss. The margin takes back what the
+      // padding adds, so the cross stays where it was.
+      style={isNarrowWidth ? { padding: 17, margin: -7 } : { padding: 10 }}
       aria-label={t('Close')}
     >
       <SvgDelete width={10} style={style} />

@@ -6,6 +6,11 @@ import type {
 import { queryOptions } from '@tanstack/react-query';
 import i18n from 'i18next';
 
+import {
+  localizeStarterCategory,
+  localizeStarterCategoryGroup,
+} from './starterCategories';
+
 type CategoryViews = {
   grouped: CategoryGroupEntity[];
   list: CategoryEntity[];
@@ -37,7 +42,7 @@ function translateStartingBalances(categories: {
   return {
     list: translateStartingBalancesCategories(categories.list) ?? [],
     grouped: categories.grouped.map(group => ({
-      ...group,
+      ...localizeStarterCategoryGroup(group, i18n.t),
       categories: translateStartingBalancesCategories(group.categories),
     })),
   };
@@ -54,11 +59,14 @@ function translateStartingBalancesCategories(
 function translateStartingBalancesCategory(
   category: CategoryEntity,
 ): CategoryEntity {
+  // The other categories a new file ships with are the application's words
+  // too, and are translated on the same way out; see `./starterCategories`.
+  const shown = localizeStarterCategory(category, i18n.t);
   return {
-    ...category,
+    ...shown,
     name:
-      category.name?.toLowerCase() === 'starting balances'
+      shown.name?.toLowerCase() === 'starting balances'
         ? i18n.t('Starting Balances')
-        : category.name,
+        : shown.name,
   };
 }

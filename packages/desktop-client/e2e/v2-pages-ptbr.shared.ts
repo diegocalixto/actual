@@ -16,6 +16,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
+import { V2Ledger } from './page-models/v2-ledger';
 import type { V2Layout } from './page-models/v2-shell';
 
 const CONTEXTS = {
@@ -337,5 +338,269 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         'Custom dashboard',
       ]);
     });
+
+    // The pages lead into the application's older screens. Their text is the
+    // upstream catalog's to translate, and a checkout that never downloaded it
+    // used to show them in English one tap away from a Portuguese page.
+    test('what the pages open is in Portuguese too', async () => {
+      /** Each of these is on the screen, written exactly so. */
+      async function expectOnScreen(labels: string[], within: Locator) {
+        for (const label of labels) {
+          await expect(
+            within.getByText(label, { exact: true }).first(),
+            `"${label}" is on the screen`,
+          ).toBeVisible();
+        }
+      }
+
+      /** None of these is: the English each was translated from. */
+      async function expectNowhere(labels: string[], within: Locator) {
+        for (const label of labels) {
+          await expect(
+            within.getByText(label, { exact: true }),
+            `"${label}" is not on the screen`,
+          ).toHaveCount(0);
+        }
+      }
+
+      const body = page.locator('body');
+
+      if (layout === 'desktop') {
+        // The register of an account, where a transaction is entered.
+        await goTo('Contas');
+        await page
+          .getByTestId('account-list-item')
+          .filter({ hasText: 'Bank of America' })
+          .first()
+          .click();
+        await page.getByTestId('transaction-table').waitFor();
+
+        for (const name of ['Nova transação', 'Importar', 'Filtrar']) {
+          await expect(
+            page.getByRole('button', { name, exact: true }).first(),
+          ).toBeVisible();
+        }
+        await expect(page.getByPlaceholder('Buscar')).toBeVisible();
+        await expectOnScreen(
+          ['Data', 'Beneficiário', 'Notas', 'Categoria', 'Saída', 'Entrada'],
+          body,
+        );
+        await expectNowhere(
+          ['Add New', 'Import', 'Filter', 'Date', 'Payee', 'Notes', 'Payment'],
+          body,
+        );
+
+        // Its list of payees, with a name nobody has.
+        await page.getByRole('button', { name: 'Nova transação' }).click();
+        const payee = page
+          .getByTestId('new-transaction')
+          .getByTestId('row')
+          .getByTestId('payee');
+        await payee.click();
+        await payee.getByRole('textbox').pressSequentially('zq');
+        await expectOnScreen(
+          ['Criar beneficiário "zq"', 'Fazer transferência'],
+          page.getByTestId('autocomplete'),
+        );
+        await page.keyboard.press('Escape');
+        await page.getByTestId('cancel-button').click();
+      } else {
+        // The form a transaction is entered on.
+        await navigation
+          .getByRole('button', { name: 'Nova transação' })
+          .click();
+        const form = page.getByTestId('transaction-form');
+        await form.waitFor();
+        // The form opens in its amount; its lists unlock once that is left.
+        await form.getByTestId('amount-input').blur();
+
+        await expectOnScreen(
+          ['Beneficiário', 'Categoria', 'Conta', 'Data', 'Confirmado', 'Notas'],
+          form,
+        );
+        await expectNowhere(
+          ['Payee', 'Category', 'Account', 'Date', 'Cleared', 'Notes'],
+          form,
+        );
+        await expect(
+          form.getByPlaceholder('Adicionar uma nota (opcional)'),
+        ).toBeVisible();
+
+        // Its list of payees: the choice above it, and how it is left.
+        await page.getByTestId('payee-field').click();
+        const list = page.getByRole('dialog');
+        await expect(
+          list.getByRole('button', { name: 'Transferência', exact: true }),
+        ).toBeVisible();
+        await list.getByRole('button', { name: 'Fechar' }).click();
+        await expect(list).toHaveCount(0);
+
+        await page.getByRole('button', { name: 'Voltar' }).click();
+        await expect(navigation).toBeVisible();
+      }
+
+      // A detailed report, from the Reports page.
+      await goTo('Relatórios');
+      if (layout === 'desktop') {
+        await page
+          .getByRole('button', { name: 'Relatórios detalhados' })
+          .click();
+        await page
+          .getByRole('menu')
+          .getByRole('button', { name: 'Relatório de fluxo de caixa' })
+          .click();
+      } else {
+        await main
+          .getByRole('button', { name: 'Relatório de fluxo de caixa' })
+          .click();
+      }
+      await expect(page).toHaveURL(/\/reports\/cash-flow$/);
+      await expect(
+        body.getByText('Fluxo de caixa', { exact: true }).first(),
+      ).toBeVisible({ timeout: 45_000 });
+      await expectOnScreen(
+        ['Receitas:', 'Despesas:', 'Transferências:', 'Ocultar saldo'],
+        body,
+      );
+      await expectNowhere(
+        ['Cash Flow', 'Income:', 'Expenses:', 'Transfers:', 'Hide balance'],
+        body,
+      );
+
+      // Back on a page with the navigation, as the next reader expects.
+      await page.goBack();
+      await expect(title).toHaveText(/^Relatórios/, { timeout: 45_000 });
+    });
+  });
+
+  /**
+   * A file of one's own, as the application hands it over. It is not empty: it
+   * has a name, three groups and seven categories, all the application's
+   * words and all of them English in the file. They are read in Portuguese —
+   * and stay English in the file, because the translation is made where they
+   * are shown and nothing rewrites what is stored.
+   */
+  test.describe(`A new file in pt-BR (${layout})`, () => {
+    /** What the file itself holds, read past everything the pages translate. */
+    type FileWindow = {
+      $q: (table: string) => { select: (fields: string[]) => unknown };
+      $query: (query: unknown) => Promise<{
+        data: Array<{ name: string; hidden: number | boolean }>;
+      }>;
+    };
+
+    let page: Page;
+
+    const stored = async (table: 'categories' | 'category_groups') =>
+      await page.evaluate(async from => {
+        // On `window` by the application's own doing.
+        const file = window as unknown as FileWindow;
+        const { data } = await file.$query(
+          file.$q(from).select(['name', 'hidden']),
+        );
+        return data;
+      }, table);
+
+    test.beforeAll(async ({ browser, baseURL }, testInfo) => {
+      testInfo.setTimeout(120_000);
+
+      const app = new URL(baseURL ?? 'http://localhost:3002');
+      page = await browser.newPage({
+        ...CONTEXTS[layout],
+        // The phone's test hides a group. Whatever it writes stays here:
+        // everything but the application's own host goes to a dead port.
+        proxy: { server: 'http://127.0.0.1:9', bypass: app.hostname },
+      });
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Criar meu orçamento' }).click();
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        'Orçamento',
+        { timeout: 90_000 },
+      );
+    });
+
+    test.afterAll(async () => {
+      await page?.close();
+    });
+
+    test('the file and what it ships with are named in Portuguese, and stored as shipped', async () => {
+      const main = page.getByRole('main');
+
+      // The name the file was given, in a profile with no server to sync to.
+      const profile = await new V2Ledger(page).profile();
+      expect(profile.serverUrl, 'no sync server').toBeNull();
+      expect(profile.files).toEqual([
+        expect.objectContaining({ name: 'Minhas finanças', isSynced: false }),
+      ]);
+
+      // The categories, as the Budget lists them.
+      for (const name of [
+        'Alimentação',
+        'Geral',
+        'Contas fixas',
+        'Contas variáveis',
+        'Poupança',
+      ]) {
+        await expect(
+          main.getByText(name, { exact: true }).first(),
+          `"${name}" is on the page`,
+        ).toBeVisible();
+      }
+      for (const name of ['Food', 'General', 'Bills', 'Savings']) {
+        await expect(
+          main.getByText(name, { exact: true }),
+          `"${name}" is not on the page`,
+        ).toHaveCount(0);
+      }
+
+      // And as the file has them.
+      const categories = await stored('categories');
+      expect(categories.map(category => category.name).sort()).toEqual(
+        [
+          'Bills',
+          'Bills (Flexible)',
+          'Food',
+          'General',
+          'Income',
+          'Savings',
+          'Starting Balances',
+        ].sort(),
+      );
+      const groups = await stored('category_groups');
+      expect(groups.map(group => group.name).sort()).toEqual(
+        ['Income', 'Investments and Savings', 'Usual Expenses'].sort(),
+      );
+    });
+
+    if (layout === 'mobile') {
+      test('hiding a group it ships with does not write the translation into the file', async () => {
+        // Hiding sends the whole group back to the file — under the name the
+        // file has for it, not the one it was shown under.
+        await expect(
+          page.getByTestId('category-group-name').first(),
+        ).toHaveText('Despesas do dia a dia');
+        await page
+          .getByRole('button', {
+            name: 'Abrir menu do grupo Despesas do dia a dia',
+          })
+          .click();
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Menu', exact: true })
+          .click();
+        await page
+          .getByRole('menu')
+          .getByRole('button', { name: 'Ocultar', exact: true })
+          .click();
+
+        await expect(async () => {
+          const groups = await stored('category_groups');
+          const hidden = groups.filter(group => Boolean(group.hidden));
+          expect(hidden.map(group => group.name)).toEqual(['Usual Expenses']);
+        }).toPass();
+        const names = (await stored('category_groups')).map(g => g.name);
+        expect(names).not.toContain('Despesas do dia a dia');
+      });
+    }
   });
 }

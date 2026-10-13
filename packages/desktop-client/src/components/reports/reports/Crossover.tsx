@@ -57,12 +57,15 @@ export const defaultTimeFrame = {
 
 export function Crossover() {
   const params = useParams();
-  const { data: widget, isPending } = useDashboardWidget<CrossoverWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<CrossoverWidget>({
     id: params.id,
     type: 'crossover-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, and the disabled query for one stays pending for good — a spinner
+  // that never left. See `CashFlow`.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 
@@ -380,6 +383,8 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
 
   // Get the default estimated return from the spreadsheet data
   const historicalReturn = displayData?.historicalReturn ?? null;
+  const historicalReturnPercent =
+    historicalReturn != null ? (historicalReturn * 100).toFixed(1) : '';
 
   // Get years to retire from spreadsheet data
   const yearsToRetire = displayData?.yearsToRetire ?? null;
@@ -1019,9 +1024,12 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                       marginLeft: 24,
                     }}
                   >
+                    {/* The figure goes in as a value. Written into the
+                        sentence as an expression, it became part of the text
+                        to translate, and no translation could match it. */}
                     <Trans>
                       Using calculated historical return of{' '}
-                      {(historicalReturn * 100).toFixed(1)}%
+                      {{ historicalReturnPercent }}%
                     </Trans>
                   </div>
                 )}

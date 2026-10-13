@@ -53,9 +53,18 @@ type PayeeAutocompleteItem = PayeeEntity &
     distance?: number;
     // Set by the filter on an account whose name is what was typed.
     isTypedName?: boolean;
+    // Set by the filter on what the search ranks first for what was typed.
+    isBestMatch?: boolean;
   };
 
 const MAX_AUTO_SUGGESTIONS = 5;
+
+// Stands in the list for "create a payee called what was typed".
+const NEW_PAYEE = {
+  id: 'new',
+  favorite: false,
+  name: '',
+} as PayeeAutocompleteItem;
 
 function getPayeeSuggestions(
   commonPayees: PayeeEntity[],
@@ -97,6 +106,25 @@ function getPayeeSuggestions(
   return payees.map(p => {
     return { ...p, itemType: determineItemType(p, false) };
   });
+}
+
+// The list is drawn group by group — whoever is nearby, whoever is suggested,
+// then the other payees, then the accounts a transfer can go to — whatever
+// order the items arrive in; see `PayeeList`. The keyboard walks the list by an
+// item's place on screen, and what it lands on is saved by the item's place in
+// the array, so the two have to be one order. This is that order.
+function inDrawnOrder(items: PayeeAutocompleteItem[]): PayeeAutocompleteItem[] {
+  const isNew = (item: PayeeAutocompleteItem) => item.id === 'new';
+  const ofType = (type: ItemTypes) =>
+    items.filter(item => !isNew(item) && item.itemType === type);
+
+  return [
+    ...items.filter(isNew),
+    ...ofType('nearby_payee'),
+    ...ofType('common_payee'),
+    ...ofType('payee'),
+    ...ofType('account'),
+  ];
 }
 
 function filterActivePayees<T extends PayeeEntity>(
@@ -145,6 +173,7 @@ function putTypedAccountFirst(
       .filter(isTypedAccount)
       .map(item => ({ ...item, isTypedName: true })),
     ...rest.filter(item => item.itemType === 'account'),
+    ...rest.filter(item => item.itemType === 'nearby_payee'),
     ...rest.filter(item => item.itemType === 'common_payee'),
     ...rest.filter(item => item.itemType === 'payee'),
     ...(isPayeeOnFile ? [] : [newItem]),
@@ -488,37 +517,8 @@ export function PayeeAutocomplete({
   const showTransferTabs = showMakeTransfer && embedded && isNarrowWidth;
   const [rawPayee, setRawPayee] = useState('');
   const hasPayeeInput = !!rawPayee;
-  const payeeSuggestions: PayeeAutocompleteItem[] = useMemo(() => {
-    const suggestions = getPayeeSuggestions(commonPayees, payees);
-
-    let filteredSuggestions: PayeeAutocompleteItem[] = [...suggestions];
-
-    if (!showInactivePayees) {
-      filteredSuggestions = filterActivePayees(filteredSuggestions, accounts);
-    }
-
-    if (focusTransferPayees) {
-      filteredSuggestions = filterTransferPayees(filteredSuggestions);
-    }
-
-    if (!hasPayeeInput) {
-      return filteredSuggestions;
-    }
-
-    return [
-      { id: 'new', favorite: false, name: '' } as PayeeAutocompleteItem,
-      ...filteredSuggestions,
-    ];
-  }, [
-    commonPayees,
-    payees,
-    focusTransferPayees,
-    accounts,
-    hasPayeeInput,
-    showInactivePayees,
-  ]);
-
-  // Process nearby payees separately from suggestions
+  // Whoever is near, as an item of the list. One of them may be on the list
+  // twice: here, and again where their name would be anyway.
   const nearbyPayeesWithType: PayeeAutocompleteItem[] = useMemo(() => {
     if (!nearbyPayees?.length) {
       return [];
@@ -533,20 +533,41 @@ export function PayeeAutocomplete({
     return processed;
   }, [nearbyPayees]);
 
-  // Filter nearby payees based on input value (similar to regular payees)
-  const filteredNearbyPayees = useMemo(() => {
-    if (!nearbyPayeesWithType.length || !rawPayee) {
-      return nearbyPayeesWithType;
+  const payeeSuggestions: PayeeAutocompleteItem[] = useMemo(() => {
+    const suggestions = getPayeeSuggestions(commonPayees, payees);
+
+    let filteredSuggestions: PayeeAutocompleteItem[] = [...suggestions];
+
+    if (!showInactivePayees) {
+      filteredSuggestions = filterActivePayees(filteredSuggestions, accounts);
     }
 
-    return new Fzf(nearbyPayeesWithType, {
-      selector: item => item.name ?? '',
-      limit: 100,
-      casing: 'case-insensitive',
-    })
-      .find(rawPayee)
-      .map(result => result.item);
-  }, [nearbyPayeesWithType, rawPayee]);
+    if (focusTransferPayees) {
+      filteredSuggestions = filterTransferPayees(filteredSuggestions);
+    } else {
+      // Among the suggestions, not beside them: drawn from a list of its own,
+      // the nearby group took places on screen that the array did not have,
+      // and the keyboard saved a row other than the one it stood on.
+      filteredSuggestions = [...nearbyPayeesWithType, ...filteredSuggestions];
+    }
+
+    // Until something is typed the list is drawn from these as they are.
+    filteredSuggestions = inDrawnOrder(filteredSuggestions);
+
+    if (!hasPayeeInput) {
+      return filteredSuggestions;
+    }
+
+    return [NEW_PAYEE, ...filteredSuggestions];
+  }, [
+    commonPayees,
+    payees,
+    nearbyPayeesWithType,
+    focusTransferPayees,
+    accounts,
+    hasPayeeInput,
+    showInactivePayees,
+  ]);
 
   const handleForgetLocation = useCallback(
     async (locationId: string) => {
@@ -585,25 +606,37 @@ export function PayeeAutocomplete({
     suggestions: PayeeAutocompleteItem[],
     value: string,
   ) => {
-    // Separate the 'new' sentinel from real payees
-    const newItem = suggestions.find(s => s.id === 'new');
+    // The offer to create a payee does not wait for the suggestions to carry
+    // it. They gain it a render after the first letter is typed, and what that
+    // letter highlights is worked out before then: counted on a list one item
+    // short, the highlight was drawn one row above what would be saved.
+    const newItem = suggestions.find(s => s.id === 'new') ?? NEW_PAYEE;
     const realSuggestions = suggestions.filter(s => s.id !== 'new');
 
-    let filtered: PayeeAutocompleteItem[];
-    if (!value) {
-      filtered = realSuggestions.slice(0, 100);
-    } else {
-      filtered = new Fzf(realSuggestions, {
+    // Whoever is nearby is listed over and above the hundred the rest is cut
+    // to, as they were when their group was drawn from a list of its own. One
+    // of them is on the list twice on purpose — near, and again where their
+    // name would be anyway — so a count shared with the rest would cost the
+    // list a payee for each of them.
+    const isNearby = (item: PayeeAutocompleteItem) =>
+      item.itemType === 'nearby_payee';
+    const nearby = realSuggestions.filter(isNearby);
+    const others = realSuggestions.filter(item => !isNearby(item));
+    const search = (items: PayeeAutocompleteItem[]) =>
+      new Fzf(items, {
         selector: item => item.name ?? '',
         limit: 100,
         casing: 'case-insensitive',
       })
         .find(value)
         .map(result => result.item);
-    }
 
-    // Re-prepend 'new' when the user has typed something
-    const showNew = newItem && value && value !== '' && !focusTransferPayees;
+    const filtered = value
+      ? [...search(nearby), ...search(others)]
+      : [...nearby, ...others.slice(0, 100)];
+
+    // Offer to create a payee once the user has typed something
+    const showNew = !!value && !focusTransferPayees;
 
     if (showNew) {
       const typedAccountFirst = putTypedAccountFirst(filtered, newItem, value);
@@ -612,20 +645,30 @@ export function PayeeAutocomplete({
       }
     }
 
-    const results = showNew ? [newItem, ...filtered] : filtered;
+    // Somebody of exactly that name is on file: they are who was meant,
+    // whoever else the search ranks beside them — it ranks "Uber" and "Uber
+    // Eats" alike for "uber" — and there is nobody to create.
+    const typedName = getNormalisedString(value);
+    const exactMatch = value
+      ? filtered.find(
+          item =>
+            !item.transfer_acct && getNormalisedString(item.name) === typedName,
+        )
+      : undefined;
 
-    if (results.length >= 2 && results[0].id === 'new') {
-      const firstFiltered = results[1];
-      if (
-        getNormalisedString(firstFiltered.name) ===
-          getNormalisedString(value) &&
-        !firstFiltered.transfer_acct
-      ) {
-        // Exact match found, remove the 'Create payee' option.
-        return results.slice(1);
-      }
-    }
-    return results;
+    // The best match is what the keyboard picks, whichever group it is drawn
+    // in: it is marked here, while the ranking is still at hand, and found
+    // again by `getHighlightedIndex`.
+    const bestMatch = exactMatch ?? filtered[0];
+    const drawn = inDrawnOrder(
+      value && bestMatch
+        ? filtered.map(item =>
+            item === bestMatch ? { ...item, isBestMatch: true } : item,
+          )
+        : filtered,
+    );
+
+    return showNew && !exactMatch ? [newItem, ...drawn] : drawn;
   };
 
   const autocomplete = (
@@ -660,14 +703,29 @@ export function PayeeAutocomplete({
       onUpdate={(id, inputValue) => onUpdate?.(id, makeNew(id, inputValue))}
       onSelect={handleSelect}
       getHighlightedIndex={suggestions => {
-        // If we have nearby payees, highlight the first nearby payee
-        if (filteredNearbyPayees.length > 0) {
-          return 0;
-        }
-
-        // Otherwise use original logic for suggestions
         if (suggestions.length === 0) {
           return null;
+        }
+
+        // An account asked for by its name is the transfer that was meant,
+        // whoever else is near or ranks beside it; see `putTypedAccountFirst`.
+        const typedAccount = suggestions.findIndex(item => item.isTypedName);
+        if (typedAccount !== -1) {
+          return typedAccount;
+        }
+
+        // If we have nearby payees, highlight the first nearby payee
+        const firstNearby = suggestions.findIndex(
+          item => item.itemType === 'nearby_payee',
+        );
+        if (firstNearby !== -1) {
+          return firstNearby;
+        }
+
+        // The best match of what was typed, wherever its group puts it.
+        const bestMatch = suggestions.findIndex(item => item.isBestMatch);
+        if (bestMatch !== -1) {
+          return bestMatch;
         } else if (suggestions[0].id === 'new') {
           // Highlight the first payee since the create payee option is at index 0.
           return suggestions.length > 1 ? 1 : 0;
@@ -677,7 +735,7 @@ export function PayeeAutocomplete({
       filterSuggestions={filterSuggestions}
       renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <PayeeList
-          items={[...filteredNearbyPayees, ...items]}
+          items={items}
           commonPayees={commonPayees}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}

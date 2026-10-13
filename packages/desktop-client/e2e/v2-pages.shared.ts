@@ -12,7 +12,7 @@
  * enough for the finger it is meant for, and that an amount is printed whole
  * however long it is.
  */
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { ConfigurationPage } from './page-models/configuration-page';
@@ -500,6 +500,27 @@ export function describeV2Pages(layout: V2Layout) {
       await expect(period).toHaveAttribute('data-month', '2017-01');
     });
 
+    test('a classic report opens on its own address', async () => {
+      // As a bookmark opens it: the address loaded whole, with nothing in
+      // memory and no dashboard on the way. Each of these used to wait, for
+      // good, on a widget it was never going to be handed.
+      const report = page.getByTestId('reports-page');
+      for (const name of ['summary', 'calendar', 'crossover', 'formula']) {
+        await page.goto(`/reports/${name}`);
+        await expect(page).toHaveURL(new RegExp(`/reports/${name}$`));
+        // Waiting, the landmark held a spinner and not a word.
+        await expect(async () => {
+          const words = (await report.innerText()).replace(/\s+/g, ' ').trim();
+          expect(words.length, `${name} draws its page`).toBeGreaterThan(30);
+        }).toPass({ timeout: 60_000 });
+      }
+
+      // The application was started again four times: back on a V2 page, with
+      // the file open, before the next test reads anything.
+      await page.goto('/budget');
+      await shell.waitForPage('budget');
+    });
+
     test('privacy mode hides every amount on the four pages and gives them back', async () => {
       for (const name of V2_PAGES) {
         await shell.goTo(name);
@@ -681,6 +702,69 @@ export function describeV2Pages(layout: V2Layout) {
         }
         await page.keyboard.press('Escape');
         await expect(page.getByRole('menu')).toHaveCount(0);
+      });
+    }
+
+    if (layout === 'mobile') {
+      // The pages lead into sheets and forms of the application's own, and a
+      // phone is no less a phone there. These three were under the size: the
+      // cross of every sheet at 30pt, the two actions of the account form and
+      // the list's "no category" row at 28pt.
+      test('what the pages open gives a finger something to hit', async () => {
+        const sheet = page.getByRole('dialog');
+        const close = sheet.getByRole('button', { name: 'Close' }).first();
+
+        const expectFingerSized = async (control: Locator, what: string) => {
+          await control.scrollIntoViewIfNeeded();
+          const box = await control.boundingBox();
+          if (!box) {
+            throw new Error(`${what} is not on screen.`);
+          }
+          expect(box.height, what).toBeGreaterThanOrEqual(TOUCH_TARGET);
+          expect(box.width, what).toBeGreaterThanOrEqual(TOUCH_TARGET);
+        };
+
+        // A sheet of the Budget, and the cross that closes it.
+        await shell.goTo('budget');
+        await page.getByRole('button', { name: 'Ações do mês' }).click();
+        await expectFingerSized(close, 'the cross of a sheet');
+        await close.click();
+        await expect(sheet).toHaveCount(0);
+
+        // The form that adds an account.
+        await shell.goTo('accounts');
+        await page
+          .getByRole('button', { name: 'Adicionar conta' })
+          .first()
+          .click();
+        for (const name of ['Cancel', 'Create']) {
+          await expectFingerSized(
+            sheet.getByRole('button', { name, exact: true }),
+            name,
+          );
+        }
+        await close.click();
+        await expect(sheet).toHaveCount(0);
+
+        // The list of categories the transaction form opens.
+        await shell.navigation
+          .getByRole('button', { name: 'New transaction' })
+          .click();
+        const form = page.getByTestId('transaction-form');
+        await form.waitFor();
+        // The form opens in its amount; its lists unlock once that is left.
+        await form.getByTestId('amount-input').blur();
+        await page.getByTestId('category-field').click();
+        await expectFingerSized(
+          sheet.getByRole('button', { name: 'Uncategorized', exact: true }),
+          'the "no category" row',
+        );
+        await close.click();
+        await expect(sheet).toHaveCount(0);
+
+        // Left as it was found: nothing was entered.
+        await page.getByRole('button', { name: 'Back' }).click();
+        await expect(shell.navigation).toBeVisible();
       });
     }
 
