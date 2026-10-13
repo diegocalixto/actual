@@ -895,6 +895,189 @@ export function describeV2Finance(layout: V2Layout) {
       }).toPass();
     });
 
+    if (layout === 'mobile') {
+      // The phone enters a transfer on the form it enters everything on, by
+      // naming the other account where a payee would go. These hold the form
+      // to saying which of the two it took, before and after it saves.
+      test('an account named as the payee is offered as a transfer before a new payee', async () => {
+        const before = await ledger.read(THIS_MONTH);
+        const payees = await ledger.payees();
+
+        await entries.openNewForm();
+        await entries.enterAmount(-8040);
+        await entries.field('payee').click();
+        await entries.search.pressSequentially(CHECKING);
+
+        // The account first. A payee of that name can still be made — after
+        // it, where a tap on the top of the list does not land.
+        await expect(entries.options).toHaveText([
+          CHECKING,
+          `Create payee "${CHECKING}"`,
+        ]);
+        await entries.options.first().click();
+        await entries.search.waitFor({ state: 'hidden' });
+
+        // The form says what it now holds: a transfer, which takes no category.
+        await expect(entries.field('payee')).toContainText(
+          `Transfer to ${CHECKING}`,
+        );
+        await expect(entries.field('category')).toContainText('Transfer');
+        await expect(entries.field('category')).toBeDisabled();
+
+        await entries.pick(entries.field('account'), SAVINGS);
+        await entries.describe('qa transferencia digitada');
+        await entries.submitNew();
+
+        // And what it recorded.
+        await expect(entries.notice('Transfer added.')).toBeVisible();
+        const after = await fileAfter(before, file => {
+          file.transactionCount += 2;
+          move(file, SAVINGS, -8040);
+          move(file, CHECKING, 8040);
+        });
+        expect(after.total).toBe(before.total);
+        expect(after.month).toEqual(before.month);
+        // Nobody called "HSBC" was made on the way.
+        expect(await ledger.payees()).toEqual(payees);
+        await expectPagesToAgree(after);
+
+        await entries.remove({
+          notes: 'qa transferencia digitada',
+          account: SAVINGS,
+        });
+        await expect(entries.notice('Transfer deleted.')).toBeVisible();
+        await expect(async () => {
+          expect(await ledger.read(THIS_MONTH)).toEqual(before);
+        }).toPass();
+        expect(await ledger.payees()).toEqual(payees);
+      });
+
+      test('the transfer side of the payee list offers accounts and nothing to create', async () => {
+        const before = await ledger.read(THIS_MONTH);
+        const payees = await ledger.payees();
+
+        await entries.openNewForm();
+        await entries.enterAmount(-2550);
+        await entries.field('payee').click();
+        await expect(entries.payeeKind('Payee')).toHaveAttribute(
+          'aria-pressed',
+          'true',
+        );
+
+        await entries.payeeKind('Transfer').click();
+        await expect(entries.payeeKind('Transfer')).toHaveAttribute(
+          'aria-pressed',
+          'true',
+        );
+        // Every account of the file, and nothing that is not one.
+        const offered = await entries.options.allInnerTexts();
+        expect(offered).toEqual(expect.arrayContaining(ACCOUNTS));
+        expect(offered).not.toContain('Kroger');
+
+        // A name no account has finds nothing here — and no payee to make.
+        await entries.search.pressSequentially('Padaria');
+        await expect(entries.options).toHaveCount(0);
+
+        // The other side is one tap away, and there the name can be made one.
+        await entries.payeeKind('Payee').click();
+        await entries.search.pressSequentially('Padaria');
+        await expect(entries.options).toHaveText(['Create payee "Padaria"']);
+
+        await entries.payeeKind('Transfer').click();
+        await entries.options.filter({ hasText: WALLET }).click();
+        await entries.search.waitFor({ state: 'hidden' });
+        await expect(entries.field('payee')).toContainText(
+          `Transfer to ${WALLET}`,
+        );
+
+        // Left without adding: looking through the list wrote nothing.
+        await entries.backToTheBar();
+        expect(await ledger.read(THIS_MONTH)).toEqual(before);
+        expect(await ledger.payees()).toEqual(payees);
+      });
+
+      test('the phone says what it did to a transaction, clear of the bar', async () => {
+        const before = await ledger.read(THIS_MONTH);
+
+        await entries.add({
+          account: SAVINGS,
+          payee: 'Kroger',
+          category: 'Food',
+          amount: -1999,
+          notes: 'qa aviso',
+        });
+        await expect(entries.notice('Transaction added.')).toBeVisible();
+        // The notice stands clear of the bar: the action a person adding
+        // several transactions reaches for next is not under it. Asked of the
+        // page itself — what is on top at the action's upper edge, which is
+        // the part of it raised out of the bar.
+        const isActionOnTop = await shell.navigation
+          .getByRole('button', { name: 'New transaction' })
+          .evaluate(action => {
+            const box = action.getBoundingClientRect();
+            const onTop = document.elementFromPoint(
+              box.left + box.width / 2,
+              box.top + 2,
+            );
+            return action.contains(onTop);
+          });
+        expect(isActionOnTop).toBe(true);
+
+        const added = await fileAfter(before, file => {
+          file.transactionCount += 1;
+          move(file, SAVINGS, -1999);
+          file.month.spent += 1999;
+          file.month.cashOut += 1999;
+          file.month.categories.Food.spent += 1999;
+          file.month.categories.Food.available -= 1999;
+        });
+
+        await entries.change({ notes: 'qa aviso' }, { amount: -2999 });
+        await expect(entries.notice('Transaction updated.')).toBeVisible();
+        const changed = await fileAfter(added, file => {
+          move(file, SAVINGS, -1000);
+          file.month.spent += 1000;
+          file.month.cashOut += 1000;
+          file.month.categories.Food.spent += 1000;
+          file.month.categories.Food.available -= 1000;
+        });
+
+        await expectPagesToAgree(changed);
+
+        await entries.remove({ notes: 'qa aviso' });
+        await expect(entries.notice('Transaction deleted.')).toBeVisible();
+        await expect(async () => {
+          expect(await ledger.read(THIS_MONTH)).toEqual(before);
+        }).toPass();
+      });
+
+      test('covering from no category covers nothing and asks for one', async () => {
+        const before = await ledger.read(THIS_MONTH);
+
+        await shell.goTo('budget');
+        await budget.openCover('Clothing');
+        // The phone opens its list of categories at once; it is closed here
+        // with none chosen.
+        await entries.search.waitFor();
+        await page.keyboard.press('Escape');
+        await entries.search.waitFor({ state: 'hidden' });
+
+        // Sent as it is, the form does not close as though it had covered
+        // something: it asks again for what it is missing.
+        await budget.coverAction.click();
+        await expect(entries.search).toBeVisible();
+        await expect(budget.coverAction).toBeAttached();
+
+        await expect(async () => {
+          await page.keyboard.press('Escape');
+          await expect(page.getByRole('dialog')).toHaveCount(0, {
+            timeout: 1_000,
+          });
+        }).toPass();
+        expect(await ledger.read(THIS_MONTH)).toEqual(before);
+      });
+    }
+
     test('a new account opens with the balance it is given', async () => {
       const before = await ledger.read(THIS_MONTH);
       // Everything the suite entered so far it also took back.

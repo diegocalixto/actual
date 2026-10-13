@@ -45,22 +45,7 @@ export class V2Budget {
    * the application's own "Cover overspending", reached from the row.
    */
   async cover(category: string, from: string) {
-    if (this.shell.layout === 'desktop') {
-      await this.shell.main
-        .getByRole('button', {
-          name: `Ações da categoria ${category}`,
-          exact: true,
-        })
-        .click();
-    } else {
-      await this.page
-        .getByRole('button', {
-          name: `Abrir menu de saldo de ${category}`,
-          exact: true,
-        })
-        .click();
-    }
-    await this.page.getByRole('button', { name: 'Cover overspending' }).click();
+    await this.openCover(category);
 
     // The amount offered is the whole overspending; only the source is asked.
     if (this.shell.layout === 'desktop') {
@@ -78,9 +63,38 @@ export class V2Budget {
         .click();
       await search.waitFor({ state: 'hidden' });
     }
-    await this.page
-      .getByRole('button', { name: 'Transfer', exact: true })
-      .click();
+    await this.coverAction.click();
+  }
+
+  /**
+   * What the form that covers an overspending is sent with. The desktop's is
+   * the popover the application always had; the phone's names what it does.
+   */
+  get coverAction() {
+    return this.page.getByRole('button', {
+      name: this.shell.layout === 'desktop' ? 'Transfer' : 'Cover',
+      exact: true,
+    });
+  }
+
+  /** Opens the form that covers what a category spent past its plan. */
+  async openCover(category: string) {
+    if (this.shell.layout === 'desktop') {
+      await this.shell.main
+        .getByRole('button', {
+          name: `Ações da categoria ${category}`,
+          exact: true,
+        })
+        .click();
+    } else {
+      await this.page
+        .getByRole('button', {
+          name: `Abrir menu de saldo de ${category}`,
+          exact: true,
+        })
+        .click();
+    }
+    await this.page.getByRole('button', { name: 'Cover overspending' }).click();
   }
 
   /** The desktop's field for a category's plan. */

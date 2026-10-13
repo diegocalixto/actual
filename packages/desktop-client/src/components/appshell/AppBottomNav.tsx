@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router';
 
@@ -13,6 +13,11 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import { useNavigate } from '#hooks/useNavigate';
+import {
+  releaseNotificationInset,
+  setNotificationInset,
+} from '#notifications/notificationsSlice';
+import { useDispatch } from '#redux';
 
 import { MoreMenu } from './MoreMenu';
 import type { NavItem } from './navigation';
@@ -60,6 +65,14 @@ export const MOBILE_NAV_HEIGHT = ROW_HEIGHT;
 export const MOBILE_NAV_SPACER = `calc(${MOBILE_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM})`;
 
 /**
+ * How far from the foot of the screen a notice is shown while the bar is up:
+ * clear of the bar and of the action raised out of it. A notice says what was
+ * just done — "Transaction added" — and the next thing a person does is often
+ * that same action again.
+ */
+const NOTIFICATION_BOTTOM_INSET = `calc(${MOBILE_NAV_HEIGHT + 24}px + ${SAFE_AREA_BOTTOM})`;
+
+/**
  * The mobile navigation.
  *
  * Actual's version was a drag-to-expand sheet: three columns of tabs at rest,
@@ -79,6 +92,19 @@ export function AppBottomNav() {
   const primary = usePrimaryNav();
   const secondary = useSecondaryNav();
   const barLabels = useBarLabels();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!isNarrowWidth) {
+      return;
+    }
+
+    const inset = { bottom: NOTIFICATION_BOTTOM_INSET };
+    dispatch(setNotificationInset({ inset }));
+    return () => {
+      dispatch(releaseNotificationInset({ inset }));
+    };
+  }, [dispatch, isNarrowWidth]);
 
   if (!isNarrowWidth) {
     return null;

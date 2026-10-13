@@ -102,7 +102,11 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useTagCSS } from '#hooks/useTagCSS';
 import { useFilteredTags } from '#hooks/useTags';
 import { pushModal } from '#modals/modalsSlice';
-import { addNotification } from '#notifications/notificationsSlice';
+import {
+  addNotification,
+  releaseNotificationInset,
+  setNotificationInset,
+} from '#notifications/notificationsSlice';
 import { useSavePayeeLocationMutation } from '#payees';
 import { locationService } from '#payees/location';
 import { aqlQuery } from '#queries/aqlQuery';
@@ -116,6 +120,14 @@ import { SplitAmountInput } from './SplitAmountInput';
 function getFieldName(transactionId: TransactionEntity['id'], field: string) {
   return `${field}-${transactionId}`;
 }
+
+/**
+ * How far from the foot of the screen a notice is shown while the form is up:
+ * clear of the form's one action, which is fixed there. A notice left by the
+ * transaction before this one would otherwise lie over it.
+ */
+const NOTIFICATION_BOTTOM_INSET =
+  'calc(76px + env(safe-area-inset-bottom, 0px))';
 
 function serializeTransaction(
   transaction: TransactionEntity,
@@ -1713,6 +1725,32 @@ function TransactionEditUnconnected({
   const isAdding = useRef(false);
   const isDeleted = useRef(false);
 
+  useEffect(() => {
+    const inset = { bottom: NOTIFICATION_BOTTOM_INSET };
+    dispatch(setNotificationInset({ inset }));
+    return () => {
+      dispatch(releaseNotificationInset({ inset }));
+    };
+  }, [dispatch]);
+
+  // What the form says once it has written to the file. It says it and no
+  // more: the application's undo takes back the last change made, whichever
+  // that was, and a notice that outlives its change would offer it for another.
+  const notify = useCallback(
+    (message: string) => {
+      dispatch(addNotification({ notification: { type: 'message', message } }));
+    },
+    [dispatch],
+  );
+
+  // A transfer and a payment are entered on this one form, and which of the
+  // two was recorded is what a person most needs to hear back.
+  const isTransfer = useCallback(
+    (transaction?: TransactionEntity) =>
+      !!payees.find(payee => payee.id === transaction?.payee)?.transfer_acct,
+    [payees],
+  );
+
   const searchParamCategory = useMemo(
     () => categories.find(c => c.name === searchParams.get('category'))?.id,
     [categories, searchParams],
@@ -1943,6 +1981,21 @@ function TransactionEditUnconnected({
         //     updated: changes.updated.concat(remoteUpdates),
         //   });
         // }
+
+        // The form closes as it saves: say what was recorded, on the page it
+        // gives way to.
+        const [saved] = newTransactions;
+        if (isAdding.current) {
+          notify(
+            isTransfer(saved) ? t('Transfer added.') : t('Transaction added.'),
+          );
+        } else {
+          notify(
+            isTransfer(saved)
+              ? t('Transfer updated.')
+              : t('Transaction updated.'),
+          );
+        }
       }
 
       if (isAdding.current) {
@@ -1951,7 +2004,7 @@ function TransactionEditUnconnected({
         dispatch(setLastTransaction({ transaction: newTransactions[0] }));
       }
     },
-    [dispatch, fetchedTransactions],
+    [dispatch, fetchedTransactions, isTransfer, notify, t],
   );
 
   const onDelete = useCallback(
@@ -1969,11 +2022,22 @@ function TransactionEditUnconnected({
         // if (onTransactionsChange) {
         //   onTransactionsChange({ ...changes, updated: remoteUpdates });
         // }
+
+        // Of the transaction itself; a part of a split goes with a tap and
+        // stays on the form.
+        const [deleted] = transactions;
+        if (deleted?.id === id) {
+          notify(
+            isTransfer(deleted)
+              ? t('Transfer deleted.')
+              : t('Transaction deleted.'),
+          );
+        }
       }
 
       setTransactions(changes.data);
     },
-    [transactions],
+    [transactions, isTransfer, notify, t],
   );
 
   const onAddSplit = useCallback(

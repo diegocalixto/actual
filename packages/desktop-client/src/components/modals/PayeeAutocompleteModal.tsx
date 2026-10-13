@@ -78,7 +78,9 @@ export function PayeeAutocompleteModal({
             onClose={() => state.close()}
             onManagePayees={onManagePayees}
             showManagePayees={!isNarrowWidth}
-            showMakeTransfer={!isNarrowWidth}
+            // On a phone the picker draws the switch as a choice of two
+            // above the search field; see `PayeeTransferTabs`.
+            showMakeTransfer
             {...defaultAutocompleteProps}
             onSelect={onSelect}
             value={null}

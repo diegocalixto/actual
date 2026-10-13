@@ -416,4 +416,147 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
         .flatMap(firstOrIncorrect),
     ).toStrictEqual(['Payees']);
   });
+
+  describe('when what is typed could be a transfer', () => {
+    const savings = generateAccount('Savings', false, false);
+    const savingsPlus = generateAccount('Savings Plus', false, false);
+    const savingsTransfer: PayeeEntity = {
+      ...makePayee('Savings'),
+      id: 'savings-transfer-id',
+      transfer_acct: savings.id,
+    };
+    const savingsPlusTransfer: PayeeEntity = {
+      ...makePayee('Savings Plus'),
+      id: 'savings-plus-transfer-id',
+      transfer_acct: savingsPlus.id,
+    };
+    // In the order the application lists them: payees by name, then accounts.
+    const payees: PayeeEntity[] = [
+      makePayee('Alice'),
+      makePayee('Savannah Bakery'),
+      makePayee('Savings Bond'),
+      savingsTransfer,
+      savingsPlusTransfer,
+    ];
+
+    // Everything the list offers, top to bottom: its headers, its payees
+    // and the offer to create one.
+    function offered() {
+      return [
+        ...screen
+          .getByTestId('autocomplete')
+          .querySelectorAll(
+            `[data-testid="create-payee-button"], ${PAYEE_SECTION_SELECTOR}, ${ALL_PAYEE_ITEMS_SELECTOR}`,
+          ),
+      ].map(e => e.getAttribute('data-testid'));
+    }
+
+    function highlighted() {
+      return [
+        ...screen
+          .getByTestId('autocomplete')
+          .querySelectorAll('[data-highlighted]'),
+      ].map(e => e.getAttribute('data-testid'));
+    }
+
+    async function type(text: string, props?: Partial<PayeeAutocompleteProps>) {
+      const autocomplete = renderPayeeAutocomplete({
+        payees,
+        accounts: [savings, savingsPlus],
+        ...props,
+      });
+      await clickAutocomplete(autocomplete);
+      await userEvent.type(autocomplete.querySelector('input')!, text);
+      await waitForAutocomplete();
+    }
+
+    test('the name of an account offers the transfer first and a new payee last', async () => {
+      const onUpdate = vi.fn();
+      await type('savings', { onUpdate });
+
+      expect(offered()).toStrictEqual([
+        'Transfer To/From-payee-item-group',
+        'Savings-payee-item',
+        'Savings Plus-payee-item',
+        'Payees-payee-item-group',
+        'Savings Bond-payee-item',
+        'create-payee-button',
+      ]);
+      // The transfer is what Enter would take, and what leaving the field
+      // would save.
+      expect(highlighted()).toStrictEqual(['Savings-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith(
+        savingsTransfer.id,
+        savingsTransfer.id,
+      );
+    });
+
+    test('walking down the list saves the row it stops on', async () => {
+      const onUpdate = vi.fn();
+      await type('savings', { onUpdate });
+
+      // The list is walked by what is on screen and saved by its place in
+      // what the search returned: the two have to be one order.
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Savings Plus-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith(
+        savingsPlusTransfer.id,
+        savingsPlusTransfer.id,
+      );
+
+      await userEvent.keyboard('{ArrowDown}');
+      expect(highlighted()).toStrictEqual(['Savings Bond-payee-item']);
+      expect(onUpdate).toHaveBeenLastCalledWith(
+        'savings bond-id',
+        'savings bond-id',
+      );
+    });
+
+    test('a payee that shares the name of an account does not come before the transfer', async () => {
+      await type('savings', {
+        payees: [makePayee('Savings'), ...payees],
+      });
+
+      // Somebody called "Savings" is on file already — made, most likely, by
+      // the very mistake this order prevents — so there is none to create.
+      expect(offered()).toStrictEqual([
+        'Transfer To/From-payee-item-group',
+        'Savings-payee-item',
+        'Savings Plus-payee-item',
+        'Payees-payee-item-group',
+        'Savings-payee-item',
+        'Savings Bond-payee-item',
+      ]);
+      expect(highlighted()).toHaveLength(1);
+      expect(
+        screen
+          .getByTestId('autocomplete')
+          .querySelector('[data-highlighted]')
+          ?.previousElementSibling?.getAttribute('data-testid'),
+      ).toBe('Transfer To/From-payee-item-group');
+    });
+
+    test('part of an account name still offers a new payee first', async () => {
+      await type('Sav');
+
+      expect(offered()).toStrictEqual([
+        'create-payee-button',
+        'Payees-payee-item-group',
+        'Savannah Bakery-payee-item',
+        'Savings Bond-payee-item',
+        'Transfer To/From-payee-item-group',
+        'Savings-payee-item',
+        'Savings Plus-payee-item',
+      ]);
+    });
+
+    test('the name of a payee offers no payee to create', async () => {
+      await type('alice');
+
+      expect(offered()).toStrictEqual([
+        'Payees-payee-item-group',
+        'Alice-payee-item',
+      ]);
+    });
+  });
 });

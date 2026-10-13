@@ -472,6 +472,14 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // the catalog already uses in `Transferred {{amount}} from … to …`.
     'Transfer from {{accountName}}': 'Transferência de {{accountName}}',
     'Transfer to {{accountName}}': 'Transferência para {{accountName}}',
+    // What the phone says once its form has saved or deleted a transaction.
+    // These strings exist only in this fork.
+    'Transaction added.': 'Transação adicionada.',
+    'Transaction updated.': 'Transação atualizada.',
+    'Transaction deleted.': 'Transação excluída.',
+    'Transfer added.': 'Transferência adicionada.',
+    'Transfer updated.': 'Transferência atualizada.',
+    'Transfer deleted.': 'Transferência excluída.',
     // Still shared by the two date-range connectors in Reports ("Jan a Mar"),
     // where the catalog's "com" was wrong. No longer used by the transfer
     // label. `from` has no active use left, so it carries no override.
@@ -684,6 +692,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // catalog, a word-for-word rendering that says nothing about where the
     // overspending goes.
     'Transfer to another category': 'Transferir para outra categoria',
+    // Where the phone's transfer between two categories goes. The bare `To:`
+    // is shared with the date ranges and the catalog reads it "Com:".
+    'To:_transfer': 'Para:',
     'Cover overspending': 'Cobrir gastos excedentes',
     'Rollover overspending': 'Levar o gasto excedente para o próximo mês',
     'Remove overspending rollover':

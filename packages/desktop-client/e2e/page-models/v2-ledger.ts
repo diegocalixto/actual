@@ -126,6 +126,22 @@ export class V2Ledger {
     });
   }
 
+  /**
+   * The payees on file that are somebody — not the other side of a transfer —
+   * by name. One made by mistake is a record like any other.
+   */
+  async payees(): Promise<string[]> {
+    return await this.page.evaluate(async () => {
+      // On `window` by the application's own doing; see `read` below.
+      const file = window as unknown as FileWindow;
+      const { data } = await file.$query(
+        file.$q('payees').filter({ transfer_acct: null }).select(['name']),
+      );
+
+      return data.map(payee => String(payee.name)).sort();
+    });
+  }
+
   /** The file as it stands, with the budget of the month given as "2017-01". */
   async read(month: string): Promise<Ledger> {
     const [year, monthOfYear] = month.split('-').map(Number);

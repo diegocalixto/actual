@@ -293,6 +293,39 @@ export class V2Entries {
     return this.page.getByTestId('transaction-form-footer').getByRole('button');
   }
 
+  /** One of the form's fields that open a list to choose from. */
+  field(name: 'payee' | 'category' | 'account') {
+    return this.page.getByTestId(`${name}-field`);
+  }
+
+  /** The field the phone's open list is searched from. */
+  get search() {
+    return this.page.getByRole('combobox').locator('input');
+  }
+
+  /** What the phone's open list offers, top to bottom. */
+  get options() {
+    return this.page.getByTestId('autocomplete').getByRole('option');
+  }
+
+  /**
+   * The choice above the phone's list of payees: somebody who is paid or
+   * pays, or another account of one's own.
+   */
+  payeeKind(kind: 'Payee' | 'Transfer') {
+    return this.page
+      .getByRole('dialog')
+      .getByRole('button', { name: kind, exact: true });
+  }
+
+  /**
+   * What the phone says it has just done, at the foot of the screen. The
+   * newest is the first, where one has not yet made way for the next.
+   */
+  notice(text: string) {
+    return this.page.getByText(text, { exact: true }).first();
+  }
+
   /** Opens the phone's form for a new transaction, from the bar. */
   async openNewForm() {
     await this.backToTheBar();
@@ -312,6 +345,12 @@ export class V2Entries {
       }
       await expect(this.shell.navigation).toBeVisible({ timeout: 2_000 });
     }).toPass();
+  }
+
+  /** The amount and the way it goes, as the phone's form takes them. */
+  async enterAmount(cents: number) {
+    await this.typeAmount(cents);
+    await this.setDirection(cents);
   }
 
   /** The amount, which the keypad fills from the cents up. */
@@ -335,13 +374,13 @@ export class V2Entries {
   }
 
   /** Picks from one of the form's lists by typing a name and tapping it. */
-  private async pick(field: Locator, name: string) {
+  async pick(field: Locator, name: string) {
     await field.click();
-    const search = this.page.getByRole('combobox').locator('input');
+    const search = this.search;
     await search.pressSequentially(name);
-    // The name and nothing before it: typing an account's name also offers to
-    // create a payee called that, which would not be a transfer. A category
-    // is listed with what it has left, after its name.
+    // The name and nothing before it: an account's name also offers, after the
+    // account, to create a payee called that, which would not be a transfer.
+    // A category is listed with what it has left, after its name.
     await this.page
       .getByRole('option')
       .filter({
@@ -357,28 +396,36 @@ export class V2Entries {
     await this.openNewForm();
 
     if (entry.amount !== 0) {
-      await this.typeAmount(entry.amount);
-      await this.setDirection(entry.amount);
+      await this.enterAmount(entry.amount);
     } else {
       // Nothing to type: leave the field the form opens in.
       await this.form.getByTestId('amount-input').blur();
     }
     if (entry.payee) {
-      await this.pick(this.page.getByTestId('payee-field'), entry.payee);
+      await this.pick(this.field('payee'), entry.payee);
     }
     if (entry.category) {
-      await this.pick(this.page.getByTestId('category-field'), entry.category);
+      await this.pick(this.field('category'), entry.category);
     }
-    await this.pick(this.page.getByTestId('account-field'), entry.account);
+    await this.pick(this.field('account'), entry.account);
     if (entry.date) {
       const date = this.form.locator('input[type="date"]');
       await date.fill(entry.date);
       await date.blur();
     }
-    const notes = this.form.getByPlaceholder('Add a note (optional)');
-    await notes.fill(entry.notes);
-    await notes.blur();
+    await this.describe(entry.notes);
+    await this.submitNew();
+  }
 
+  /** The entry's own words, in the form's notes. */
+  async describe(words: string) {
+    const notes = this.form.getByPlaceholder('Add a note (optional)');
+    await notes.fill(words);
+    await notes.blur();
+  }
+
+  /** Adds what the phone's form holds, once it has all it needs. */
+  async submitNew() {
     await expect(this.formAction).toHaveText('Add transaction');
     await this.formAction.click();
     // The form gives way to the page it was opened from, which has the bar.
@@ -429,22 +476,16 @@ export class V2Entries {
         .getByRole('button', { name: /^[\d,]+\.\d{2}$/ })
         .first()
         .click();
-      await this.typeAmount(changes.amount);
-      await this.setDirection(changes.amount);
+      await this.enterAmount(changes.amount);
     }
     if (changes.category !== undefined) {
-      await this.pick(
-        this.page.getByTestId('category-field'),
-        changes.category,
-      );
+      await this.pick(this.field('category'), changes.category);
     }
     if (changes.account !== undefined) {
-      await this.pick(this.page.getByTestId('account-field'), changes.account);
+      await this.pick(this.field('account'), changes.account);
     }
     if (changes.notes !== undefined) {
-      const notes = this.form.getByPlaceholder('Add a note (optional)');
-      await notes.fill(changes.notes);
-      await notes.blur();
+      await this.describe(changes.notes);
     }
 
     await expect(this.formAction).toHaveText('Save changes');
