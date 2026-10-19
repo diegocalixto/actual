@@ -1,0 +1,25 @@
+{
+  "_aviso": "MODELO FICTÍCIO. Copie para fora do repositório e troque pelos totais reais (ver README).",
+  "contas": {
+    "Itaú Conta Corrente": {
+      "tipo": "corrente",
+      "saldo_inicial": { "data": "2026-01-01", "valor": "1.000,00" },
+      "saldo_final": { "data": "2026-01-31", "valor": "1.820,00" }
+    },
+    "Itaú Personnalité Crédito": {
+      "tipo": "cartao",
+      "saldo_inicial": { "data": "2026-01-01", "valor": "0,00" }
+    }
+  },
+  "faturas": {
+    "Itaú Personnalité Crédito": {
+      "2026-02": {
+        "total": "60,00",
+        "situacao": "fechada",
+        "fechamento": "2026-02-03",
+        "vencimento": "2026-02-10"
+      },
+      "2026-04": { "total": "40,00", "situacao": "projetada" }
+    }
+  }
+}

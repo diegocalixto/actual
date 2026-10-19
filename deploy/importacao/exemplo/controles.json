@@ -1,0 +1,31 @@
+{
+  "_aviso": "EXEMPLO FICTÍCIO. O real fica fora do repositório (ver README).",
+  "contas": {
+    "Itaú Conta Corrente": {
+      "tipo": "corrente",
+      "saldo_inicial": { "data": "2026-07-15", "valor": "5.000,00" },
+      "saldo_final": { "data": "2026-09-30", "valor": "7.250,00" }
+    },
+    "Itaú Personnalité Crédito": {
+      "tipo": "cartao",
+      "saldo_inicial": { "data": "2026-07-01", "valor": "0,00" }
+    }
+  },
+  "faturas": {
+    "Itaú Personnalité Crédito": {
+      "2026-08": {
+        "total": "400,00",
+        "situacao": "fechada",
+        "fechamento": "2026-08-03",
+        "vencimento": "2026-08-10"
+      },
+      "2026-09": {
+        "total": "500,00",
+        "situacao": "aberta",
+        "fechamento": "2026-09-03",
+        "vencimento": "2026-09-10"
+      },
+      "2026-10": { "total": "300,00", "situacao": "projetada" }
+    }
+  }
+}
