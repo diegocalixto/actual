@@ -266,18 +266,18 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await expectLabels([
         'Receitas',
         'Despesas',
-        'Saldo',
+        'Resultado líquido',
         'Taxa de poupança',
-        'Receitas, despesas e saldo',
+        'Receitas, despesas e resultado líquido',
         'Receitas (média)',
         'Despesas (média)',
-        'Saldo (média)',
+        'Resultado líquido (média)',
       ]);
       if (layout === 'desktop') {
         await expectLabels([
           'Total de receitas',
           'Total de despesas',
-          'Saldo do período',
+          'Resultado líquido do período',
           'Para onde foi o seu dinheiro',
           'Categoria',
           'Valor',
@@ -291,7 +291,7 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
           'Relatório de fluxo de caixa',
           'Relatório de patrimônio líquido',
           'Relatório de despesas',
-          'Painel personalizável',
+          'Painel personalizado',
           'Abra um relatório com filtros próprios',
         ]);
       }
@@ -382,7 +382,7 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         }
         await expect(page.getByPlaceholder('Buscar')).toBeVisible();
         await expectOnScreen(
-          ['Data', 'Beneficiário', 'Notas', 'Categoria', 'Saída', 'Entrada'],
+          ['Data', 'Favorecido', 'Notas', 'Categoria', 'Saída', 'Entrada'],
           body,
         );
         await expectNowhere(
@@ -399,7 +399,7 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         await payee.click();
         await payee.getByRole('textbox').pressSequentially('zq');
         await expectOnScreen(
-          ['Criar beneficiário "zq"', 'Fazer transferência'],
+          ['Criar favorecido "zq"', 'Fazer transferência'],
           page.getByTestId('autocomplete'),
         );
         await page.keyboard.press('Escape');
@@ -415,7 +415,7 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         await form.getByTestId('amount-input').blur();
 
         await expectOnScreen(
-          ['Beneficiário', 'Categoria', 'Conta', 'Data', 'Confirmado', 'Notas'],
+          ['Favorecido', 'Categoria', 'Conta', 'Data', 'Confirmado', 'Notas'],
           form,
         );
         await expectNowhere(
