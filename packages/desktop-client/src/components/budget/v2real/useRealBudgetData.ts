@@ -208,7 +208,7 @@ export function useRealBudgetData() {
             id: transaction.id,
             name:
               getPrettyPayee({ t, transaction, payee, transferAccount }) ||
-              t('(Sem beneficiário)'),
+              t('(No payee)'),
             envelope: category?.name ?? t('Sem categoria'),
             date: monthUtils.format(transaction.date, 'd MMM', ptBR),
             amount: transaction.amount ?? 0,

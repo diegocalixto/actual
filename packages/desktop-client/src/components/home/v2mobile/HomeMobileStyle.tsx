@@ -27,6 +27,52 @@ export const mobileLayout = {
 };
 
 /**
+ * Wraps the two cards the phone keeps from the previous Home (balance trend,
+ * recent transactions).
+ *
+ * Those cards paint with the app theme's variables, so under a light
+ * appearance — the iPhone's default — they came out as white slabs between the
+ * dark ones. Inside this class the theme variables they read are pointed at
+ * this page's tokens, which repaints them, chart and text included, without
+ * touching the cards (the desktop still mounts them) or the shared tokens.
+ */
+export const HOME_MOBILE_LEGACY_SCOPE_CLASS = 'df-home-mobile-legacy';
+
+const LEGACY_SCOPE_DECLARATIONS = `
+  --color-cardBackground: var(--dfl-surface);
+  --color-pageText: var(--dfl-text);
+  --color-pageTextLight: var(--dfl-text-2);
+  --color-pageTextSubdued: var(--dfl-text-3);
+  --color-pageTextPositive: var(--dfl-hue-violet);
+  --color-buttonPrimaryBackground: var(--dfl-violet);
+  --color-numberPositive: var(--dfl-positive);
+  --color-numberNegative: var(--dfl-negative);
+  --color-buttonBareText: var(--dfl-text);
+  --color-buttonBareTextHover: var(--dfl-text);
+  --color-buttonBareBackgroundHover: var(--dfl-inset);
+  --color-buttonBareBackgroundActive: var(--dfl-inset);
+  color: var(--dfl-text);
+`;
+
+/**
+ * The same cards, given the surface and the section label the Contas and
+ * Despesas do mês groups use, so the bottom of the page does not change
+ * treatment halfway down.
+ */
+const LEGACY_SCOPE_RULES = `
+.${HOME_MOBILE_ROOT_CLASS} .${HOME_MOBILE_LEGACY_SCOPE_CLASS} [data-surface='dashboard-card'] {
+  border-radius: var(--dfm-radius);
+  border: 1px solid var(--dfl-line-strong);
+  box-shadow: var(--dfl-shadow), 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.${HOME_MOBILE_ROOT_CLASS} .${HOME_MOBILE_LEGACY_SCOPE_CLASS} [role='heading'] {
+  font-size: 13.5px;
+  letter-spacing: 1.4px;
+  color: var(--dfl-text);
+}
+`;
+
+/**
  * A few values that only make sense on a phone, kept out of the shared token
  * list so the desktop screens cannot pick them up: tighter radii than the
  * desktop's 18px, which would eat a 396px-wide card, and the ramp the hero is
@@ -78,7 +124,8 @@ export function HomeMobileStyle() {
     <style>
       {`${tokensCssFor(HOME_MOBILE_ROOT_CLASS)}
 .${HOME_MOBILE_ROOT_CLASS} {${MOBILE_DECLARATIONS}}
-`}
+.${HOME_MOBILE_ROOT_CLASS} .${HOME_MOBILE_LEGACY_SCOPE_CLASS} {${LEGACY_SCOPE_DECLARATIONS}}
+${LEGACY_SCOPE_RULES}`}
     </style>
   );
 }

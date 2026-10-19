@@ -5,6 +5,8 @@ import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
+import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
@@ -34,6 +36,8 @@ export function LabAccounts({ accounts }: LabAccountsProps) {
 }
 
 function Row({ account, isLast }: { account: LabAccount; isLast: boolean }) {
+  const cardBrand = cardBrandForAccount(account.name);
+
   return (
     <View
       style={{
@@ -45,7 +49,11 @@ function Row({ account, isLast }: { account: LabAccount; isLast: boolean }) {
         borderBottom: isLast ? 'none' : '1px solid var(--dfl-line)',
       }}
     >
-      <LabTile Icon={account.Icon} hue={account.hue} size={42} />
+      {cardBrand ? (
+        <AccountCardThumbnail brand={cardBrand} size={42} />
+      ) : (
+        <LabTile Icon={account.Icon} hue={account.hue} size={42} />
+      )}
 
       <View style={{ flex: '0 0 auto', maxWidth: 190, gap: 3 }}>
         <TextOneLine

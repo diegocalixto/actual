@@ -8,6 +8,8 @@ import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
+import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { iconForAccount } from '#components/v2lab/LabStyle';
 import { useNavigate } from '#hooks/useNavigate';
 
@@ -49,6 +51,7 @@ export function HomeMobileAccountRow({
   const { account, kind, detail } = homeAccount;
   const balance = useAccountBalance(account.id);
   const Icon = iconForAccount(account.name);
+  const cardBrand = cardBrandForAccount(account.name);
 
   // On-budget money is spendable and reads in the positive colour; off-budget
   // money is not, so it reads in plain text — painting it green too would tell
@@ -86,7 +89,11 @@ export function HomeMobileAccountRow({
           minWidth: 0,
         }}
       >
-        <HomeMobileIconTile Icon={Icon} hue={hue} />
+        {cardBrand ? (
+          <AccountCardThumbnail brand={cardBrand} size={38} />
+        ) : (
+          <HomeMobileIconTile Icon={Icon} hue={hue} />
+        )}
 
         <View
           style={{ flex: 1, minWidth: 0, gap: 1, alignItems: 'flex-start' }}

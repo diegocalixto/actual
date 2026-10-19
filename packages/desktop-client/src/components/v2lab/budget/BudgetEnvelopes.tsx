@@ -5,6 +5,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { SvgCheveronRight } from '@actual-app/components/icons/v1';
+import { SvgPencil1 } from '@actual-app/components/icons/v2';
+import type { CSSProperties } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
@@ -25,7 +27,7 @@ import { BudgetBar } from './BudgetBar';
 import type { LabEnvelope } from './budgetFixtures';
 import { formatPercent, formatPlain } from './budgetMoney';
 import { BudgetTile } from './BudgetTile';
-import type { EnvelopeActions } from './BudgetView';
+import type { EnvelopeActions, EnvelopeActionsIntent } from './BudgetView';
 
 type BudgetEnvelopesProps = {
   envelopes: LabEnvelope[];
@@ -180,6 +182,57 @@ function HeaderLabel({ children }: { children: ReactNode }) {
   );
 }
 
+const NAME_STYLE: CSSProperties = {
+  minWidth: 0,
+  fontSize: 15,
+  fontWeight: 600,
+  letterSpacing: -0.1,
+  color: 'var(--dfl-text)',
+};
+
+/** The pencil beside a renamable name: quiet until the row is pointed at. */
+const RENAME_HINT_CLASS = css({
+  flexShrink: 0,
+  color: 'var(--dfl-text-3)',
+  opacity: 0,
+  transition: 'opacity 120ms ease',
+});
+
+const ROW_CLASS = css({
+  [`&:hover .${RENAME_HINT_CLASS}, &:focus-within .${RENAME_HINT_CLASS}`]: {
+    opacity: 1,
+  },
+});
+
+/**
+ * The name as a control. It keeps the figure's type and place — a few pixels
+ * of padding are given back by the margin — and shows itself only by the
+ * pencil and a faint wash, so the list still reads as a list.
+ */
+const NAME_BUTTON_CLASS = css({
+  alignSelf: 'flex-start',
+  // The column's width, plus the padding the margin gives back.
+  maxWidth: 'calc(100% + 12px)',
+  minWidth: 0,
+  flexShrink: 1,
+  flexDirection: 'row',
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  gap: 6,
+  padding: '2px 6px',
+  margin: '-2px -6px',
+  borderRadius: 6,
+  backgroundColor: 'transparent',
+  cursor: 'pointer',
+  '&[data-hovered], &[data-pressed]': {
+    backgroundColor: 'var(--dfl-inset)',
+  },
+  '&[data-focus-visible]': {
+    outline: '2px solid var(--dfl-blue)',
+    outlineOffset: 1,
+  },
+});
+
 type RowProps = {
   envelope: LabEnvelope;
   /** One size per money column, shared by every row. */
@@ -200,7 +253,11 @@ function Row({
 }: RowProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const nameRef = useRef<HTMLButtonElement | null>(null);
+  // Which control opened the row's popover, if any: the chevron asks for the
+  // row's actions, the name for a rename. Rendered only while open, so each
+  // opening starts from what was asked for.
+  const [openedBy, setOpenedBy] = useState<EnvelopeActionsIntent | null>(null);
   const renderActions =
     typeof envelopeActions === 'function' ? envelopeActions : undefined;
   // The engine's own figure for this envelope, carryover included.
@@ -216,6 +273,7 @@ function Row({
 
   return (
     <View
+      className={ROW_CLASS}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -236,17 +294,32 @@ function Row({
           minWidth: NAME_COLUMN_MIN,
         }}
       >
-        <TextOneLine
-          data-testid="category-name"
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            letterSpacing: -0.1,
-            color: 'var(--dfl-text)',
-          }}
-        >
-          {envelope.name}
-        </TextOneLine>
+        {renderActions ? (
+          // The name is where a person looks to change it, as in the classic
+          // sidebar: pressing it opens the rename, and the pencil beside it
+          // says so on hover and on keyboard focus.
+          <Button
+            ref={nameRef}
+            variant="bare"
+            aria-label={t('Rename category {{name}}', { name: envelope.name })}
+            onPress={() => setOpenedBy('rename')}
+            className={NAME_BUTTON_CLASS}
+          >
+            <TextOneLine data-testid="category-name" style={NAME_STYLE}>
+              {envelope.name}
+            </TextOneLine>
+            <SvgPencil1
+              aria-hidden="true"
+              className={RENAME_HINT_CLASS}
+              width={11}
+              height={11}
+            />
+          </Button>
+        ) : (
+          <TextOneLine data-testid="category-name" style={NAME_STYLE}>
+            {envelope.name}
+          </TextOneLine>
+        )}
         <Text style={{ fontSize: 12, color: 'var(--dfl-text-3)' }}>
           {formatPercent(share)}
         </Text>
@@ -299,7 +372,9 @@ function Row({
           aria-label={t('Ações da categoria {{name}}', {
             name: envelope.name,
           })}
-          onPress={() => setIsOpen(open => !open)}
+          onPress={() =>
+            setOpenedBy(opened => (opened === 'actions' ? null : 'actions'))
+          }
           style={{
             flex: `0 0 ${ACTIONS_COLUMN}px`,
             padding: 2,
@@ -310,12 +385,15 @@ function Row({
           <SvgCheveronRight aria-hidden="true" width={16} height={16} />
         </Button>
       )}
-      {renderActions?.({
-        envelopeId: envelope.id,
-        triggerRef,
-        isOpen,
-        onClose: () => setIsOpen(false),
-      })}
+      {renderActions &&
+        openedBy !== null &&
+        renderActions({
+          envelopeId: envelope.id,
+          triggerRef: openedBy === 'rename' ? nameRef : triggerRef,
+          intent: openedBy,
+          isOpen: true,
+          onClose: () => setOpenedBy(null),
+        })}
     </View>
   );
 }

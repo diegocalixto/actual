@@ -4,6 +4,7 @@ import * as Platform from '@actual-app/core/shared/platform';
 import i18n from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 
+import { forkConfig } from './app/forkConfig';
 import { languages } from './languages';
 import { localeOverrides } from './locale-overrides';
 
@@ -21,9 +22,12 @@ const catalogLanguages = Object.keys(languages).map(
 // git-ignored and only a release build fetches it, so a fresh checkout has
 // none. The fork's own screens are then fully translated from the overrides,
 // and upstream text falls back to English until the catalog is there.
+// English is always offered: the keys are English, so it needs no catalog, and
+// without it in the list a checkout without the catalog could not leave the
+// fork's default language (`forkConfig.defaultLanguage`).
 export const availableLanguages = Platform.isPlaywright
   ? []
-  : [...new Set([...catalogLanguages, ...Object.keys(localeOverrides)])];
+  : [...new Set(['en', ...catalogLanguages, ...Object.keys(localeOverrides)])];
 
 const isLanguageAvailable = (language: string) =>
   hasCatalog(language) || Object.hasOwn(localeOverrides, language);
@@ -90,11 +94,29 @@ const resolveLanguage = (language: string) => {
   return undefined;
 };
 
-export const setI18NextLanguage = (language: string | null) => {
+// The change being loaded, if any. Calls can overlap (the app's start-up
+// default and the saved preference): asking again for the language already on
+// its way shares its load, and asking for another one supersedes it — i18next
+// drops a load that finishes after a newer request.
+let pendingChange: { language: string; done: Promise<void> } | null = null;
+
+/**
+ * Switches the app's language. Resolves once the language's strings are loaded,
+ * so a caller can hold back rendering until then — see `loadPrefs`.
+ */
+export const setI18NextLanguage = async (
+  language: string | null,
+): Promise<void> => {
   const defaultLanguages = Array.isArray(navigator.languages)
     ? navigator.languages
     : [navigator.language || 'en'];
-  const languagesToTry = language ? [language] : defaultLanguages;
+  // Without a choice made on this device the fork's own language comes first
+  // (see `forkConfig.defaultLanguage`); tests keep following the browser.
+  const languagesToTry = language
+    ? [language]
+    : Platform.isPlaywright
+      ? defaultLanguages
+      : [forkConfig.defaultLanguage, ...defaultLanguages];
 
   let resolved: string | undefined;
 
@@ -113,9 +135,21 @@ export const setI18NextLanguage = (language: string | null) => {
     resolved = 'en';
   }
 
-  if (resolved === i18n.language) {
+  if (pendingChange?.language === resolved) {
+    return pendingChange.done;
+  }
+  if (!pendingChange && resolved === i18n.language) {
     return; // language is already set
   }
 
-  void i18n.changeLanguage(resolved);
+  const change = {
+    language: resolved,
+    done: Promise.resolve(i18n.changeLanguage(resolved)).then(() => {
+      if (pendingChange === change) {
+        pendingChange = null;
+      }
+    }),
+  };
+  pendingChange = change;
+  return change.done;
 };

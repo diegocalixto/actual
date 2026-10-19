@@ -21,8 +21,9 @@ const AUTHOR = 'Diego Calixto';
  * data and the token scope. Anything that looks different between the two
  * routes is a difference in the data, never in the design.
  *
- * The one thing it adds is the surface behind each row's chevron, which the
- * laboratory has no categories to act on.
+ * The one thing it adds is the surface behind each row's chevron and name —
+ * moving money, renaming the category or its group — which the laboratory has
+ * no categories to act on.
  */
 export function V2RealBudget() {
   // Redrawn whole when the file's number format or currency changes.
@@ -45,12 +46,19 @@ export function V2RealBudget() {
       <BudgetView
         data={{
           ...data,
-          envelopeActions: ({ envelopeId, triggerRef, isOpen, onClose }) => (
+          envelopeActions: ({
+            envelopeId,
+            triggerRef,
+            intent,
+            isOpen,
+            onClose,
+          }) => (
             <EnvelopeActionsPopover
               categoryId={envelopeId}
               month={data.month}
               sheetName={data.sheetName}
               triggerRef={triggerRef}
+              intent={intent}
               isOpen={isOpen}
               onClose={onClose}
               onBudgetAction={data.onBudgetAction}

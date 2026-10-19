@@ -11,6 +11,8 @@ import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
+import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { iconForAccount } from '#components/v2lab/LabStyle';
 
 import { AccountsMobileMoney } from './AccountsMobileMoney';
@@ -67,6 +69,7 @@ export function AccountsMobileRow({
 }: AccountsMobileRowProps) {
   const { t } = useTranslation();
   const Icon = iconForAccount(account.name);
+  const cardBrand = cardBrandForAccount(account.name);
 
   const detailParts = [
     account.bankName,
@@ -115,12 +118,20 @@ export function AccountsMobileRow({
             justifyContent: 'center',
             width: 38,
             height: 38,
-            borderRadius: 'var(--dfma-radius-tile)',
-            backgroundColor: `color-mix(in srgb, ${hue} 13%, transparent)`,
-            border: `1px solid color-mix(in srgb, ${hue} 22%, transparent)`,
+            ...(cardBrand
+              ? null
+              : {
+                  borderRadius: 'var(--dfma-radius-tile)',
+                  backgroundColor: `color-mix(in srgb, ${hue} 13%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${hue} 22%, transparent)`,
+                }),
           }}
         >
-          <Icon width={18} height={18} style={{ color: hue }} />
+          {cardBrand ? (
+            <AccountCardThumbnail brand={cardBrand} size={38} />
+          ) : (
+            <Icon width={18} height={18} style={{ color: hue }} />
+          )}
 
           {/* The bank-sync state the previous page showed as a dot beside the
               name. It keeps that meaning and moves onto the tile, where it
@@ -130,7 +141,10 @@ export function AccountsMobileRow({
             <View
               style={{
                 position: 'absolute',
-                top: -3,
+                // On a card the badge sits on the card's own corner, which is
+                // lower than the square tile's: the card is 24 px tall,
+                // centred in the same 38 px slot.
+                top: cardBrand ? 4 : -3,
                 right: -3,
                 width: 9,
                 height: 9,

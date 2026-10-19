@@ -46,11 +46,16 @@ export type { BudgetHue } from './budgetTokens';
 export type EnvelopeActions =
   | ((args: {
       envelopeId: string;
+      /** Whatever was pressed: the chevron, or the name. */
       triggerRef: RefObject<HTMLButtonElement | null>;
+      /** The chevron asks for the row's actions; the name, for a rename. */
+      intent: EnvelopeActionsIntent;
       isOpen: boolean;
       onClose: () => void;
     }) => ReactNode)
   | 'mock';
+
+export type EnvelopeActionsIntent = 'actions' | 'rename';
 
 export type BudgetViewData = {
   /** Income for the month. `null` while the cell has not resolved. */

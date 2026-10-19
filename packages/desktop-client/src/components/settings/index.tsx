@@ -14,6 +14,7 @@ import { isElectron } from '@actual-app/core/shared/environment';
 import { css } from '@emotion/css';
 
 import { getLatestAppVersion } from '#app/appSlice';
+import { forkConfig } from '#app/forkConfig';
 import { closeBudget } from '#budgetfiles/budgetfilesSlice';
 import { Link } from '#components/common/Link';
 import { Checkbox, FormField, FormLabel } from '#components/forms';
@@ -48,6 +49,10 @@ function About() {
       void dispatch(getLatestAppVersion());
     });
   const dispatch = useDispatch();
+  // Upstream's release check is off in this fork (see `forkConfig`), so there
+  // is no status to show and no notification to opt out of.
+  const showUpdateStatus =
+    forkConfig.announceUpstreamReleases && notifyWhenUpdateIsAvailable;
 
   return (
     <Setting>
@@ -82,7 +87,7 @@ function About() {
           <Trans>Server version: {{ version }}</Trans>
         </Text>
 
-        {notifyWhenUpdateIsAvailable && versionInfo?.isOutdated ? (
+        {showUpdateStatus && versionInfo?.isOutdated ? (
           <Link
             variant="external"
             to="https://actualbudget.org/docs/releases"
@@ -92,9 +97,7 @@ function About() {
           </Link>
         ) : (
           <Text style={{ color: theme.noticeText, fontWeight: 600 }}>
-            {notifyWhenUpdateIsAvailable ? (
-              <Trans>You're up to date!</Trans>
-            ) : null}
+            {showUpdateStatus ? <Trans>You're up to date!</Trans> : null}
           </Text>
         )}
         <Text>
@@ -107,20 +110,22 @@ function About() {
           </Link>
         </Text>
       </View>
-      <View>
-        <Text style={{ display: 'flex' }}>
-          <Checkbox
-            id="settings-notifyWhenUpdateIsAvailable"
-            checked={notifyWhenUpdateIsAvailable}
-            onChange={e =>
-              setNotifyWhenUpdateIsAvailablePref(e.currentTarget.checked)
-            }
-          />
-          <label htmlFor="settings-notifyWhenUpdateIsAvailable">
-            <Trans>Display a notification when updates are available</Trans>
-          </label>
-        </Text>
-      </View>
+      {forkConfig.announceUpstreamReleases && (
+        <View>
+          <Text style={{ display: 'flex' }}>
+            <Checkbox
+              id="settings-notifyWhenUpdateIsAvailable"
+              checked={notifyWhenUpdateIsAvailable}
+              onChange={e =>
+                setNotifyWhenUpdateIsAvailablePref(e.currentTarget.checked)
+              }
+            />
+            <label htmlFor="settings-notifyWhenUpdateIsAvailable">
+              <Trans>Display a notification when updates are available</Trans>
+            </label>
+          </Text>
+        </View>
+      )}
     </Setting>
   );
 }

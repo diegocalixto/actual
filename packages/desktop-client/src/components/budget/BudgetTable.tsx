@@ -24,6 +24,7 @@ import type { MonthBounds } from './MonthsContext';
 import {
   findSortDown,
   findSortUp,
+  getCategoryColumnWidth,
   getScrollbarWidth,
   separateGroups,
 } from './util';
@@ -249,11 +250,11 @@ export function BudgetTable(props: BudgetTableProps) {
     <View
       data-testid="budget-table"
       // Every table Cell/Field paints `theme.tableBorder` on its top and
-      // bottom edge, so at the Budget's density the global value (tuned for
-      // the transaction table) reads as a spreadsheet grid. Scope a softer
-      // one to this subtree: descendants inherit it, while portalled popovers
-      // and every other screen keep the global token.
-      nativeStyle={{ '--color-tableBorder': '#2a3240' }}
+      // bottom edge, so at the Budget's density a visible value draws a grid.
+      // Scoping an almost-invisible hairline to this subtree turns the grid
+      // into a list of rows; portalled popovers and every other screen keep
+      // the global token.
+      nativeStyle={{ '--color-tableBorder': 'rgba(255, 255, 255, 0.05)' }}
       style={{
         flex: 1,
         ...(styles.lightScrollbar && {
@@ -278,7 +279,9 @@ export function BudgetTable(props: BudgetTableProps) {
           paddingRight: 5 + getScrollbarWidth(),
         }}
       >
-        <View style={{ width: 200 + 100 * categoryExpandedState }} />
+        <View
+          style={{ width: getCategoryColumnWidth(categoryExpandedState) }}
+        />
         <MonthsProvider
           startMonth={prewarmStartMonth}
           numMonths={numMonths}

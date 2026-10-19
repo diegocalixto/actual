@@ -28,6 +28,7 @@ import {
   chromeCanvas,
   chromeInk,
   chromeLine,
+  HOME_MOBILE_LEGACY_SCOPE_CLASS,
   HOME_MOBILE_ROOT_CLASS,
   HomeMobileStyle,
   mobileLayout,
@@ -73,9 +74,9 @@ type HomeMobilePageProps = {
  *
  * Below the approved fold the previous Home's trend and activity cards are
  * kept as they are. They are real, they work, and this round was asked to
- * promote an appearance, not to redesign the whole screen; leaving them intact
- * costs a visible change of surface treatment halfway down and loses no
- * function, which is the right way round.
+ * promote an appearance, not to redesign the whole screen. They are mounted
+ * inside `HOME_MOBILE_LEGACY_SCOPE_CLASS`, which gives them this page's dark
+ * surface and section label instead of the app theme's.
  */
 export function HomeMobilePage({
   month,
@@ -171,8 +172,16 @@ export function HomeMobilePage({
 
         <HomeMobileSpending sheetName={sheetName} budgetType={budgetType} />
 
-        <BalanceTrendCard />
-        <RecentActivityCard />
+        {/* The previous Home's two cards paint with the app theme, which is
+            white under a light appearance; this scope hands them the page's
+            own dark ground and ink. */}
+        <View
+          className={HOME_MOBILE_LEGACY_SCOPE_CLASS}
+          style={{ gap: mobileLayout.stackGap }}
+        >
+          <BalanceTrendCard />
+          <RecentActivityCard />
+        </View>
 
         <Text
           style={{

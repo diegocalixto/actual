@@ -18,6 +18,7 @@ import { useContextMenu } from '#hooks/useContextMenu';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
+import { getCategoryColumnWidth } from './util';
 
 type SidebarCategoryProps = {
   innerRef: Ref<HTMLDivElement>;
@@ -125,7 +126,7 @@ export function SidebarCategory({
     <View
       innerRef={innerRef}
       style={{
-        width: 200 + 100 * categoryExpandedState,
+        width: getCategoryColumnWidth(categoryExpandedState),
         overflow: 'hidden',
         '& .hover-visible': {
           display: 'none',

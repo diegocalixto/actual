@@ -23,6 +23,8 @@ import { useContextMenu } from '#hooks/useContextMenu';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 
+import { getCategoryColumnWidth } from './util';
+
 type SidebarGroupProps = {
   group: CategoryGroupEntity;
   editing?: boolean;
@@ -204,7 +206,7 @@ export function SidebarGroup({
       innerRef={innerRef}
       style={{
         ...style,
-        width: 200 + 100 * categoryExpandedState,
+        width: getCategoryColumnWidth(categoryExpandedState),
         backgroundColor: theme.budgetHeaderCurrentMonth,
         overflow: 'hidden',
         '& .hover-visible': {

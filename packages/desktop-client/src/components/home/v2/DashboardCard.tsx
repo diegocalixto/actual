@@ -28,6 +28,7 @@ export function DashboardCard({
 }: DashboardCardProps) {
   return (
     <View
+      data-surface="dashboard-card"
       style={{
         backgroundColor: emphasized
           ? shellColors.surfaceElevated

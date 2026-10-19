@@ -52,7 +52,13 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Available balance': 'Saldo disponível',
     'New transaction': 'Nova transação',
     'Spending this month': 'Despesas do mês',
+    'See in budget': 'Ver no orçamento',
+    'See spending in the budget': 'Ver os gastos no orçamento',
     'Recent activity': 'Transações recentes',
+    'See all': 'Ver todas',
+    'See all transactions': 'Ver todas as movimentações',
+    'Balance trend': 'Evolução do saldo',
+    'Loading trend…': 'Carregando evolução…',
 
     // Budget on a phone — the switch that decides which of a category's two
     // plan figures its row prints. These strings exist only in this fork.
@@ -116,7 +122,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Transfer: ': 'Transferência: ',
     'Transfer: {{name}}': 'Transferência: {{name}}',
     // The catalog drops the article: "Exibir todos beneficiários".
-    'Show all payees': 'Exibir todos os beneficiários',
+    'Show all payees': 'Exibir todos os favorecidos',
 
     // Rules — tag operators, missing from the catalog.
     'has all tags': 'tem todas as etiquetas',
@@ -402,7 +408,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       'Cada mês tem o seu próprio orçamento. Use o seletor de mês para navegar entre os meses e os ícones de calendário à esquerda para escolher quantos meses aparecem lado a lado.',
     'Getting Around': 'Navegando pelo app',
     'The sidebar takes you to your budget, reports, and scheduled transactions. You can find payees, rules, and the settings under <2>More</2>.':
-      'A barra lateral leva você ao seu orçamento, aos relatórios e às transações agendadas. Beneficiários, regras e configurações ficam em <2>Mais</2>.',
+      'A barra lateral leva você ao seu orçamento, aos relatórios e às transações agendadas. Favorecidos, regras e configurações ficam em <2>Mais</2>.',
     'Add Your Accounts': 'Adicione suas contas',
     'Transactions live in accounts, so adding your first account is the best way to get started with {{appName}}. Click here to add one. You can enter transactions yourself, or <4>link the account to your bank</4> to import them automatically.':
       'As transações ficam nas contas, então adicionar sua primeira conta é a melhor forma de começar no {{appName}}. Clique aqui para adicionar uma. Você pode lançar as transações manualmente ou <4>conectar a conta ao seu banco</4> para importá-las automaticamente.',
@@ -597,7 +603,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Reports: 'Relatórios',
     More: 'Mais',
     Schedules: 'Agendamentos',
-    Payees: 'Beneficiários',
+    Payees: 'Favorecidos',
     Rules: 'Regras',
     Settings: 'Configurações',
     Help: 'Ajuda',
@@ -659,14 +665,14 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Expenses: 'Despesas',
     // What is left of the income once the expenses are out: "Saldo do mês" on
     // the Home and on the Budget, and the same word here for the period.
-    'Net Result': 'Saldo',
+    'Net Result': 'Resultado líquido',
     'Savings Rate': 'Taxa de poupança',
     'vs {{previousPeriodLabel}}': 'vs. {{previousPeriodLabel}}',
-    'Income, Expenses & Net Result': 'Receitas, despesas e saldo',
+    'Income, Expenses & Net Result': 'Receitas, despesas e resultado líquido',
     'Total income': 'Total de receitas',
     'Total expenses': 'Total de despesas',
     // Not "Saldo total", which on the Accounts page is the sum of the balances.
-    'Total net result': 'Saldo do período',
+    'Total net result': 'Resultado líquido do período',
     'Top categories': 'Principais categorias',
     'Where your money went': 'Para onde foi o seu dinheiro',
     Category: 'Categoria',
@@ -678,7 +684,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Monthly comparison': 'Comparativo mensal',
     'Income (avg)': 'Receitas (média)',
     'Expenses (avg)': 'Despesas (média)',
-    'Net Result (avg)': 'Saldo (média)',
+    'Net Result (avg)': 'Resultado líquido (média)',
     'View full comparison': 'Ver comparativo completo',
     'Loading the period…': 'Carregando o período…',
     'No transactions in this period.': 'Nenhuma transação neste período.',
@@ -695,7 +701,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Cash flow report': 'Relatório de fluxo de caixa',
     'Net worth report': 'Relatório de patrimônio líquido',
     'Spending report': 'Relatório de despesas',
-    'Custom dashboard': 'Painel personalizável',
+    'Custom dashboard': 'Painel personalizado',
     'Detailed reports': 'Relatórios detalhados',
     'Open a report with its own filters':
       'Abra um relatório com filtros próprios',
@@ -831,7 +837,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'See schedule details': 'Ver detalhes do agendamento',
     Date: 'Data',
     Account: 'Conta',
-    Payee: 'Beneficiário',
+    Payee: 'Favorecido',
     Notes: 'Notas',
     // Which way the money goes in the account. A payment is not always an
     // expense, nor a deposit an income — a transfer is neither — so these are
@@ -845,7 +851,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Uncleared: 'Não confirmado',
     Categorize: 'Categorizar',
     'Split Transaction': 'Dividir transação',
-    '(No payee)': '(Sem beneficiário)',
+    '(No payee)': '(Sem favorecido)',
     Uncategorized: 'Sem categoria',
     'Uncategorized & Off budget': 'Sem categoria e fora do orçamento',
     'Collapse split transactions': 'Recolher transações divididas',
@@ -888,7 +894,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // filters that were saved, hence the plural.
     date: 'data',
     account: 'conta',
-    payee: 'beneficiário',
+    payee: 'favorecido',
     notes: 'notas',
     category: 'categoria',
     amount: 'valor',
@@ -898,14 +904,14 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     saved: 'salvos',
 
     // The pickers of a payee, a category and an account.
-    'Create payee "{{payeeName}}"': 'Criar beneficiário "{{payeeName}}"',
-    'Suggested Payees': 'Beneficiários sugeridos',
-    'Nearby Payees': 'Beneficiários próximos',
+    'Create payee "{{payeeName}}"': 'Criar favorecido "{{payeeName}}"',
+    'Suggested Payees': 'Favorecidos sugeridos',
+    'Nearby Payees': 'Favorecidos próximos',
     'Transfer To/From': 'Transferir para/de',
     'Make transfer': 'Fazer transferência',
-    'Manage payees': 'Gerenciar beneficiários',
+    'Manage payees': 'Gerenciar favorecidos',
     'More payees are available, search to find them':
-      'Há mais beneficiários; busque para encontrá-los',
+      'Há mais favorecidos; busque para encontrá-los',
     forget: 'Esquecer',
     // What a screen reader is told as a list changes. These replace the fixed
     // English of the list's library; see `Autocomplete`.
@@ -1103,9 +1109,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Distribute: 'Distribuir',
     // Where a category would be, on a transaction that is split.
     'Split ({{count}})': 'Dividida ({{count}})',
-    'Imported Payee': 'Beneficiário importado',
-    'Imported payee': 'Beneficiário importado',
-    'No payee': 'Sem beneficiário',
+    'Imported Payee': 'Favorecido importado',
+    'Imported payee': 'Favorecido importado',
+    'No payee': 'Sem favorecido',
     'No account': 'Sem conta',
     'Needs Repair': 'Precisa de reparo',
     'See transfer account': 'Ver a conta da transferência',
@@ -1150,8 +1156,8 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'amount (inflow)': 'valor (entrada)',
     'amount (outflow)': 'valor (saída)',
     'category group': 'grupo de categorias',
-    'imported payee': 'beneficiário importado',
-    'payee (name)': 'beneficiário (nome)',
+    'imported payee': 'favorecido importado',
+    'payee (name)': 'favorecido (nome)',
     set: 'definir',
     'link schedule': 'vincular agendamento',
     'delete transaction': 'excluir transação',
@@ -1295,7 +1301,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Stacked Bar Graph': 'Gráfico de barras empilhadas',
     'Custom Report: {{name}}': 'Relatório personalizado: {{name}}',
     'This report is configured to use a non-existing filter value (i.e. category/account/payee).':
-      'Este relatório usa um valor de filtro que não existe mais (por exemplo, uma categoria, uma conta ou um beneficiário).',
+      'Este relatório usa um valor de filtro que não existe mais (por exemplo, uma categoria, uma conta ou um favorecido).',
     'Choose Report': 'Escolher relatório',
     'Save new report': 'Salvar novo relatório',
     'Update report': 'Atualizar relatório',
@@ -1344,9 +1350,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Merge with existing transactions': 'Mesclar com as transações existentes',
     'Reimport deleted transactions': 'Reimportar transações excluídas',
     'Import notes from file': 'Importar as notas do arquivo',
-    'Swap Payee and Memo': 'Trocar beneficiário e nota',
+    'Swap Payee and Memo': 'Trocar favorecido e nota',
     'Use Memo as a fallback for empty Payees':
-      'Usar a nota quando o beneficiário estiver vazio',
+      'Usar a nota quando o favorecido estiver vazio',
     'Transaction on {{date}} has no amount':
       'A transação de {{date}} não tem valor',
     'Unable to parse date {{date}} with given date format':
@@ -1672,7 +1678,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     "This transfer has a linked transaction in another account that is reconciled. Deleting it may bring that account's reconciliation out of balance.":
       'Esta transferência tem uma transação vinculada, em outra conta, que está reconciliada. Excluí-la pode desequilibrar a reconciliação daquela conta.',
     "Unlocking this transaction means you won't be warned about changes that can impact your reconciled balance. (Changes to amount, account, payee, etc).":
-      'Desbloquear esta transação significa que você não será avisado sobre alterações que podem afetar seu saldo reconciliado (valor, conta, beneficiário etc.).',
+      'Desbloquear esta transação significa que você não será avisado sobre alterações que podem afetar seu saldo reconciliado (valor, conta, favorecido etc.).',
     "Your cleared balance <2>{{clearedBalance}}</2> needs <5>{{difference}}</5> to match your bank's balance of <8>{{bankBalance}}</8>":
       'Seu saldo confirmado de <2>{{clearedBalance}}</2> precisa de <5>{{difference}}</5> para igualar o saldo do banco, de <8>{{bankBalance}}</8>',
     'Convert to Schedule': 'Converter em agendamento',
@@ -1690,7 +1696,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       'Tem certeza de que deseja excluir estas {{count}} transações?',
     'Are you sure you want to delete these {{count}} transactions?_other':
       'Tem certeza de que deseja excluir estas {{count}} transações?',
-    'Split (no payee)': 'Dividida (sem beneficiário)',
+    'Split (no payee)': 'Dividida (sem favorecido)',
     '(+{{numHiddenPayees}} more)': '(mais {{numHiddenPayees}})',
     Find: 'Localizar',
     Replace: 'Substituir',
@@ -1766,7 +1772,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'This custom report has been deleted.':
       'Este relatório personalizado foi excluído.',
     'The widget is configured to use a non-existing filter value (i.e. category/account/payee). Edit the filters used in this report widget to remove the warning.':
-      'Este cartão usa um valor de filtro que não existe mais (por exemplo, uma categoria, uma conta ou um beneficiário). Edite os filtros deste cartão para remover o aviso.',
+      'Este cartão usa um valor de filtro que não existe mais (por exemplo, uma categoria, uma conta ou um favorecido). Edite os filtros deste cartão para remover o aviso.',
     'Hidden amount': 'Valor oculto',
     'Unknown amount': 'Valor desconhecido',
     'Zero amount': 'Valor zero',
@@ -1902,5 +1908,182 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       'Usando o retorno histórico calculado de {{historicalReturnPercent}}%',
     'Formula that returns a color (e.g., \u201Cred\u201D, \u201C#ff0000\u201D). Leave blank for default. Use RESULT variable to access the main formula result.':
       'Fórmula que retorna uma cor (ex.: "red", "#ff0000"). Deixe em branco para usar o padrão. Use a variável RESULT para acessar o resultado da fórmula principal.',
+
+    // Etapa 16 — "Payee" is "Favorecido" throughout. The catalog says
+    // "Beneficiário"; these are its other payee strings with the term swapped,
+    // so a release build (catalog downloaded) does not mix the two words.
+    '<0>Category Learning</0> will automatically determine the best category for a transaction and create a rule that sets the category for the payee. <3>Learn more</3>':
+      '<0>Aprendizado de Categoria</0> determinará automaticamente a melhor categoria para uma transação e criará uma regra que define a categoria para o favorecido. <3>Saiba mais</3>',
+    'Automatically rename these payees in the future_many':
+      'Renomear automaticamente estes favorecidos no futuro',
+    'Automatically rename these payees in the future_one':
+      'Renomear automaticamente este favorecido no futuro',
+    'Automatically rename these payees in the future_other':
+      'Renomear automaticamente estes favorecidos no futuro',
+    'Edit Payee': 'Editar favorecido',
+    'Failed to delete payee. Please try again.':
+      'Falha ao excluir favorecido. Tente novamente.',
+    'Failed to update payee. Please try again.':
+      'Falha ao atualizar o favorecido. Tente novamente.',
+    'Filter payees...': 'Filtrar favorecidos...',
+    'Filter payees…': 'Filtrar favorecidos…',
+    'Fixed {{count}} splits with a blank payee._many':
+      '{{count}} transações divididas com favorecido em branco foram corrigidas.',
+    'Fixed {{count}} splits with a blank payee._one':
+      '{{count}} transação dividida com favorecido em branco foi corrigida.',
+    'Fixed {{count}} splits with a blank payee._other':
+      '{{count}} transações divididas com favorecido em branco foram corrigidas.',
+    "If you expected a schedule here and don't see it, it might be because the payees of the transactions don't match. Make sure you rename payees on all transactions for a schedule to be the same payee.":
+      'Se você esperava um agendamento aqui e não o vê, pode ser porque os favorecidos das transações não coincidem. Certifique-se de renomear os favorecidos em todas as transações para que o agendamento tenha o mesmo favorecido.',
+    'Loading payee...': 'Carregando favorecido…',
+    'Merging will delete the selected payee(s) and transfer any associated rules to the target payee.':
+      'A mesclagem excluirá o(s) favorecido(s) selecionado(s) e transferirá todas as regras associadas para o favorecido de destino.',
+    'Merging will remove the payee and transfer any existing rules to the new payee.':
+      'A mesclagem removerá o favorecido e transferirá quaisquer regras existentes para o novo favorecido.',
+    'No payees': 'Sem favorecidos',
+    'No payees found.': 'Nenhum favorecido encontrado.',
+    'No payees selected': 'Nenhum favorecido selecionado',
+    'Payee "{{name}}" deleted successfully':
+      'Favorecido "{{name}}" excluído com sucesso',
+    'Payee name': 'Nome do favorecido',
+    'Payee {{oldName}} renamed to {{newName}}':
+      'Favorecido {{oldName}} renomeado para {{newName}}',
+    'Payee:': 'Favorecido:',
+    'Set payee for selected transactions':
+      'Definir favorecido para transações selecionadas',
+    'Show {{count}} unused payees_many':
+      'Mostrar {{count}} favorecidos não utilizados',
+    'Show {{count}} unused payees_one': 'Mostrar favorecido não utilizado',
+    'Show {{count}} unused payees_other':
+      'Mostrar {{count}} favorecidos não utilizados',
+    'The following payees are not used by transactions any more. Would you like to merge them with <2>{{payee}}</2>?':
+      'Os seguintes favorecidos não são mais usados por transações. Você gostaria de combiná-los com <2>{{payee}}</2>?',
+    'The payee <2>{{previousPayee}}</2> is not used by transactions any more. Would you like to merge it with <6>{{payee}}</6>?':
+      'O favorecido <2>{{previousPayee}}</2> não é mais usado em transações. Você gostaria de mesclá-lo com <6>{{payee}}</6>?',
+    'The payees <1>{payeeNamesList}</1> have schedules that are due today._many':
+      'Os favorecidos <1>{payeeNamesList}</1> têm agendamentos que vencem hoje.',
+    'The payees <1>{payeeNamesList}</1> have schedules that are due today._one':
+      'O favorecido <1>{payeeNamesList}</1> tem agendamento que vence hoje.',
+    'The payees <1>{payeeNamesList}</1> have schedules that are due today._other':
+      'Os favorecidos <1>{payeeNamesList}</1> têm agendamentos que vencem hoje.',
+    'There are payees that have schedules that are due today._many':
+      'Há favorecidos com agendamentos vencendo hoje.',
+    'There are payees that have schedules that are due today._one':
+      'Há um favorecido com agendamentos vencendo hoje.',
+    'There are payees that have schedules that are due today._other':
+      'Há favorecidos com agendamentos vencendo hoje.',
+    'There was an error creating the payee. Please try again.':
+      'Ocorreu um erro ao criar o favorecido. Tente novamente.',
+    '{{count}} payees_many': '{{count}} favorecidos',
+    '{{count}} payees_one': '{{count}} favorecido',
+    '{{count}} payees_other': '{{count}} favorecidos',
+
+    // Etapa 16 — upstream text on the phone's "Mais" screens (Settings,
+    // Schedules, Rules, Payees, Tags) that had no Portuguese without the
+    // catalog. Wording follows the catalog where it fits the glossary.
+    '(after weekend)': '(após o fim de semana)',
+    '<0>Actual</0> is a super fast privacy-focused app for managing your finances.':
+      '<0>Actual</0> é um app super rápido e focado em privacidade para gerenciar suas finanças.',
+    '<0>Formatting</0> does not affect how budget data is stored, and can be changed at any time.':
+      '<0>Formatação</0> não afeta como os dados do orçamento são armazenados e pode ser alterada a qualquer momento.',
+    '<0>Themes</0> change the user interface colors.':
+      '<0>Temas</0> alteram as cores da interface.',
+    'Account:': 'Conta:',
+    'Add new rule': 'Adicionar nova regra',
+    'Add new schedule': 'Adicionar novo agendamento',
+    'Amount:': 'Valor:',
+    'Budget name': 'Nome do orçamento',
+    'Client version: {{version}}': 'Versão do app: {{version}}',
+    'Server version: {{version}}': 'Versão do servidor: {{version}}',
+    'Custom theme': 'Tema personalizado',
+    DEFAULT: 'PADRÃO',
+    'Dark theme': 'Tema escuro',
+    'Light theme': 'Tema claro',
+    Dates: 'Datas',
+    Description: 'Descrição',
+    'Every month on the {{dateFormatted}}':
+      'Todo mês, no dia {{dateFormatted}}',
+    'Filter accounts…': 'Filtrar contas…',
+    'Filter schedules…': 'Filtrar agendamentos…',
+    'First day of the week': 'Primeiro dia da semana',
+    Sunday: 'Domingo',
+    Monday: 'Segunda-feira',
+    Tuesday: 'Terça-feira',
+    Wednesday: 'Quarta-feira',
+    Thursday: 'Quinta-feira',
+    Friday: 'Sexta-feira',
+    Saturday: 'Sábado',
+    'Hide decimal places': 'Ocultar casas decimais',
+    IF: 'SE',
+    THEN: 'ENTÃO',
+    'Next:': 'Próximo:',
+    'No description': 'Sem descrição',
+    Numbers: 'Números',
+    'Release Notes': 'Notas de versão',
+    'Rule {{id}}': 'Regra {{id}}',
+    'Select language': 'Selecionar idioma',
+    'Show completed schedules': 'Mostrar agendamentos concluídos',
+    'System default': 'Padrão do sistema',
+    Theme: 'Tema',
+    Unlinked: 'Não vinculada',
+    'View Transactions': 'Ver transações',
+    'Show advanced settings': 'Mostrar configurações avançadas',
+    'Export data': 'Exportar dados',
+    'Loading…': 'Carregando…',
+    Color: 'Cor',
+
+    // Etapa 16 — the phone's Tags page. These strings exist only in this fork.
+    'Edit tag': 'Editar etiqueta',
+    'Default color': 'Cor padrão',
+    'Hex color': 'Cor hexadecimal',
+    'Use a six-digit hex color, like #690CB0.':
+      'Use uma cor hexadecimal de seis dígitos, como #690CB0.',
+    'A tag name cannot contain # or spaces.':
+      'O nome da etiqueta não pode ter # nem espaços.',
+    'A tag with this name already exists.':
+      'Já existe uma etiqueta com esse nome.',
+    'This tag no longer exists.': 'Esta etiqueta não existe mais.',
+    'Hide tag': 'Ocultar etiqueta',
+    'Unhide tag': 'Reexibir etiqueta',
+    'Delete tag': 'Excluir etiqueta',
+    Hidden: 'Oculta',
+    'No tags': 'Nenhuma etiqueta',
+    'No tags match your filter.': 'Nenhuma etiqueta corresponde ao filtro.',
+    "Write #name in a transaction's notes to tag it.":
+      'Escreva #nome nas notas de uma transação para etiquetá-la.',
+    "Hidden tags only appear in this list when 'Show hidden tags' is on.":
+      "Etiquetas ocultas só aparecem nesta lista quando 'Mostrar etiquetas ocultas' está ativado.",
+    'Are you sure you want to delete the tag #{{tag}}?':
+      'Tem certeza de que deseja excluir a etiqueta #{{tag}}?',
+    'Tag #{{tag}} deleted': 'Etiqueta #{{tag}} excluída',
+    // The tag's transactions (`/tags/:id/transactions`).
+    'Search #{{tag}}': 'Buscar em #{{tag}}',
+
+    // Etapa 16 — renaming categories and groups from the V2 Budget.
+    'Rename category {{name}}': 'Renomear categoria {{name}}',
+    'Rename group {{name}}': 'Renomear grupo {{name}}',
+    'Rename category': 'Renomear categoria',
+    'Rename group': 'Renomear grupo',
+    'Group name': 'Nome do grupo',
+
+    // Etapa 16 — fork switches (see `app/forkConfig.ts`).
+    'A new version of the app is ready': 'Uma nova versão do app está pronta',
+    'Default: {{language}}': 'Padrão: {{language}}',
+    '<0>Language</0> is the display language of all text. Please note that no warranty is provided for the accuracy or completeness of non-English translations. If you encounter a translation error, feel free to make a suggestion on <3>Weblate</3>.':
+      '<0>Idioma</0> é o idioma de exibição de todo o texto. Não há garantia de precisão ou completude das traduções para outros idiomas além do inglês. Se encontrar um erro de tradução, sugira uma correção no <3>Weblate</3>.',
+
+    // Etapa 16 — the rest of Settings on the phone (encryption, budget type,
+    // export), which had no Portuguese without the catalog.
+    '<0>End-to-end encryption</0> is not available when running without a server. Budget files are always kept unencrypted locally, and encryption is only applied when sending data to a server.':
+      '<0>Criptografia de ponta a ponta</0> não está disponível sem um servidor. Os arquivos de orçamento ficam sempre sem criptografia no aparelho, e a criptografia só é aplicada ao enviar dados para um servidor.',
+    "<0>Envelope budgeting</0> (recommended) digitally mimics physical envelope budgeting system by allocating funds into virtual envelopes for different expenses. It helps track spending and ensure you don't overspend in any category.":
+      '<0>Orçamento por envelopes</0> (recomendado) imita digitalmente o sistema de envelopes físicos, distribuindo o dinheiro em envelopes virtuais para cada despesa. Ajuda a acompanhar os gastos e a não gastar além do orçado em nenhuma categoria.',
+    '<0>Export</0> your data as a zip file containing <3>db.sqlite</3> and <5>metadata.json</5> files. It can be imported into another Actual instance by closing an open file (if any), then clicking the "Import file" button, then choosing "Actual."':
+      '<0>Exporte</0> seus dados como um arquivo zip com os arquivos <3>db.sqlite</3> e <5>metadata.json</5>. Para importá-los em outra instalação do Actual, feche o arquivo aberto (se houver), clique em "Importar arquivo" e escolha "Actual".',
+    'Enable encryption': 'Ativar criptografia',
+    'Learn more': 'Saiba mais',
+    'Switch to tracking budgeting': 'Mudar para orçamento de acompanhamento',
+    'With <1>tracking budgeting</1>, category balances reset each month, and funds are managed using a "Saved" metric instead of "To Be Budgeted." Income is forecasted to plan future spending, rather than relying on current available funds.':
+      'Com o <1>orçamento de acompanhamento</1>, os saldos das categorias recomeçam a cada mês, e o dinheiro é acompanhado pela métrica "Poupado" em vez de "Para distribuir". As receitas são previstas para planejar os gastos futuros, em vez de depender do dinheiro disponível agora.',
   },
 };

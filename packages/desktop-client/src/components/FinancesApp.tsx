@@ -34,6 +34,7 @@ import { FeatureErrorFallback } from './FeatureErrorFallback';
 import { GlobalKeys } from './GlobalKeys';
 import { V2RealOverview } from './home/v2real/V2RealOverview';
 import { MobileBankSyncAccountEditPage } from './mobile/banksync/MobileBankSyncAccountEditPage';
+import { MobileTagTransactionsPage } from './mobile/tags/MobileTagTransactionsPage';
 import { TransactionEdit } from './mobile/transactions/TransactionEdit';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
@@ -43,13 +44,14 @@ import { V2RealReports } from './reports/v2real/V2RealReports';
 import { NarrowAlternate, WideComponent } from './responsive';
 import { useMultiuserEnabled } from './ServerContext';
 import { Settings } from './settings';
-import { ManageTagsPage } from './tags/ManageTagsPage';
 import { Tour } from './tour/Tour';
 import { TourAutoOffer } from './tour/TourAutoOffer';
 import { TourProvider } from './tour/TourProvider';
 import { V2LabAccounts } from './v2lab/accounts/V2LabAccounts';
 import { V2LabBudget } from './v2lab/budget/V2LabBudget';
 import { LAB_ROOT_CLASS, LabStyle } from './v2lab/LabStyle';
+import { V2LabMobileBudget } from './v2lab/mobileBudget/V2LabMobileBudget';
+import { V2LabMobileHome } from './v2lab/mobileHome/V2LabMobileHome';
 import { V2LabReports } from './v2lab/reports/V2LabReports';
 import { V2LabOverview } from './v2lab/V2LabOverview';
 
@@ -130,7 +132,9 @@ function WideNotSupported({
   const navigate = useNavigate();
   useEffect(() => {
     if (!isNarrowWidth) {
-      void navigate(redirectTo);
+      // Replace: kept in the history, the unsupported page would send "back"
+      // straight forward again.
+      void navigate(redirectTo, { replace: true });
     }
   }, [isNarrowWidth, navigate, redirectTo]);
   return isNarrowWidth ? children : null;
@@ -179,7 +183,9 @@ export function FinancesApp() {
         addNotification({
           notification: {
             type: 'message',
-            title: t('A new version of Actual is available!'),
+            // This prompt is about this fork's own deployed build, so it does
+            // not name upstream's app (whose releases are not announced).
+            title: t('A new version of the app is ready'),
             message: t(
               'Click the button below to reload and apply the update.',
             ),
@@ -414,7 +420,30 @@ export function FinancesApp() {
                       </ErrorBoundary>
                     }
                   />
-                  <Route path="/tags" element={<ManageTagsPage />} />
+                  <Route
+                    path="/tags"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <NarrowAlternate name="Tags" />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/tags/:id/transactions"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <WideNotSupported redirectTo="/tags">
+                          <MobileTagTransactionsPage />
+                        </WideNotSupported>
+                      </ErrorBoundary>
+                    }
+                  />
                   <Route path="/settings" element={<Settings />} />
 
                   <Route
@@ -517,6 +546,28 @@ export function FinancesApp() {
                     }
                   />
                   <Route
+                    path="/v2-lab/mobile-budget"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <V2LabMobileBudget />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/v2-lab/mobile-home"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <V2LabMobileHome />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
                     path="/v2-lab/budget"
                     element={
                       <ErrorBoundary
@@ -572,6 +623,7 @@ export function FinancesApp() {
                 <Route path="/rules" element={<AppBottomNav />} />
                 <Route path="/payees" element={<AppBottomNav />} />
                 <Route path="/schedules" element={<AppBottomNav />} />
+                <Route path="/tags" element={<AppBottomNav />} />
                 <Route path="*" element={null} />
               </Routes>
             </MobilePageHeaderProvider>

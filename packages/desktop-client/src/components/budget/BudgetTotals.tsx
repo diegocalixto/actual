@@ -10,14 +10,14 @@ import {
 } from '@actual-app/components/icons/v2';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
-import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { shellColors } from '#components/appshell/shellTheme';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 
 import { RenderMonths } from './RenderMonths';
-import { getScrollbarWidth } from './util';
+import { getCategoryColumnWidth, getScrollbarWidth } from './util';
 
 import { useBudgetComponents } from '.';
 
@@ -63,14 +63,15 @@ export const BudgetTotals = memo(function BudgetTotals({
     <View
       data-testid="budget-totals"
       style={{
-        backgroundColor: theme.budgetCurrentMonth, //use budget colors, not generic table colors
         flexDirection: 'row',
         flexShrink: 0,
-        boxShadow: styles.cardShadow,
+        // The column header used to be a shadowed, rounded slab in its own
+        // fill — the loudest "spreadsheet" cue on the page. It is now a quiet
+        // label row sitting on the canvas, separated by a single hairline.
         marginLeft: 5,
         marginRight: 5 + getScrollbarWidth(),
-        borderRadius: '4px 4px 0 0',
-        borderBottom: '1px solid ' + theme.tableBorder,
+        backgroundColor: 'transparent',
+        borderBottom: `1px solid ${shellColors.border}`,
         '& .hover-visible': {
           opacity: 0,
           transition: 'opacity .25s',
@@ -82,7 +83,7 @@ export const BudgetTotals = memo(function BudgetTotals({
     >
       <View
         style={{
-          width: 200 + 100 * categoryExpandedState,
+          width: getCategoryColumnWidth(categoryExpandedState),
           color: theme.tableHeaderText,
           justifyContent: 'center',
           paddingLeft: 5,

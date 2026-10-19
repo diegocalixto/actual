@@ -33,6 +33,7 @@
     "#mocks": "./src/mocks.tsx",
     "#mocks/*": "./src/mocks/*.ts",
     "#components/forms": "./src/components/forms/index.tsx",
+    "#components/appshell/navigation": "./src/components/appshell/navigation.ts",
     "#components/appshell/shellTheme": "./src/components/appshell/shellTheme.ts",
     "#components/banksync": "./src/components/banksync/index.tsx",
     "#components/banksync/bankSyncUtils": "./src/components/banksync/bankSyncUtils.ts",

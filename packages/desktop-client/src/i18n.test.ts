@@ -71,26 +71,36 @@ describe('setI18NextLanguage', () => {
 
   afterEach(vi.unstubAllGlobals);
 
-  test('should set system default language when no language is provided', () => {
+  // The fork starts a device with no language chosen in its own language
+  // (`forkConfig.defaultLanguage`), whatever the browser prefers.
+  test("should set the fork's default language when no language is provided", async () => {
     vi.stubGlobal('navigator', { language: 'uk' });
 
-    setI18NextLanguage('');
+    await setI18NextLanguage('');
 
-    expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('uk');
+    expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('pt-BR');
   });
 
-  test('should set the provided language if it is available', () => {
+  test('should keep English when English is chosen', async () => {
+    vi.stubGlobal('navigator', { language: 'pt-BR' });
+
+    await setI18NextLanguage('en');
+
+    expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('en');
+  });
+
+  test('should set the provided language if it is available', async () => {
     const language = availableLanguages[0];
 
-    setI18NextLanguage(language);
+    await setI18NextLanguage(language);
 
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith(language);
   });
 
-  test('should fallback to English if the provided language is unavailable', () => {
+  test('should fallback to English if the provided language is unavailable', async () => {
     vi.spyOn(console, 'info');
 
-    setI18NextLanguage('unknown');
+    await setI18NextLanguage('unknown');
 
     expect(console.info).toHaveBeenCalledWith(
       'Unknown locale unknown, falling back to en',
@@ -98,18 +108,18 @@ describe('setI18NextLanguage', () => {
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('en');
   });
 
-  test('should successfully use a language with a region code if it is known', () => {
+  test('should successfully use a language with a region code if it is known', async () => {
     const language = 'pt-BR';
 
-    setI18NextLanguage(language);
+    await setI18NextLanguage(language);
 
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith(language);
   });
 
-  test('should fallback to base language if the provided language has an unknown region code', () => {
+  test('should fallback to base language if the provided language has an unknown region code', async () => {
     vi.spyOn(console, 'info');
 
-    setI18NextLanguage('uk-ZZ');
+    await setI18NextLanguage('uk-ZZ');
 
     expect(console.info).toHaveBeenCalledWith(
       'Unknown locale uk-ZZ, falling back to uk-zz',
@@ -117,10 +127,10 @@ describe('setI18NextLanguage', () => {
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('uk');
   });
 
-  test('should fallback to lowercase language if the provided language has uppercase letters', () => {
+  test('should fallback to lowercase language if the provided language has uppercase letters', async () => {
     vi.spyOn(console, 'info');
 
-    setI18NextLanguage('EN');
+    await setI18NextLanguage('EN');
 
     expect(console.info).toHaveBeenCalledWith(
       'Unknown locale EN, falling back to en',
@@ -128,15 +138,69 @@ describe('setI18NextLanguage', () => {
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('en');
   });
 
-  test('should use a language the fork translates even without a catalog', () => {
-    setI18NextLanguage('gl');
+  test('should use a language the fork translates even without a catalog', async () => {
+    await setI18NextLanguage('gl');
 
     expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledWith('gl');
   });
 });
 
+describe('overlapping language changes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function deferredChanges() {
+    // The app starts in English (`lng: 'en'`) before anything is chosen.
+    Object.assign(i18n, { language: 'en' });
+    // A real `t` for the mocked change to resolve with.
+    const { default: actual } = await vi.importActual<{ default: typeof i18n }>(
+      'i18next',
+    );
+    const t = actual.createInstance().t;
+    const resolvers: Array<() => void> = [];
+    vi.mocked(i18n).changeLanguage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolvers.push(() => resolve(t));
+        }),
+    );
+    return () => resolvers.forEach(resolve => resolve());
+  }
+
+  test('a saved choice made while the default is loading is still applied', async () => {
+    const finishAll = await deferredChanges();
+
+    const startUp = setI18NextLanguage('');
+    const saved = setI18NextLanguage('en');
+
+    expect(vi.mocked(i18n).changeLanguage).toHaveBeenNthCalledWith(1, 'pt-BR');
+    expect(vi.mocked(i18n).changeLanguage).toHaveBeenNthCalledWith(2, 'en');
+    finishAll();
+    await Promise.all([startUp, saved]);
+  });
+
+  test('asking again for the language being loaded waits for the same load', async () => {
+    const finishAll = await deferredChanges();
+
+    const first = setI18NextLanguage('gl');
+    const second = setI18NextLanguage('gl');
+
+    expect(vi.mocked(i18n).changeLanguage).toHaveBeenCalledTimes(1);
+    let secondDone = false;
+    void second.then(() => {
+      secondDone = true;
+    });
+    await Promise.resolve();
+    expect(secondDone).toBe(false);
+    finishAll();
+    await Promise.all([first, second]);
+    expect(secondDone).toBe(true);
+  });
+});
+
 describe('availableLanguages', () => {
-  test('should offer the languages of the catalog and of the overrides once each', () => {
+  test('should offer the languages of the catalog and of the overrides once each', async () => {
     expect(availableLanguages).toEqual(['en', 'uk', 'pt-BR', 'gl']);
   });
 });

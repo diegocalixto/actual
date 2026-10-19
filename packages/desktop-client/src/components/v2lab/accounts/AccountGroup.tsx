@@ -7,6 +7,8 @@ import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 
+import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { currencySymbol } from '#components/v2lab/LabStyle';
@@ -106,6 +108,7 @@ export function AccountGroup({
 function Row({ account }: { account: ViewAccount }) {
   const color = ACCOUNT_HUE[account.hue];
   const isNegative = account.balance !== null && account.balance < 0;
+  const cardBrand = cardBrandForAccount(account.name);
 
   const surface: CSSProperties = {
     flexDirection: 'row',
@@ -131,7 +134,11 @@ function Row({ account }: { account: ViewAccount }) {
 
   return (
     <Surface {...surfaceProps} data-testid="account-list-item" style={surface}>
-      <AccountTile Icon={account.Icon} hue={account.hue} />
+      {cardBrand ? (
+        <AccountCardThumbnail brand={cardBrand} size={44} />
+      ) : (
+        <AccountTile Icon={account.Icon} hue={account.hue} />
+      )}
 
       {/* Name above, filet below — the reference stacks them, and stacking is
           what lets the colour run the full width of the block instead of
