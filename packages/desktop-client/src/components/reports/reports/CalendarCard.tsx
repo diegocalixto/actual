@@ -39,6 +39,7 @@ import type { CalendarDataType } from '#components/reports/spreadsheets/calendar
 import { useReport } from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
+import { useLocale } from '#hooks/useLocale';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useNavigate } from '#hooks/useNavigate';
 import { useResizeObserver } from '#hooks/useResizeObserver';
@@ -94,18 +95,22 @@ export function CalendarCard({
     [start, end, meta?.conditions, meta?.conditionsOp, firstDayOfWeekIdx],
   );
 
-  const [cardOrientation, setCardOrientation] = useState<'row' | 'column'>(
-    'row',
-  );
+  const [measuredOrientation, setMeasuredOrientation] = useState<
+    'row' | 'column'
+  >('row');
   const { isNarrowWidth } = useResponsive();
 
   const cardRef = useResizeObserver(rect => {
-    if (rect.height > rect.width) {
-      setCardOrientation('column');
-    } else {
-      setCardOrientation('row');
-    }
+    setMeasuredOrientation(rect.height > rect.width ? 'column' : 'row');
   });
+
+  // On a narrow screen the card is a single full-width column and is routinely
+  // taller than it is wide, which flipped it to the stacked layout: every month
+  // in the range shared one fixed card height, leaving a few pixels per week
+  // row and day numbers too small to read. The row layout already has a
+  // narrow-width path that pages the months horizontally at full card size, so
+  // keep it there and only measure the orientation on wider screens.
+  const cardOrientation = isNarrowWidth ? 'row' : measuredOrientation;
 
   const data = useReport('calendar', params);
 
@@ -178,6 +183,7 @@ export function CalendarCard({
           <View style={{ flex: 1, marginBottom: -5 }}>
             <ReportCardName
               name={meta?.name || t('Calendar')}
+              widgetType="calendar-card"
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -344,6 +350,7 @@ function CalendarCardInner({
   isEditing,
   format,
 }: CalendarCardInnerProps) {
+  const locale = useLocale();
   const { t } = useTranslation();
   const [monthNameVisible, setMonthNameVisible] = useState(true);
   const monthFormatSizeContainers = useRef<(HTMLSpanElement | null)[]>(
@@ -413,10 +420,19 @@ function CalendarCardInner({
   const navigate = useNavigate();
 
   const monthFormats = [
-    { format: 'MMMM yyyy', text: formatDate(calendar.start, 'MMMM yyyy') },
-    { format: 'MMM yyyy', text: formatDate(calendar.start, 'MMM yyyy') },
-    { format: 'MMM yy', text: formatDate(calendar.start, 'MMM yy') },
-    { format: 'MMM', text: formatDate(calendar.start, 'MMM') },
+    {
+      format: 'MMMM yyyy',
+      text: formatDate(calendar.start, 'MMMM yyyy', { locale }),
+    },
+    {
+      format: 'MMM yyyy',
+      text: formatDate(calendar.start, 'MMM yyyy', { locale }),
+    },
+    {
+      format: 'MMM yy',
+      text: formatDate(calendar.start, 'MMM yy', { locale }),
+    },
+    { format: 'MMM', text: formatDate(calendar.start, 'MMM', { locale }) },
     { format: '', text: '' },
   ];
 
@@ -462,7 +478,7 @@ function CalendarCardInner({
             }}
           >
             {selectedMonthNameFormat &&
-              formatDate(calendar.start, selectedMonthNameFormat)}
+              formatDate(calendar.start, selectedMonthNameFormat, { locale })}
           </Button>
         </View>
         <View

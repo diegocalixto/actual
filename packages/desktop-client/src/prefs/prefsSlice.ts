@@ -50,6 +50,18 @@ export const loadPrefs = createAppAsyncThunk(
       send('preferences/get'),
     ]);
 
+    // The language is loaded before the prefs reach the store: setting them
+    // mounts the budget, and text drawn with `<Trans>` (memoized by the React
+    // Compiler, and not subscribed to language changes) keeps whatever
+    // language was active when it first rendered. Loading the catalog is a
+    // network request in a release build, so without waiting the screens
+    // mounted first stayed in English with Portuguese chosen.
+    try {
+      await setI18NextLanguage(globalPrefs.language ?? '');
+    } catch (error) {
+      console.error('Failed to load the language', error);
+    }
+
     dispatch(
       setPrefs({ local: prefs, global: globalPrefs, synced: syncedPrefs }),
     );
@@ -61,9 +73,6 @@ export const loadPrefs = createAppAsyncThunk(
         hideFraction: syncedPrefs.hideFraction,
       }),
     );
-
-    // We need to load translations before the app renders
-    setI18NextLanguage(globalPrefs.language ?? '');
 
     return prefs;
   },
@@ -85,6 +94,13 @@ export const loadGlobalPrefs = createAppAsyncThunk(
   `${sliceName}/loadGlobalPrefs`,
   async (_, { dispatch, getState }) => {
     const globalPrefs = await send('load-global-prefs');
+    // Applied here too: with no budget open `loadPrefs` never runs, and the
+    // file manager would otherwise stay in the default language.
+    try {
+      await setI18NextLanguage(globalPrefs.language ?? '');
+    } catch (error) {
+      console.error('Failed to load the language', error);
+    }
     dispatch(
       setPrefs({
         local: getState().prefs.local,

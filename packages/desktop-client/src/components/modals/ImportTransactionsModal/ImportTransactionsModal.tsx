@@ -550,7 +550,7 @@ export function ImportTransactionsModal({
     const res = await window.Actual.openFileDialog({
       filters: [
         {
-          name: 'Financial Files',
+          name: t('Financial Files'),
           extensions: ['qif', 'ofx', 'qfx', 'csv', 'tsv', 'xml'],
         },
       ],
@@ -1012,7 +1012,10 @@ export function ImportTransactionsModal({
               }}
             >
               <Text style={{ maxWidth: 450, marginBottom: 15 }}>
-                <strong>Error:</strong> {error.message}
+                <strong>
+                  <Trans>Error:</Trans>
+                </strong>{' '}
+                {error.message}
               </Text>
               {error.parsed && (
                 <Button onPress={() => onNewFile()}>

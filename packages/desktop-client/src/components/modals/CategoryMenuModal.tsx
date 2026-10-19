@@ -11,6 +11,7 @@ import {
 } from '@actual-app/components/icons/v1';
 import {
   SvgNotesPaper,
+  SvgPencil1,
   SvgViewHide,
   SvgViewShow,
 } from '@actual-app/components/icons/v2';
@@ -20,17 +21,18 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import {
-  Modal,
-  ModalCloseButton,
-  ModalHeader,
-  ModalTitle,
-} from '#components/common/Modal';
+import { renamedRow } from '#budget/renamedRow';
+import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { Notes } from '#components/Notes';
 import { useCategory } from '#hooks/useCategory';
 import { useCategoryGroup } from '#hooks/useCategoryGroup';
 import { useNotes } from '#hooks/useNotes';
 import type { Modal as ModalType } from '#modals/modalsSlice';
+
+import { RenameableModalTitle } from './RenameableModalTitle';
+
+/** A finger's height: the upstream buttons here are 40px, short of it. */
+const RENAME_BUTTON_HEIGHT = 44;
 
 type CategoryMenuModalProps = Extract<
   ModalType,
@@ -50,13 +52,13 @@ export function CategoryMenuModal({
   const { data: category } = useCategory(categoryId);
   const { data: categoryGroup } = useCategoryGroup(category?.group);
   const originalNotes = useNotes(category.id);
+  const [isRenaming, setIsRenaming] = useState(false);
 
-  const onRename = newName => {
-    if (newName && newName !== category.name) {
-      onSave?.({
-        ...category,
-        name: newName,
-      });
+  // Only the name changes, so the category keeps its id and its transactions.
+  const onRename = (typed: string) => {
+    const renamed = renamedRow(category, typed);
+    if (renamed) {
+      onSave?.(renamed);
     }
   };
 
@@ -104,10 +106,12 @@ export function CategoryMenuModal({
               />
             }
             title={
-              <ModalTitle
-                isEditable
+              <RenameableModalTitle
                 title={category.name}
-                onTitleUpdate={onRename}
+                label={t('Rename category {{name}}', { name: category.name })}
+                isRenaming={isRenaming}
+                onRenamingChange={setIsRenaming}
+                onRename={onRename}
               />
             }
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
@@ -150,6 +154,17 @@ export function CategoryMenuModal({
                 paddingTop: 10,
               }}
             >
+              <Button
+                style={{ ...buttonStyle, height: RENAME_BUTTON_HEIGHT }}
+                onPress={() => setIsRenaming(true)}
+              >
+                <SvgPencil1
+                  width={16}
+                  height={16}
+                  style={{ paddingRight: 5 }}
+                />
+                <Trans>Rename</Trans>
+              </Button>
               <Button style={buttonStyle} onPress={_onEditNotes}>
                 <SvgNotesPaper
                   width={20}

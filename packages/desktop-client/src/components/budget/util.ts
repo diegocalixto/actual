@@ -214,3 +214,16 @@ export async function prewarmAllMonths(
     months.map(month => prewarmMonth(budgetType, spreadsheet, month)),
   );
 }
+
+/**
+ * Width of the Budget's category column.
+ *
+ * The upstream value was 200px, sized for a window that also carried a 240px
+ * sidebar. With the V2 rail giving the page its width back, a wider column lets
+ * a category name breathe and stops the three number columns from drifting so
+ * far apart that the row reads as a spreadsheet. Kept in one place because six
+ * components have to agree on it or the header stops lining up with the rows.
+ */
+export function getCategoryColumnWidth(categoryExpandedState: number) {
+  return 320 + 100 * categoryExpandedState;
+}

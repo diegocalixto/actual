@@ -138,12 +138,19 @@ export function CoverModal({
                 marginLeft: styles.mobileEditingPadding,
                 marginRight: styles.mobileEditingPadding,
               }}
+              // Nothing is covered with no amount, and nothing from nowhere:
+              // the form says so instead of closing as though it had been done.
+              isDisabled={!amount}
               onPress={() => {
+                if (!fromCategoryId) {
+                  openCategoryModal();
+                  return;
+                }
                 _onSubmit();
                 state.close();
               }}
             >
-              <Trans>Transfer</Trans>
+              <Trans>Cover</Trans>
             </Button>
           </View>
         </>

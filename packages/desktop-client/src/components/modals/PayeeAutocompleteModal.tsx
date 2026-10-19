@@ -23,11 +23,21 @@ type PayeeAutocompleteModalProps = Extract<
 
 export function PayeeAutocompleteModal({
   onSelect,
+  transactionAccountId,
   onClose,
 }: PayeeAutocompleteModalProps) {
   const { t } = useTranslation();
-  const { data: payees = [] } = usePayees();
-  const { data: accounts = [] } = useAccounts();
+  const { data: allPayees = [] } = usePayees();
+  const { data: allAccounts = [] } = useAccounts();
+  // Filter out the account the transaction is in as it is not a valid
+  // transfer: the register does the same for its payee cell.
+  const accounts = allAccounts.filter(
+    account => account.id !== transactionAccountId,
+  );
+  const payees = allPayees.filter(
+    payee =>
+      !payee.transfer_acct || payee.transfer_acct !== transactionAccountId,
+  );
   const navigate = useNavigate();
 
   const { isNarrowWidth } = useResponsive();
@@ -78,7 +88,9 @@ export function PayeeAutocompleteModal({
             onClose={() => state.close()}
             onManagePayees={onManagePayees}
             showManagePayees={!isNarrowWidth}
-            showMakeTransfer={!isNarrowWidth}
+            // On a phone the picker draws the switch as a choice of two
+            // above the search field; see `PayeeTransferTabs`.
+            showMakeTransfer
             {...defaultAutocompleteProps}
             onSelect={onSelect}
             value={null}

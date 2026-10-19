@@ -30,7 +30,9 @@ export type NotificationWithId = Notification & { id: string };
 type NotificationsState = {
   notifications: NotificationWithId[];
   inset?: {
-    bottom?: number;
+    // A length as well as a number of pixels: what is fixed to the foot of a
+    // phone's screen stands on the safe area, which only CSS can measure.
+    bottom?: number | string;
     top?: number;
     right?: number;
     left?: number;
@@ -92,6 +94,17 @@ const notificationsSlice = createSlice({
     ) {
       state.inset = action.payload?.inset ? action.payload.inset : {};
     },
+    // Gives back an inset the screen that reserved it no longer needs — and
+    // only that one. Whatever is fixed to the foot of a screen reserves its
+    // own, and a screen leaving must not take the next one's with it.
+    releaseNotificationInset(
+      state,
+      action: PayloadAction<{ inset: NotificationsState['inset'] }>,
+    ) {
+      if (state.inset?.bottom === action.payload.inset?.bottom) {
+        state.inset = {};
+      }
+    },
   },
   extraReducers: builder => {
     builder.addCase(resetApp, () => initialState);
@@ -107,6 +120,7 @@ export const actions = {
 export const {
   addGenericErrorNotification,
   addNotification,
+  releaseNotificationInset,
   removeNotification,
   setNotificationInset,
 } = actions;

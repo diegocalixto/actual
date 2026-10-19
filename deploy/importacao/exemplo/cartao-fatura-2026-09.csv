@@ -1,0 +1,8 @@
+conta;data;descricao;valor;categoria;favorecido;parcela;tipo;fatura;observacao
+Itaú Personnalité Crédito;2026-08-10;PAGAMENTO EFETUADO EXEMPLO;400,00;;;;pagamento_fatura;2026-09;lado do cartão do pagamento - não é importado
+Itaú Personnalité Crédito;2026-08-10;EXEMPLO LOJA;-100,00;Compras;;2/3;compra;2026-09;
+Itaú Personnalité Crédito;2026-08-15;PAG*EXEMPLO XYZ;-50,00;;;;compra;2026-09;descrição ambígua
+Itaú Personnalité Crédito;2026-08-18;EXEMPLO PADARIA;-25,00;Mercado;;;compra;2026-09;
+Itaú Personnalité Crédito;2026-08-18;EXEMPLO PADARIA;-25,00;Mercado;;;compra;2026-09;duas compras iguais no mesmo dia
+Itaú Personnalité Crédito;2026-08-20;EXEMPLO MERCADO;-100,00;Mercado;;;compra;2026-09;
+Itaú Personnalité Crédito;2026-08-25;EXEMPLO ELETRO;-200,00;Compras;;1/2;compra;2026-09;compra de 400,00 em 2x

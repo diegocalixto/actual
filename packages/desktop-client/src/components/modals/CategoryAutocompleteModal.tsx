@@ -3,6 +3,7 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
+import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -108,6 +109,13 @@ export function CategoryAutocompleteModal({
               <View style={{ flexShrink: 0, padding: 5 }}>
                 <Button
                   variant="menu"
+                  // A row a finger can hit: 44px, where the button's own
+                  // 28px made it the one row of the list easy to miss.
+                  style={
+                    isNarrowWidth
+                      ? { ...styles.mobileMenuItem, height: 44, minHeight: 44 }
+                      : undefined
+                  }
                   onPress={() => {
                     onSelect(null, '');
                     state.close();

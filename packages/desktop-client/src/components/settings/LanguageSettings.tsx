@@ -7,6 +7,7 @@ import type { SelectOption } from '@actual-app/components/select';
 import { Text } from '@actual-app/components/text';
 import type { TFunction } from 'i18next';
 
+import { forkConfig } from '#app/forkConfig';
 import { Link } from '#components/common/Link';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { availableLanguages, setI18NextLanguage } from '#i18n';
@@ -19,18 +20,23 @@ const languageDisplayNameOverride: { [key: string]: string } = {
 
 const languageOptions = (t: TFunction): SelectOption[] =>
   [
-    ['', t('System default')] as [string, string],
+    // Nothing chosen means the fork's default language, not the system's.
+    [
+      '',
+      t('Default: {{language}}', {
+        language: displayName(forkConfig.defaultLanguage),
+      }),
+    ] as [string, string],
     Menu.line as typeof Menu.line,
-  ].concat(
-    availableLanguages.map(lang => [
-      lang,
-      lang in languageDisplayNameOverride
-        ? languageDisplayNameOverride[lang]
-        : new Intl.DisplayNames([lang], {
-            type: 'language',
-          }).of(lang) || lang,
-    ]),
-  );
+  ].concat(availableLanguages.map(lang => [lang, displayName(lang)]));
+
+function displayName(lang: string): string {
+  return lang in languageDisplayNameOverride
+    ? languageDisplayNameOverride[lang]
+    : new Intl.DisplayNames([lang], {
+        type: 'language',
+      }).of(lang) || lang;
+}
 
 export function LanguageSettings() {
   const { t } = useTranslation();
@@ -49,7 +55,7 @@ export function LanguageSettings() {
           }
           onChange={value => {
             setLanguage(value);
-            setI18NextLanguage(value);
+            void setI18NextLanguage(value);
           }}
           disabled={!isEnabled}
         />

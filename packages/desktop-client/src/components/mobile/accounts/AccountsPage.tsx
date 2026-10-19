@@ -1,5 +1,4 @@
 import { forwardRef, useCallback, useRef } from 'react';
-import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
 import type { DragItem } from 'react-aria';
 import {
   DropIndicator,
@@ -10,304 +9,83 @@ import {
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import {
-  SvgAdd,
-  SvgCheveronDown,
-  SvgCheveronRight,
-  SvgPiggyBank,
-} from '@actual-app/components/icons/v1';
-import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
-import { TextOneLine } from '@actual-app/components/text-one-line';
-import { theme } from '@actual-app/components/theme';
+import { SvgAdd } from '@actual-app/components/icons/v1';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
 import { useMoveAccountMutation, useSyncAndDownloadMutation } from '#accounts';
 import { isAccountFailedSync } from '#accounts/syncStatus';
-import { makeAmountFullStyle } from '#components/budget/util';
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
+import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
+import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
 import { PullToRefresh } from '#components/mobile/PullToRefresh';
-import { MobilePageHeader, Page } from '#components/Page';
-import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
+import {
+  mobileHeaderIconButtonStyle,
+  MobilePageHeader,
+  Page,
+} from '#components/Page';
+import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
+import { useAccountBalances } from '#hooks/useAccountBalances';
 import { useAccounts } from '#hooks/useAccounts';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useNavigate } from '#hooks/useNavigate';
-import { useSyncedPref } from '#hooks/useSyncedPref';
+import { useSheetValue } from '#hooks/useSheetValue';
 import { replaceModal } from '#modals/modalsSlice';
 import { useDispatch, useSelector } from '#redux';
-import type { Binding, SheetFields } from '#spreadsheet';
 import * as bindings from '#spreadsheet/bindings';
 
-const ROW_HEIGHT = 60;
+import { AccountsMobileAddPanel } from './v2/AccountsMobileAddPanel';
+import { AccountsMobileEmpty } from './v2/AccountsMobileEmpty';
+import { AccountsMobileGroup } from './v2/AccountsMobileGroup';
+import { AccountsMobileHero } from './v2/AccountsMobileHero';
+import { AccountsMobileLoading } from './v2/AccountsMobileLoading';
+import { AccountsMobileRow } from './v2/AccountsMobileRow';
+import {
+  ACCOUNTS_MOBILE_ROOT_CLASS,
+  accountsLayout,
+  AccountsMobileStyle,
+  chromeAccent,
+  chromeCanvas,
+  chromeInk,
+  chromeLine,
+} from './v2/AccountsMobileStyle';
 
-type AccountHeaderProps<SheetFieldName extends SheetFields<'account'>> = {
-  id: string;
-  name: string;
-  amount: Binding<'account', SheetFieldName>;
-  style?: CSSProperties;
-  showCheveronDown?: boolean;
-  onPress?: () => void;
-};
+/**
+ * Each group's tile colour, one hue for every row inside it.
+ *
+ * A ramp across the rows would give eight accounts eight colours and imply a
+ * difference between them the data does not contain. These are the hues the
+ * mobile Home already gives the same two groups, so the accounts a reader sees
+ * on the Home and the accounts they see here are never a different colour.
+ */
+const ON_BUDGET_HUE = 'var(--dfl-hue-violet)';
+const OFF_BUDGET_HUE = 'var(--dfl-hue-blue)';
+/** A closed account keeps a tile, in the screen's own grey rather than a hue. */
+const CLOSED_HUE = 'var(--dfma-hue-closed)';
 
-function AccountHeader<SheetFieldName extends SheetFields<'account'>>({
-  id,
-  name,
-  amount,
-  style = {},
-  showCheveronDown = false,
-  onPress,
-}: AccountHeaderProps<SheetFieldName>) {
+/**
+ * The Accounts, on a phone.
+ *
+ * Composition and presentation only. Every figure arrives from a cell the
+ * budget engine publishes — `accounts-balance` for the hero, the three group
+ * cells for the group headers, one `balance` cell per row — so no two lines on
+ * the screen can disagree and nothing here adds a number up. Every destination,
+ * preference and gesture the previous page had is still here: the four
+ * registers, the closed-accounts toggle, drag-to-reorder, pull-to-refresh, the
+ * bank-sync state and the highlight on a freshly synced account.
+ */
+export function AccountsPage() {
+  // Redrawn whole when the file's number format or currency changes.
+  const regionalFormat = useRegionalFormatKey();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  // `placeholderData: []` means the query never reports `isLoading`, so an
+  // empty array is what a loading file and a genuinely empty one both look
+  // like. `isPlaceholderData` is the real signal, exactly as the mobile Home
+  // already reads it.
+  const { data: accounts = [], isPlaceholderData } = useAccounts();
 
-  const Cheveron = showCheveronDown ? SvgCheveronDown : SvgCheveronRight;
-
-  return (
-    <Button
-      variant="bare"
-      aria-label={t('View {{name}} transactions', { name })}
-      onPress={onPress ? onPress : () => navigate(`/accounts/${id}`)}
-      style={{
-        height: ROW_HEIGHT,
-        width: '100%',
-        padding: '0 18px',
-        color: theme.pageTextLight,
-        ...style,
-      }}
-      // to match the feel of the other account buttons
-      className={css([
-        {
-          '&[data-pressed], &[data-hovered]': {
-            backgroundColor: 'transparent',
-            transform: 'translateY(1px)',
-          },
-        },
-      ])}
-    >
-      <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row' }}>
-        <Text
-          style={{
-            ...styles.text,
-            fontSize: 17,
-          }}
-          data-testid="name"
-        >
-          {name}
-        </Text>
-        <Cheveron
-          style={{
-            flexShrink: 0,
-            color: theme.mobileHeaderTextSubdued,
-            marginLeft: 5,
-          }}
-          width={styles.text.fontSize}
-          height={styles.text.fontSize}
-        />
-      </View>
-      <CellValue binding={amount} type="financial">
-        {props => (
-          <CellValueText<'account', SheetFieldName>
-            {...props}
-            style={{ ...styles.text }}
-          />
-        )}
-      </CellValue>
-    </Button>
-  );
-}
-
-type AccountListItemProps = ComponentPropsWithoutRef<
-  typeof ListBoxItem<AccountEntity>
-> & {
-  isUpdated: boolean;
-  isConnected: boolean;
-  isPending: boolean;
-  isFailed: boolean;
-  getBalanceQuery: (
-    accountId: AccountEntity['id'],
-  ) => Binding<'account', 'balance'>;
-  onSelect: (account: AccountEntity) => void;
-};
-
-function AccountListItem({
-  isUpdated,
-  isConnected,
-  isPending,
-  isFailed,
-  getBalanceQuery,
-  onSelect,
-  ...props
-}: AccountListItemProps) {
-  const { value: account } = props;
-
-  if (!account) {
-    return null;
-  }
-
-  return (
-    <ListBoxItem
-      textValue={account.name}
-      className={css({
-        borderBottom: `1px solid ${theme.tableBorder}`,
-        '&:last-child': {
-          borderBottom: 'none',
-        },
-      })}
-      {...props}
-    >
-      {itemProps => (
-        <Button
-          {...itemProps}
-          style={{
-            height: ROW_HEIGHT,
-            width: '100%',
-            backgroundColor: theme.tableBackground,
-            border: 'none',
-            borderRadius: 0,
-            paddingLeft: 8,
-          }}
-          data-testid="account-list-item"
-          onPress={() => onSelect(account)}
-        >
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              flexDirection: 'row',
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: isPending
-                  ? theme.sidebarItemBackgroundPending
-                  : isFailed
-                    ? theme.sidebarItemBackgroundFailed
-                    : theme.sidebarItemBackgroundPositive,
-                marginRight: '6px',
-                width: 8,
-                flexShrink: 0,
-                height: 8,
-                borderRadius: 8,
-                opacity: isConnected ? 1 : 0,
-              }}
-            />
-            <TextOneLine
-              style={{
-                ...styles.text,
-                fontSize: 17,
-                fontWeight: 600,
-                color: isUpdated ? theme.mobileAccountText : theme.pillText,
-              }}
-              data-testid="account-name"
-            >
-              {account.name}
-            </TextOneLine>
-          </View>
-          <CellValue binding={getBalanceQuery(account.id)} type="financial">
-            {props => (
-              <CellValueText<'account', 'balance'>
-                {...props}
-                style={{
-                  fontSize: 16,
-                  ...makeAmountFullStyle(props.value, {
-                    positiveColor: theme.numberPositive,
-                    negativeColor: theme.numberNegative,
-                    zeroColor: theme.numberNeutral,
-                  }),
-                }}
-                data-testid="account-balance"
-              />
-            )}
-          </CellValue>
-        </Button>
-      )}
-    </ListBoxItem>
-  );
-}
-
-function EmptyMessage({ onAddAccount }: { onAddAccount: () => void }) {
-  return (
-    <View
-      style={{
-        minHeight: `calc(100vh - ${MOBILE_NAV_HEIGHT}px - 140px)`,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 30,
-        gap: 15,
-      }}
-    >
-      <SvgPiggyBank
-        width={70}
-        height={70}
-        style={{ color: theme.pageTextSubdued }}
-      />
-      <Text
-        style={{
-          ...styles.largeText,
-          fontWeight: 600,
-          textAlign: 'center',
-        }}
-      >
-        <Trans>Add your first account</Trans>
-      </Text>
-      <Text
-        style={{
-          ...styles.text,
-          textAlign: 'center',
-          color: theme.pageTextLight,
-          lineHeight: 1.5,
-          maxWidth: 340,
-        }}
-      >
-        <Trans>
-          Accounts hold your transactions, like everyday spending, savings,
-          credit cards, or cash. Add one to start tracking your money.
-        </Trans>
-      </Text>
-      <Button
-        variant="primary"
-        style={{
-          padding: '12px 20px',
-          fontSize: 15,
-          minHeight: styles.mobileMinHeight,
-          marginTop: 10,
-        }}
-        onPress={onAddAccount}
-      >
-        <Trans>Add account</Trans>
-      </Button>
-    </View>
-  );
-}
-
-type AllAccountListProps = {
-  accounts: AccountEntity[];
-  getAccountBalance: (
-    accountId: AccountEntity['id'],
-  ) => Binding<'account', 'balance'>;
-  getAllAccountsBalance: () => Binding<'account', 'accounts-balance'>;
-  getOnBudgetBalance: () => Binding<'account', 'onbudget-accounts-balance'>;
-  getOffBudgetBalance: () => Binding<'account', 'offbudget-accounts-balance'>;
-  getClosedAccountsBalance: () => Binding<'account', 'closed-accounts-balance'>;
-  onAddAccount: () => void;
-  onOpenAccount: (account: AccountEntity) => void;
-  onSync: () => Promise<void>;
-};
-
-function AllAccountList({
-  accounts,
-  getAccountBalance,
-  getAllAccountsBalance,
-  getOnBudgetBalance,
-  getOffBudgetBalance,
-  getClosedAccountsBalance,
-  onAddAccount,
-  onOpenAccount,
-  onSync,
-}: AllAccountListProps) {
-  const { t } = useTranslation();
   const onBudgetAccounts = accounts.filter(
     account => account.offbudget === 0 && account.closed === 0,
   );
@@ -315,6 +93,23 @@ function AllAccountList({
     account => account.offbudget === 1 && account.closed === 0,
   );
   const closedAccounts = accounts.filter(account => account.closed === 1);
+
+  // One bind per account, in a single hook, rather than a hook inside a list
+  // whose length changes.
+  const balances = useAccountBalances(accounts.map(account => account.id));
+
+  const total = useSheetValue<'account', 'accounts-balance'>(
+    bindings.allAccountBalance(),
+  );
+  const onBudgetTotal = useSheetValue<'account', 'onbudget-accounts-balance'>(
+    bindings.onBudgetAccountBalance(),
+  );
+  const offBudgetTotal = useSheetValue<'account', 'offbudget-accounts-balance'>(
+    bindings.offBudgetAccountBalance(),
+  );
+  const closedTotal = useSheetValue<'account', 'closed-accounts-balance'>(
+    bindings.closedAccountBalance(),
+  );
 
   const closedAccountsRef = useRef<HTMLDivElement | null>(null);
   const [showClosedAccounts, setShowClosedAccountsPref] = useLocalPref(
@@ -335,88 +130,178 @@ function AllAccountList({
     }
   };
 
+  const onOpenAccount = useCallback(
+    (account: AccountEntity) => {
+      void navigate(`/accounts/${account.id}`);
+    },
+    [navigate],
+  );
+
+  const onAddAccount = useCallback(() => {
+    dispatch(replaceModal({ modal: { name: 'add-account', options: {} } }));
+  }, [dispatch]);
+
+  const syncAndDownload = useSyncAndDownloadMutation();
+  const onSync = useCallback(async () => {
+    syncAndDownload.mutate({});
+  }, [syncAndDownload]);
+
+  const openRegister = (id: string) => () => {
+    void navigate(`/accounts/${id}`);
+  };
+
   return (
     <Page
       header={
         <MobilePageHeader
-          title={t('Accounts')}
+          title={<Trans>Contas</Trans>}
+          // The header is portalled into the shell's slot, outside this page's
+          // class, so it is painted with the scope's literals rather than its
+          // tokens. Without this it keeps the shell's lighter grey and draws a
+          // band across the top of the design.
+          style={{
+            backgroundColor: chromeCanvas,
+            borderBottom: `1px solid ${chromeLine}`,
+          }}
+          // The ground is this page's own, so the ink has to be too.
+          ink={chromeInk}
           rightContent={
-            <Button
-              variant="bare"
-              aria-label={t('Add account')}
-              style={{ margin: 10 }}
-              onPress={onAddAccount}
-            >
-              <SvgAdd width={20} height={20} />
-            </Button>
+            <>
+              <Button
+                variant="bare"
+                aria-label={t('Adicionar conta')}
+                style={mobileHeaderIconButtonStyle}
+                onPress={onAddAccount}
+              >
+                <SvgAdd width={20} height={20} />
+              </Button>
+              {/* Last, as on every other top bar: the eye is found in the
+                  same corner whichever page is open. */}
+              <MobilePrivacyToggle
+                style={mobileHeaderIconButtonStyle}
+                accent={chromeAccent}
+              />
+            </>
           }
         />
       }
       padding={0}
+      style={{ backgroundColor: chromeCanvas }}
     >
-      {accounts.length === 0 ? (
-        <EmptyMessage onAddAccount={onAddAccount} />
-      ) : (
-        <PullToRefresh onRefresh={onSync}>
+      <View
+        key={regionalFormat}
+        className={ACCOUNTS_MOBILE_ROOT_CLASS}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          backgroundColor: 'var(--dfl-canvas)',
+          color: 'var(--dfl-text)',
+        }}
+      >
+        <AccountsMobileStyle />
+
+        {accounts.length === 0 && isPlaceholderData ? (
           <View
-            aria-label={t('Account list')}
-            style={{ paddingBottom: MOBILE_NAV_HEIGHT }}
+            style={{
+              padding: `14px ${accountsLayout.gutter}px`,
+            }}
           >
-            <AccountHeader
-              id="all"
-              name={t('All accounts')}
-              amount={getAllAccountsBalance()}
-            />
-            {onBudgetAccounts.length > 0 && (
-              <AccountHeader
-                id="onbudget"
-                name={t('On budget')}
-                amount={getOnBudgetBalance()}
-              />
-            )}
-            <AccountList
-              aria-label={t('On budget accounts')}
-              accounts={onBudgetAccounts}
-              getAccountBalance={getAccountBalance}
-              onOpenAccount={onOpenAccount}
-            />
-            {offBudgetAccounts.length > 0 && (
-              <AccountHeader
-                id="offbudget"
-                name={t('Off budget')}
-                amount={getOffBudgetBalance()}
-              />
-            )}
-            <AccountList
-              aria-label={t('Off budget accounts')}
-              accounts={offBudgetAccounts}
-              getAccountBalance={getAccountBalance}
-              onOpenAccount={onOpenAccount}
-            />
-            {closedAccounts.length > 0 && (
-              <AccountHeader
-                id="closed"
-                name={t('Closed')}
-                onPress={onToggleClosedAccounts}
-                amount={getClosedAccountsBalance()}
-                style={{ marginTop: 30 }}
-                showCheveronDown={showClosedAccounts}
-              />
-            )}
-            {showClosedAccounts && (
-              <AccountList
-                aria-label={t('Closed accounts')}
-                accounts={closedAccounts}
-                getAccountBalance={getAccountBalance}
-                onOpenAccount={onOpenAccount}
-                ref={el => {
-                  if (el) closedAccountsRef.current = el;
-                }}
-              />
-            )}
+            <AccountsMobileLoading />
           </View>
-        </PullToRefresh>
-      )}
+        ) : accounts.length === 0 ? (
+          <AccountsMobileEmpty onAddAccount={onAddAccount} />
+        ) : (
+          <PullToRefresh onRefresh={onSync}>
+            <View
+              aria-label={t('Account list')}
+              style={{
+                width: '100%',
+                flexShrink: 0,
+                padding: `14px ${accountsLayout.gutter}px`,
+                // The bar is fixed and overlays the page, so the bottom padding
+                // has to clear it — and, on an iPhone, the home indicator under
+                // it. The extra room is the Budget's: without it the last
+                // control ended exactly at the bar's edge, under the raised
+                // action button, which took the lower strip of its target.
+                paddingBottom: `calc(${MOBILE_NAV_SPACER} + 14px)`,
+                gap: accountsLayout.stackGap,
+              }}
+            >
+              <AccountsMobileHero
+                total={total}
+                accountCount={
+                  onBudgetAccounts.length + offBudgetAccounts.length
+                }
+                onOpenAllTransactions={openRegister('all')}
+              />
+
+              {onBudgetAccounts.length > 0 && (
+                <AccountsMobileGroup
+                  label={<Trans>No orçamento</Trans>}
+                  subtotal={onBudgetTotal}
+                  dotColor={ON_BUDGET_HUE}
+                  actionLabel={t('Ver as transações das contas no orçamento')}
+                  onPress={openRegister('onbudget')}
+                >
+                  <AccountList
+                    aria-label={t('On budget accounts')}
+                    accounts={onBudgetAccounts}
+                    balances={balances}
+                    hue={ON_BUDGET_HUE}
+                    onOpenAccount={onOpenAccount}
+                  />
+                </AccountsMobileGroup>
+              )}
+
+              {offBudgetAccounts.length > 0 && (
+                <AccountsMobileGroup
+                  label={<Trans>Fora do orçamento</Trans>}
+                  subtotal={offBudgetTotal}
+                  dotColor={OFF_BUDGET_HUE}
+                  actionLabel={t(
+                    'Ver as transações das contas fora do orçamento',
+                  )}
+                  onPress={openRegister('offbudget')}
+                >
+                  <AccountList
+                    aria-label={t('Off budget accounts')}
+                    accounts={offBudgetAccounts}
+                    balances={balances}
+                    hue={OFF_BUDGET_HUE}
+                    onOpenAccount={onOpenAccount}
+                  />
+                </AccountsMobileGroup>
+              )}
+
+              {closedAccounts.length > 0 && (
+                <AccountsMobileGroup
+                  label={<Trans>Encerradas</Trans>}
+                  subtotal={closedTotal}
+                  dotColor="var(--dfl-text-3)"
+                  actionLabel={t('Mostrar ou ocultar as contas encerradas')}
+                  onPress={onToggleClosedAccounts}
+                  isExpanded={!!showClosedAccounts}
+                >
+                  {showClosedAccounts && (
+                    <AccountList
+                      aria-label={t('Closed accounts')}
+                      accounts={closedAccounts}
+                      balances={balances}
+                      hue={CLOSED_HUE}
+                      onOpenAccount={onOpenAccount}
+                      ref={el => {
+                        if (el) closedAccountsRef.current = el;
+                      }}
+                    />
+                  )}
+                </AccountsMobileGroup>
+              )}
+
+              <AccountsMobileAddPanel onPress={onAddAccount} />
+            </View>
+          </PullToRefresh>
+        )}
+      </View>
     </Page>
   );
 }
@@ -424,18 +309,27 @@ function AllAccountList({
 type AccountListProps = {
   'aria-label': string;
   accounts: AccountEntity[];
-  getAccountBalance: (
-    accountId: AccountEntity['id'],
-  ) => Binding<'account', 'balance'>;
+  /** Live balances for every account on the page, keyed by id. */
+  balances: Record<string, number | null>;
+  hue: string;
   onOpenAccount: (account: AccountEntity) => void;
 };
 
+/**
+ * The rows of one group.
+ *
+ * Still a react-aria `ListBox` with the same drag-and-drop hooks the previous
+ * page used, because reordering accounts is a real feature and restyling a
+ * screen is no reason to drop one. Only its chrome moved: the card around it
+ * now draws the border and the radius, so the list itself is a plain column.
+ */
 const AccountList = forwardRef<HTMLDivElement, AccountListProps>(
   (
     {
       'aria-label': ariaLabel,
       accounts,
-      getAccountBalance: getBalanceBinding,
+      balances,
+      hue,
       onOpenAccount,
     }: AccountListProps,
     ref,
@@ -462,7 +356,7 @@ const AccountList = forwardRef<HTMLDivElement, AccountListProps>(
             className={css({
               '&[data-drop-target]': {
                 height: 4,
-                backgroundColor: theme.tableBorderSeparator,
+                backgroundColor: 'var(--dfl-blue)',
                 opacity: 1,
                 borderRadius: 4,
               },
@@ -504,34 +398,45 @@ const AccountList = forwardRef<HTMLDivElement, AccountListProps>(
         }
       },
     });
+
     return (
       <ListBox
         aria-label={ariaLabel}
         items={accounts}
-        dependencies={[syncingAccountIds, updatedAccounts]}
+        dependencies={[syncingAccountIds, updatedAccounts, balances]}
         dragAndDropHooks={dragAndDropHooks}
         ref={ref}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          margin: '0 8px',
-          border: `1px solid ${theme.tableBorder}`,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
         {account => (
-          <AccountListItem
+          <ListBoxItem
             key={account.id}
             id={account.id}
             value={account}
-            isUpdated={updatedAccounts && updatedAccounts.includes(account.id)}
-            isConnected={!!account.bank}
-            isPending={syncingAccountIds.includes(account.id)}
-            isFailed={isAccountFailedSync(account)}
-            getBalanceQuery={getBalanceBinding}
-            onSelect={onOpenAccount}
-          />
+            textValue={account.name}
+          >
+            {itemProps => (
+              <AccountsMobileRow
+                account={account}
+                balance={balances[account.id] ?? null}
+                hue={hue}
+                isConnected={!!account.bank}
+                syncState={
+                  syncingAccountIds.includes(account.id)
+                    ? 'pending'
+                    : isAccountFailedSync(account)
+                      ? 'failed'
+                      : 'idle'
+                }
+                isUpdated={
+                  !!updatedAccounts && updatedAccounts.includes(account.id)
+                }
+                isLast={account.id === accounts[accounts.length - 1]?.id}
+                itemProps={itemProps}
+                onPress={() => onOpenAccount(account)}
+              />
+            )}
+          </ListBoxItem>
         )}
       </ListBox>
     );
@@ -539,48 +444,3 @@ const AccountList = forwardRef<HTMLDivElement, AccountListProps>(
 );
 
 AccountList.displayName = 'AccountList';
-
-export function AccountsPage() {
-  const dispatch = useDispatch();
-  const { data: accounts = [] } = useAccounts();
-  const [_numberFormat] = useSyncedPref('numberFormat');
-  const numberFormat = _numberFormat || 'comma-dot';
-  const [hideFraction] = useSyncedPref('hideFraction');
-
-  const navigate = useNavigate();
-
-  const onOpenAccount = useCallback(
-    (account: AccountEntity) => {
-      void navigate(`/accounts/${account.id}`);
-    },
-    [navigate],
-  );
-
-  const onAddAccount = useCallback(() => {
-    dispatch(replaceModal({ modal: { name: 'add-account', options: {} } }));
-  }, [dispatch]);
-
-  const syncAndDownload = useSyncAndDownloadMutation();
-  const onSync = useCallback(async () => {
-    syncAndDownload.mutate({});
-  }, [syncAndDownload]);
-
-  return (
-    <View style={{ flex: 1 }}>
-      <AllAccountList
-        // This key forces the whole table rerender when the number
-        // format changes
-        key={numberFormat + hideFraction}
-        accounts={accounts}
-        getAccountBalance={bindings.accountBalance}
-        getAllAccountsBalance={bindings.allAccountBalance}
-        getOnBudgetBalance={bindings.onBudgetAccountBalance}
-        getOffBudgetBalance={bindings.offBudgetAccountBalance}
-        getClosedAccountsBalance={bindings.closedAccountBalance}
-        onAddAccount={onAddAccount}
-        onOpenAccount={onOpenAccount}
-        onSync={onSync}
-      />
-    </View>
-  );
-}

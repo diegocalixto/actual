@@ -17,7 +17,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
-import { SvgLogo } from '@actual-app/components/icons/logo';
 import { SvgDelete } from '@actual-app/components/icons/v0';
 import { Input } from '@actual-app/components/input';
 import { styles } from '@actual-app/components/styles';
@@ -29,6 +28,7 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 import { AutoTextSize } from 'auto-text-size';
 
+import { BrandMark } from '#components/appshell/BrandMark';
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import { useModalState } from '#hooks/useModalState';
 
@@ -318,7 +318,6 @@ export function ModalHeader({
   title,
   rightContent,
 }: ModalHeaderProps) {
-  const { t } = useTranslation();
   return (
     <h1
       style={{
@@ -351,12 +350,9 @@ export function ModalHeader({
           }}
         >
           {showLogo && (
-            <SvgLogo
-              aria-label={t('Modal logo')}
-              width={30}
-              height={30}
-              style={{ justifyContent: 'center', alignSelf: 'center' }}
-            />
+            <View style={{ alignItems: 'center' }}>
+              <BrandMark size={30} />
+            </View>
           )}
           {title &&
             (typeof title === 'string' || typeof title === 'number' ? (
@@ -488,11 +484,15 @@ type ModalCloseButtonProps = {
 
 export function ModalCloseButton({ onPress, style }: ModalCloseButtonProps) {
   const { t } = useTranslation();
+  const { isNarrowWidth } = useResponsive();
   return (
     <Button
       variant="bare"
       onPress={onPress}
-      style={{ padding: '10px 10px' }}
+      // On a phone the cross is hit with a finger: 44px a side, where the
+      // 30px it is drawn in were easy to miss. The margin takes back what the
+      // padding adds, so the cross stays where it was.
+      style={isNarrowWidth ? { padding: 17, margin: -7 } : { padding: 10 }}
       aria-label={t('Close')}
     >
       <SvgDelete width={10} style={style} />

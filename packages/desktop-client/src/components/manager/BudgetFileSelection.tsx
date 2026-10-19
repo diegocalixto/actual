@@ -175,7 +175,7 @@ function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
       const userFound = file.usersWithAccess?.find(f => f.owner);
 
       if (userFound?.userName === '') {
-        return 'Server';
+        return t('Server');
       }
 
       return userFound?.displayName ?? userFound?.userName ?? t('Unassigned');
@@ -770,7 +770,7 @@ function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
                       color: theme.pageTextLight,
                     }}
                   >
-                    File shared with:
+                    <Trans>File shared with:</Trans>
                   </Text>
                   <View
                     style={{

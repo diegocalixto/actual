@@ -1,0 +1,6 @@
+# Configuração local, dados e backups nunca entram no repositório.
+.env
+data/
+backups/
+*.tar.gz
+*.sha256

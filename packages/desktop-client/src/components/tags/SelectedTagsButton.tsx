@@ -46,7 +46,7 @@ export function SelectedTagsButton() {
   return (
     <SelectedItemsButton<Actions>
       id="selected-tags"
-      name={c => `${c} Tags`}
+      name={count => t('{{count}} tags', { count })}
       items={[
         { name: 'delete-tags', text: t('Delete'), key: 'D' },
         { name: 'hide-tags', text: t('Hide'), key: 'H' },

@@ -48,13 +48,13 @@ import { UpdateNotification } from './UpdateNotification';
 function AppInner() {
   const [budgetId] = useMetadataPref('id');
   const [cloudFileId] = useMetadataPref('cloudFileId');
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
   const userData = useSelector(state => state.user.data);
 
   useEffect(() => {
-    setI18NextLanguage(null);
+    void setI18NextLanguage(null);
   }, []);
 
   useEffect(() => {
@@ -151,7 +151,10 @@ function AppInner() {
     }
   }, [dispatch, t, userData?.tokenExpired]);
 
-  return budgetId ? <FinancesApp /> : <ManagementApp />;
+  // Keyed by language: static `<Trans>` text does not follow a language
+  // change on its own (see `loadPrefs`), so switching language in Settings
+  // redraws the budget's screens whole, already in the new language.
+  return budgetId ? <FinancesApp key={i18n.language} /> : <ManagementApp />;
 }
 
 function ErrorFallback({ error }: FallbackProps) {

@@ -14,7 +14,9 @@ import { useGlobalPref } from '#hooks/useGlobalPref';
 
 import { useBudgetMonthCount } from './BudgetMonthCountContext';
 import { BudgetPageHeader } from './BudgetPageHeader';
+import { BudgetPageIntro } from './BudgetPageIntro';
 import { BudgetTable } from './BudgetTable';
+import { getCategoryColumnWidth } from './util';
 
 function getNumPossibleMonths(width: number, categoryWidth: number) {
   const estimatedTableWidth = width - categoryWidth;
@@ -58,10 +60,14 @@ const DynamicBudgetTable = ({
 
   const numPossible = getNumPossibleMonths(
     width,
-    200 + 100 * categoryExpandedState,
+    getCategoryColumnWidth(categoryExpandedState),
   );
   const numMonths = Math.min(numPossible, maxMonths);
-  const maxWidth = 200 + 100 * categoryExpandedState + 500 * numMonths;
+  // Wider than upstream so the table occupies the width the rail gave back,
+  // but not so wide that the three figures drift apart and the row starts
+  // reading as a spreadsheet again.
+  const maxWidth =
+    getCategoryColumnWidth(categoryExpandedState) + 470 * numMonths;
 
   useEffect(() => {
     setDisplayMax(numPossible);
@@ -149,6 +155,7 @@ const DynamicBudgetTable = ({
     >
       <View style={{ width: '100%', maxWidth }}>
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
+          <BudgetPageIntro startMonth={startMonth} numMonths={numMonths} />
           <BudgetPageHeader
             startMonth={prewarmStartMonth}
             numMonths={numMonths}

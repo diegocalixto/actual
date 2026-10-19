@@ -28,6 +28,7 @@ import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { NetWorthGraph } from '#components/reports/graphs/NetWorthGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -264,7 +265,9 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
 
-  const title = widget?.meta?.name || t('Net Worth');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'net-worth-card', t) ||
+    t('Net Worth');
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');

@@ -2,6 +2,119 @@
 
 This guide provides comprehensive information for AI agents (like Cursor) working with the Actual Budget codebase.
 
+## Diego Finance V2 — política dos três agentes
+
+> Seção específica deste fork (branch `diego-v2`). Todos os três agentes leem
+> este arquivo: Claude Code via `CLAUDE.md`, Grok automaticamente (confirmado
+> com `grok inspect`) e Codex pela convenção `AGENTS.md`.
+
+**Papéis**
+
+| Agente          | Papel                        | Pode escrever no repositório? |
+| --------------- | ---------------------------- | ----------------------------- |
+| **Claude Code** | executor                     | **Sim** — é o único           |
+| **Grok CLI**    | revisor independente         | Não                           |
+| **Codex CLI**   | revisor técnico independente | Não                           |
+
+**Fluxo:** Claude implementa → Grok revisa → Codex revisa → Playwright valida no
+navegador → **Diego** decide sobre commit/push.
+
+**Claude (executor)** lê o repositório, edita código quando Diego pedir, roda
+testes, lint e typecheck, e aciona os revisores. Claude **não** faz commit nem
+push, **não** descarta modificações existentes (`git reset`, `git restore`,
+`git clean`, `git checkout`, `git stash drop/clear/pop`), **não** remove
+arquivos rastreados (`git rm`) e **não** instala nem altera dependências
+(`yarn add/remove/up/install`, `npm`, `pnpm`) sem autorização explícita de
+Diego. Commit e push são manuais, feitos por Diego. Essa é a mesma lista que
+`.claude/hooks/executor-guard.sh` bloqueia mecanicamente.
+
+**Preflight obrigatório.** Antes de qualquer alteração de código do aplicativo,
+Claude confere que `.claude/hooks/executor-guard.sh` existe **e** está
+registrado como `PreToolUse` com matcher `Bash` em
+`.claude/settings.local.json`. Faltando o script ou o registro, Claude **não
+inicia** a alteração: para e avisa que o guard local precisa ser restaurado. A
+ausência do guard nunca é autorização implícita para seguir.
+
+O script é versionado; só a ativação é local e gitignored, de propósito. Ela
+some em clone limpo, em rebuild que perca `.claude/` e se o arquivo for apagado.
+Nos três casos a restauração é a mesma: recriar `.claude/settings.local.json`
+com um bloco `hooks.PreToolUse` de matcher `Bash` cujo único hook é o comando
+`"$CLAUDE_PROJECT_DIR/.claude/hooks/executor-guard.sh"`. Esse registro soma ao
+`scripts/agent-hooks/git-guard.sh` do upstream, não o substitui.
+
+**Grok e Codex (revisores)** apenas leem: código, `git diff` e o contexto
+necessário. Não editam nem criam arquivos, não instalam nada, não executam
+mudanças, não fazem commit nem push. Devem separar problema real de sugestão
+opcional e apontar arquivo e localização sempre que possível.
+
+### Fronteira V1 / V2
+
+As duas worktrees rodam lado a lado nesta máquina:
+
+|                           | Worktree                | Branch     | Porta de dev |
+| ------------------------- | ----------------------- | ---------- | ------------ |
+| **V2 — este repositório** | `/workspaces/actual-v2` | `diego-v2` | **3002**     |
+| **V1 — intocável**        | `/workspaces/actual`    | `diego-v1` | 3001         |
+
+Todo trabalho deste workflow acontece em `/workspaces/actual-v2`, na branch
+`diego-v2`, servida na porta **3002**
+(`packages/desktop-client/vite.config.mts`, com `strictPort`). A seção "Cursor
+Cloud specific instructions" mais abaixo é texto do upstream e cita 3001; neste
+fork, 3001 é a porta da V1.
+
+**A V1 é intocável:** nenhum agente deste workflow altera arquivo, branch,
+worktree, servidor ou dado da V1. Isso inclui apontar comandos `git` para
+`/workspaces/actual` (por exemplo com `-C`), trocar a branch `diego-v1`, subir
+ou derrubar o servidor da V1 e escrever no orçamento dela.
+
+### Como Claude aciona os revisores
+
+```bash
+.agents/review-grok.sh  [pathspec...]   # revisor independente (Grok)
+.agents/review-codex.sh [escopo]        # revisor técnico (Codex)
+```
+
+Os dois wrappers já carregam as restrições comprovadas neste container. Não
+invoque `grok` ou `codex` diretamente para revisão: as travas vivem nos
+wrappers.
+
+### Formato obrigatório de revisão
+
+Grok e Codex devem responder **exatamente** neste formato, e nada além dele:
+
+```
+REVIEW RESULT
+
+Critical:
+- ...
+
+High:
+- ...
+
+Medium:
+- ...
+
+Low:
+- ...
+
+Optional:
+- ...
+
+Verdict:
+APPROVE            (ou CHANGES REQUESTED)
+```
+
+Cada finding traz, quando possível: **arquivo**, **localização**, **problema**,
+**impacto** e **correção recomendada**. Seções sem findings ficam com
+`- (nenhum)`. Sem elogio genérico, sem revisão inflada, sem repetir o que o
+código já diz. Não havendo problema material, o revisor declara isso
+explicitamente e responde `APPROVE`.
+
+`REVIEW RESULT` define apenas o **formato** da resposta. Os **critérios** de
+revisão continuam em [CODE_REVIEW_GUIDELINES.md](./CODE_REVIEW_GUIDELINES.md)
+(supressões de strict mode e de linter, type assertions, `any`/`unknown`, i18n,
+mocking, tipografia de números) e no restante deste guia.
+
 ## Project Overview
 
 **Actual Budget** is a local-first personal finance tool written in TypeScript/JavaScript. It's 100% free and open-source with synchronization capabilities across devices.

@@ -19,6 +19,7 @@ import { AuthProvider } from './auth/AuthProvider';
 import * as budgetfilesSlice from './budgetfiles/budgetfilesSlice';
 import { App } from './components/App';
 import { ServerProvider } from './components/ServerContext';
+import { bindRegionalFormatToStore } from './components/v2lab/useRegionalFormat';
 import * as modalsSlice from './modals/modalsSlice';
 import * as notificationsSlice from './notifications/notificationsSlice';
 import * as prefsSlice from './prefs/prefsSlice';
@@ -32,6 +33,8 @@ const queryClient = new QueryClient();
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 
 const store = configureAppStore({ queryClient });
+// The V2 pages format money from the open file's preferences, read from here.
+bindRegionalFormatToStore(store);
 
 const boundActions = bindActionCreators(
   {

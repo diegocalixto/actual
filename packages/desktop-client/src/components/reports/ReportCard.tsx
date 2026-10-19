@@ -5,9 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
-import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import {
+  shellColors,
+  shellRadius,
+  shellShadow,
+} from '#components/appshell/shellTheme';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useIsInViewport } from '#hooks/useIsInViewport';
 import { useNavigate } from '#hooks/useNavigate';
@@ -69,13 +73,17 @@ export function ReportCard({
     <View
       ref={ref}
       style={{
-        backgroundColor: theme.tableBackground,
-        borderBottomLeftRadius: 2,
-        borderBottomRightRadius: 2,
+        // The V2 widget surface: a panel a few levels above the canvas, with a
+        // generous radius and a hairline, instead of a square-cornered slab
+        // separated by a drop shadow. Every report on the dashboard inherits
+        // this, which is what makes the page read as one product.
+        backgroundColor: shellColors.surface,
+        border: `1px solid ${shellColors.border}`,
+        borderRadius: shellRadius.card,
         width: '100%',
         height: '100%',
-        boxShadow: '0 2px 6px rgba(0, 0, 0, .15)',
-        transition: 'box-shadow .25s',
+        boxShadow: shellShadow,
+        transition: 'border-color .2s, background-color .2s',
         ...(isEditing
           ? {
               '& .recharts-surface:hover': {
@@ -91,7 +99,7 @@ export function ReportCard({
               },
             }),
         ':hover': {
-          ...(to ? { boxShadow: '0 4px 6px rgba(0, 0, 0, .15)' } : null),
+          ...(to ? { borderColor: shellColors.borderStrong } : null),
           ...(isEditing ? { cursor: 'move', filter: 'grayscale(0)' } : null),
         },
         ...(to ? null : containerProps),
