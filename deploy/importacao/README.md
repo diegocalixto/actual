@@ -8,7 +8,7 @@ tocada por nada desta pasta.
 
 | Arquivo        | Para quê                                                             |
 | -------------- | -------------------------------------------------------------------- |
-| `importar.mjs` | validar, planejar, aplicar e conferir (Node 24, sem dependências)    |
+| `importar.mjs` | validar, planejar, aplicar, conferir e atualizar (Node 24, sem deps) |
 | `modelos/`     | modelo de CSV e de `controles.json`, só com linhas fictícias         |
 | `exemplo/`     | conjunto fictício completo usado na simulação                        |
 | `SIMULACAO.md` | comandos e resultados da simulação isolada                           |
@@ -126,6 +126,10 @@ dfi1-<primeiros 32 hex de sha256(conta | data | centavos | descrição normaliza
 Mudar a descrição, a data ou o valor de uma linha muda o `imported_id`: corrija
 os CSVs **antes** do primeiro `aplicar` real, não depois.
 
+Isso vale para o orçamento local do `aplicar`. Depois que o orçamento está no
+servidor, os lotes seguintes vão pelo `atualizar` (seção 3.1), que nunca
+reenvia uma transação já existente.
+
 ## 2. Formato de entrada
 
 CSV **UTF-8, separador `;`** (o padrão do Excel em português), cabeçalho
@@ -195,6 +199,9 @@ node deploy/importacao/importar.mjs aplicar  --controles <json> --data-dir <past
      [--exportar <arquivo.zip>] [--api <index.js do @actual-app/api>] <csv...>
 node deploy/importacao/importar.mjs conferir --controles <json> --data-dir <pasta isolada> \
      --orcamento "<nome>" [--api ...] <csv...>
+node deploy/importacao/importar.mjs atualizar --controles <json> --servidor <url> --sync-id <id> \
+     --orcamento "<nome>" --data-dir <pasta vazia> [--confirmar] [--importar-suspeitas] \
+     [--aplicar-parcial] [--sem-agendamentos] [--api ...] <csv...>
 ```
 
 - **validar** — cabeçalho, datas, valores, tipos, sinais, conta conhecida,
@@ -215,7 +222,8 @@ node deploy/importacao/importar.mjs conferir --controles <json> --data-dir <past
   marcador. O orçamento é reaberto pelo id guardado no marcador — nunca
   escolhido pelo nome —, e uma pasta com orçamento que o fluxo não criou é
   recusada. Cria contas e categorias que faltam (categorias só
-  com `--criar-categorias`), importa por conta com dedupe por `imported_id`,
+  com `--criar-categorias`; o saldo inicial fica na data de `saldo_inicial`,
+  não no dia da criação), importa por conta com dedupe por `imported_id`,
   cria os agendamentos das parcelas futuras e, com `--exportar`, gera o `.zip`
   do orçamento para abrir no aplicativo. O ruído do núcleo do Actual vai para
   `<data-dir>/importar.log`.
@@ -230,6 +238,86 @@ estava sobrescrito pela saída do `tsc` e não roda sozinho; o script detecta e
 recusa. Ver em `SIMULACAO.md` como o pacote foi gerado numa pasta fora do
 repositório, sem mexer em dependências, e passado com `--api`. É preciso
 `NODE_PATH=<repo>/node_modules` para o `better-sqlite3`.
+
+### 3.1 Atualização incremental (`atualizar`), depois da implantação
+
+Quando o orçamento real já está no servidor e é editado no computador e no
+iPhone, o `aplicar` não serve mais: a pasta local dele fica para trás, e
+reenviar o lote faria o `importTransactions` do Actual (26.8.1) regravar
+notas, categoria e "conferido" que o usuário apagou e reimportar o que ele
+excluiu. O `atualizar` usa a sincronização da própria API:
+
+1. confere no servidor que o **id de sincronização** (Configurações →
+   Avançado) é do orçamento `--orcamento` e só então o baixa, numa pasta
+   **vazia**, a cada execução; outro orçamento nunca é baixado nem aberto;
+2. recusa se faltar conta (renomeada ou fechada no app) ou categoria; nunca
+   cria nenhuma das duas;
+3. classifica cada linha contra o orçamento, inclusive o que foi excluído no
+   app:
+
+| Situação                                                                                   | O que acontece                                     |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| já importada: mesmo `imported_id`, data e valor                                            | nada; não é reenviada                              |
+| equivalente: outro `id_origem`, mesma conta, data, valor e descrição, em trecho completo¹  | nada; um extrato novo renumera o `id_origem`       |
+| excluída no app                                                                            | nada; não volta                                    |
+| divergente: mesmo `imported_id`, outra data ou valor                                       | nada; mantido o do orçamento, listada para revisão |
+| suspeita: parecida com uma já importada (mesmo valor em 7 dias, ou mesma data e descrição) | não entra; entra com `--importar-suspeitas`        |
+| suspeita: igual a uma já importada, em trecho sem prova de lote completo¹                  | idem: pode ser outra compra idêntica               |
+| nova                                                                                       | entra                                              |
+
+¹ Trecho completo: na corrente, entre `saldo_inicial` e `saldo_final` do
+`controles.json` (o `validar` exige que a soma feche); no cartão, fatura com
+total no `controles.json`. Fora disso, o lote pode ser parcial. Uma transação
+excluída no app nunca volta, nem quando reencontrada pelo conteúdo, nem com
+`--importar-suspeitas`.
+
+4. só as novas são enviadas. Antes, a prévia do próprio Actual (nada gravado)
+   aponta as que casam com **lançamento manual** (mesmo valor, até 7 dias, sem
+   `imported_id`): o manual recebe só o `imported_id` e a descrição do banco;
+   favorecido, categoria, notas, data e "conferido" ficam como o usuário
+   deixou;
+5. sincroniza (só mensagens; o arquivo do servidor nunca é substituído) e
+   confere: nenhum `imported_id` repetido, cada nova presente uma vez, saldo em
+   `saldo_final.data` × previsto × declarado.
+
+Sem `--confirmar` é só prévia. Com `--confirmar`, divergência ou suspeita sem
+resolução **bloqueia o lote inteiro**: nada é gravado. Resolver é explícito:
+corrigir o CSV ou o app e rodar de novo; ou, depois de revisar,
+`--importar-suspeitas` (as suspeitas entram como novas) e/ou
+`--aplicar-parcial` (entram só as novas; divergências e suspeitas ficam de
+fora). Sai com código 1 se houver pendência, saldo diferente do declarado ou
+falha na conferência. Reaplicar o mesmo lote não grava nada.
+
+Não há atomicidade entre etapas: o Actual envia cada gravação ao servidor
+cerca de 1 s depois de feita. Se der erro no meio, o importador fecha sem
+sincronizar o que restou, mas parte do lote pode já estar no servidor; rodar
+o mesmo comando de novo completa o lote sem duplicar (tudo é reconhecido pelo
+id).
+
+Também não há trava entre aparelhos: não edite no app enquanto o `atualizar`
+roda, e abra antes o app no iPhone, com internet, para enviar lançamentos
+feitos offline. Um lançamento manual que chegue ao servidor durante a
+execução, ou depois dela, não é casado com o extrato e pode ficar em dobro.
+
+- `controles.json` do lote: só as faturas que estão no lote; `saldo_inicial` e
+  `saldo_final` da corrente tirados do próprio extrato.
+- Comece o extrato novo **pelo menos 7 dias antes** do último dia já
+  importado: a sobreposição é reconhecida e evita suspeitas falsas.
+- Depois da implantação, categoria, favorecido e notas se decidem no app;
+  mudar a categoria de uma linha já importada no CSV não tem efeito.
+- Divergência e suspeita somem quando orçamento e extrato concordam: ajuste no
+  app (por exemplo, a data de um lançamento manual) ou corrija o CSV.
+- A senha vai só pelo ambiente e só para `https`, ou para `http` em endereço
+  local (`localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal`). Do
+  contêiner de desenvolvimento, o servidor do host é
+  `http://host.docker.internal:5006`:
+
+```powershell
+$s = Read-Host 'Senha do Diego Finance' -AsSecureString
+$env:DF_SENHA_SERVIDOR = [Net.NetworkCredential]::new('', $s).Password
+docker exec -e DF_SENHA_SERVIDOR df-v2-dev sh -c "cd /workspaces/actual-v2 && NODE_PATH=/workspaces/actual-v2/node_modules node deploy/importacao/importar.mjs atualizar --servidor http://host.docker.internal:5006 --sync-id <id> --orcamento 'Diego Finance Real' ..."
+Remove-Item Env:DF_SENHA_SERVIDOR
+```
 
 ## 4. Roteiro da execução real (futura, com o Diego)
 
@@ -303,11 +391,16 @@ repositório:
 ## 7. Limitações
 
 - Leitura de OFX e PDF não está implementada: a entrada é o CSV do modelo.
-- O `aplicar` só grava em pasta local isolada; envio ao servidor é pelo
-  aplicativo (importar o `.zip`), de propósito.
+- O `aplicar` só grava em pasta local isolada; o primeiro envio ao servidor é
+  pelo aplicativo (importar o `.zip`), de propósito. Os lotes seguintes vão
+  pelo `atualizar`.
 - Fuzzy matching do Actual: transação nova sem `imported_id` igual pode ser
   casada com uma existente de mesmo valor e data próxima. Em orçamento novo
   isso não ocorre; não rode o `aplicar` sobre um orçamento com lançamentos
-  manuais.
-- Corrigir uma linha depois de importada gera outro `imported_id`; a correção
-  deve ser feita no aplicativo.
+  manuais. O `atualizar` mostra esses casamentos na prévia e só grava o
+  `imported_id` no lançamento manual.
+- Corrigir uma linha depois de importada gera outro `imported_id`: no
+  `atualizar` ela aparece como suspeita, não como nova; a correção deve ser
+  feita no aplicativo.
+- O `api.updateTransaction` do Actual 26.8.1 devolve antes de gravar; o
+  importador usa o handler `transaction-update`, o mesmo do app.

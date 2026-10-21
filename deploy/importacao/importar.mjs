@@ -8,10 +8,16 @@
 //                                                [--exportar <arquivo.zip>] [--api <index.js>] <csv...>
 //   node deploy/importacao/importar.mjs conferir --controles <json> --data-dir <pasta> --orcamento <nome>
 //                                                [--api <index.js>] <csv...>
+//   node deploy/importacao/importar.mjs atualizar --controles <json> --servidor <url> --sync-id <id>
+//                                                 --orcamento <nome> --data-dir <pasta vazia>
+//                                                 [--confirmar] [--importar-suspeitas] [--aplicar-parcial]
+//                                                 [--sem-agendamentos] [--api <index.js>] <csv...>
 //
-// Sem dependências. Só `aplicar` e `conferir` carregam o @actual-app/api, e só
-// contra uma pasta de dados local e isolada: nunca contra o servidor, nunca
-// contra a pasta de produção. Detalhes em deploy/importacao/README.md.
+// Sem dependências. Só `aplicar`, `conferir` e `atualizar` carregam o
+// @actual-app/api. `aplicar` e `conferir` trabalham numa pasta de dados local
+// e isolada, nunca no servidor nem na pasta de produção. `atualizar` acrescenta
+// um lote ao orçamento que já está no servidor, pela sincronização da própria
+// API (senha em DF_SENHA_SERVIDOR). Detalhes em deploy/importacao/README.md.
 
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -87,8 +93,10 @@ function parseArgs(argv) {
   const [cmd, ...rest] = argv;
   const opts = { arquivos: [] };
   const flags = new Set([
+    'aplicar-parcial',
     'confirmar',
     'criar-categorias',
+    'importar-suspeitas',
     'sem-agendamentos',
     'verbose',
   ]);
@@ -688,6 +696,7 @@ function montarPlano(v, controles) {
       categoria: r.categoria || null,
       categoria_receita: r.tipo === 'receita',
       notas: notas || null,
+      fatura: r.fatura || null,
       origem: `${r._arquivo}:${r._linha}`,
     });
   }
@@ -783,7 +792,7 @@ function gravarMarcador(dir, dados) {
  * `--confirmar`.
  */
 function verificarDataDir(dir, cmd) {
-  if (!dir) sair('aplicar exige --data-dir <pasta local e isolada>');
+  if (!dir) sair(`${cmd} exige --data-dir <pasta local e isolada>`);
   if (!fs.existsSync(dir)) {
     sair(`--data-dir ${dir} não existe; crie a pasta vazia de propósito antes`);
   }
@@ -819,6 +828,15 @@ function verificarDataDir(dir, cmd) {
     }
   }
   const marcador = lerMarcador(real);
+  if (cmd === 'atualizar') {
+    // A cópia local é descartável: o orçamento vem do servidor a cada vez.
+    if (marcador || fs.readdirSync(real).length > 0) {
+      sair(
+        `--data-dir ${dir} precisa estar vazia: atualizar baixa o orçamento do servidor a cada execução`,
+      );
+    }
+    return { real, marcador: null };
+  }
   if (!marcador) {
     if (cmd !== 'aplicar') {
       sair(
@@ -936,7 +954,16 @@ async function abrirOrcamento(api, opts, criar, verificado, marcador) {
   return { lib, criado: true, id: novo.id };
 }
 
-async function aplicar(plano, api, opts) {
+/**
+ * Grava só os campos dados e espera a gravação terminar, pelo mesmo handler
+ * que o app usa ao salvar uma edição. O `api.updateTransaction` do Actual
+ * 26.8.1 devolve antes de gravar.
+ */
+function atualizarTransacao(lib, id, campos) {
+  return lib.send('transaction-update', { id, ...campos });
+}
+
+async function aplicar(plano, api, lib, opts) {
   const res = {
     contas_criadas: [],
     categorias_criadas: [],
@@ -956,6 +983,17 @@ async function aplicar(plano, api, opts) {
         { name: c.nome, offbudget: !c.no_orcamento },
         c.saldo_inicial ?? 0,
       );
+      // O Actual data o saldo inicial no dia em que a conta é criada; o saldo
+      // declarado é o do extrato em `data_saldo_inicial`.
+      if (c.saldo_inicial && c.data_saldo_inicial) {
+        const abertura = (
+          await api.getTransactions(ids[c.nome], '1900-01-01', '2999-12-31')
+        ).find(t => t.starting_balance_flag);
+        if (!abertura) throw new Error(`saldo inicial de ${c.nome} não achado`);
+        await atualizarTransacao(lib, abertura.id, {
+          date: c.data_saldo_inicial,
+        });
+      }
       res.contas_criadas.push(c.nome);
     }
   }
@@ -1004,18 +1042,7 @@ async function aplicar(plano, api, opts) {
   for (const c of plano.contas) {
     const txs = plano.transacoes
       .filter(t => t.conta === c.nome)
-      .map(t => ({
-        date: t.data,
-        amount: t.centavos,
-        imported_id: t.imported_id,
-        imported_payee: t.descricao,
-        ...(t.transferir_para
-          ? { payee: payeeTransfer[t.transferir_para] }
-          : { payee_name: t.favorecido }),
-        category: t.categoria ? catId[t.categoria] : null,
-        notes: t.notas,
-        cleared: true,
-      }));
+      .map(t => paraTransacaoApi(t, catId, payeeTransfer));
     if (!txs.length) continue;
     const r = await api.importTransactions(ids[c.nome], txs, {
       defaultCleared: true,
@@ -1033,31 +1060,49 @@ async function aplicar(plano, api, opts) {
     };
   }
 
-  // Parcelas futuras: agendamentos sem lançamento automático.
   if (!opts['sem-agendamentos']) {
     const existentes = new Set((await api.getSchedules()).map(s => s.name));
-    for (const a of plano.agendamentos) {
-      if (existentes.has(a.nome)) {
-        res.agendamentos_existentes++;
-        continue;
-      }
-      let payee = (await api.getPayees()).find(
-        p => p.name === a.favorecido,
-      )?.id;
-      payee ??= await api.createPayee({ name: a.favorecido });
-      await api.createSchedule({
-        name: a.nome,
-        posts_transaction: false,
-        account: ids[a.conta],
-        payee,
-        amount: a.centavos,
-        amountOp: 'is',
-        date: a.data,
-      });
-      res.agendamentos_criados++;
-    }
+    await criarAgendamentos(api, plano, ids, existentes, res);
   }
   return res;
+}
+
+/** Linha do plano no formato do `importTransactions` do Actual. */
+function paraTransacaoApi(t, catId, payeeTransfer) {
+  return {
+    date: t.data,
+    amount: t.centavos,
+    imported_id: t.imported_id,
+    imported_payee: t.descricao,
+    ...(t.transferir_para
+      ? { payee: payeeTransfer[t.transferir_para] }
+      : { payee_name: t.favorecido }),
+    category: t.categoria ? catId[t.categoria] : null,
+    notes: t.notas,
+    cleared: true,
+  };
+}
+
+/** Parcelas futuras: agendamentos sem lançamento automático. */
+async function criarAgendamentos(api, plano, ids, existentes, res) {
+  for (const a of plano.agendamentos) {
+    if (existentes.has(a.nome)) {
+      res.agendamentos_existentes++;
+      continue;
+    }
+    let payee = (await api.getPayees()).find(p => p.name === a.favorecido)?.id;
+    payee ??= await api.createPayee({ name: a.favorecido });
+    await api.createSchedule({
+      name: a.nome,
+      posts_transaction: false,
+      account: ids[a.conta],
+      payee,
+      amount: a.centavos,
+      amountOp: 'is',
+      date: a.data,
+    });
+    res.agendamentos_criados++;
+  }
 }
 
 async function conferir(plano, api, controles) {
@@ -1145,13 +1190,476 @@ async function conferir(plano, api, controles) {
   return r;
 }
 
+// ---------------------------------------------------------------- servidor
+
+function verificarServidor(opts) {
+  for (const o of ['servidor', 'sync-id', 'orcamento']) {
+    if (!opts[o]) sair(`atualizar exige --${o}`);
+  }
+  // A senha vai ao servidor no login: http só dentro desta máquina.
+  const url = URL.canParse(opts.servidor) ? new URL(opts.servidor) : null;
+  const local = ['localhost', '127.0.0.1', '[::1]', 'host.docker.internal'];
+  if (
+    !url ||
+    url.username ||
+    url.password ||
+    !(
+      url.protocol === 'https:' ||
+      (url.protocol === 'http:' && local.includes(url.hostname))
+    )
+  ) {
+    sair(
+      `--servidor: use https, ou http só em ${local.join(', ')}; sem usuário ou senha na URL`,
+    );
+  }
+  if (opts['criar-categorias']) {
+    sair('atualizar não cria categorias: crie no aplicativo');
+  }
+  if (!process.env.DF_SENHA_SERVIDOR) {
+    sair(
+      'defina a senha do servidor em DF_SENHA_SERVIDOR (nunca na linha de comando)',
+    );
+  }
+}
+
+/**
+ * Abre o orçamento que já vive no servidor, pelo id de sincronização: a API
+ * baixa uma cópia nesta pasta vazia e daí em diante só troca mensagens com o
+ * servidor — nunca envia o arquivo inteiro. O nome tem de bater com
+ * --orcamento antes de baixar: abrir já sincroniza, e outro orçamento nunca
+ * deve ser aberto.
+ */
+async function abrirOrcamentoServidor(api, opts, verificado, sessao) {
+  const lib = await api.init({
+    dataDir: verificado.real,
+    serverURL: opts.servidor,
+    password: process.env.DF_SENHA_SERVIDOR,
+  });
+  sessao.lib = lib;
+  const noServidor = (await api.getBudgets()).find(
+    b => b.state === 'remote' && b.groupId === opts['sync-id'],
+  );
+  if (noServidor?.name !== opts.orcamento) {
+    throw new Error(
+      `o id de sincronização ${opts['sync-id']} é do orçamento "${noServidor?.name ?? '?'}" no servidor, não de "${opts.orcamento}"; nada foi baixado`,
+    );
+  }
+  await api.downloadBudget(opts['sync-id']);
+  const baixado = (await api.getBudgets()).find(
+    b => b.id && b.groupId === opts['sync-id'],
+  );
+  if (baixado?.name !== opts.orcamento) {
+    throw new Error(
+      `o id de sincronização ${opts['sync-id']} é do orçamento "${baixado?.name ?? '?'}", não de "${opts.orcamento}"; nada foi importado`,
+    );
+  }
+  return lib;
+}
+
+/**
+ * Separa as linhas do lote pelo que o orçamento do servidor já tem. O que já
+ * está lá nunca é reenviado: ao reencontrar um `imported_id`, o
+ * `importTransactions` do Actual regrava notas, categoria e "conferido" que o
+ * usuário tenha apagado, e por padrão reimporta o que ele excluiu.
+ *
+ * - já importada: mesmo `imported_id`, mesma data e valor;
+ * - divergente: mesmo `imported_id`, outra data ou valor; nunca é alterada;
+ * - excluída: só existe como excluída no app; não volta;
+ * - equivalente: outro `imported_id` (um extrato novo renumera o `id_origem`
+ *   da conta corrente), mas mesma data, valor e descrição de uma já importada
+ *   que o lote não traz pelo id — só onde o lote prova estar completo;
+ * - suspeita: parecida com uma já importada que o lote não reconheceu (mesmo
+ *   valor em até 7 dias, ou mesma data e descrição): pode ser a mesma
+ *   transação alterada pelo banco; ou igual a uma já importada num trecho sem
+ *   prova de lote completo: pode ser outra compra idêntica. Só entra com
+ *   --importar-suspeitas;
+ * - nova: o resto.
+ */
+async function classificar(api, plano, ids, controles) {
+  const r = {
+    por_conta: {},
+    novas: [],
+    divergentes: [],
+    excluidas: [],
+    suspeitas: [],
+    ausentes: [],
+  };
+  const chave = (data, centavos, desc) =>
+    `${data}|${centavos}|${normalizarDescricao(desc ?? '')}`;
+  // Só o saldo da corrente ou o total da fatura, conferidos pelo `validar`,
+  // provam que o lote traz todas as transações do trecho; num lote parcial,
+  // uma linha igual a uma já importada pode ser outra compra idêntica.
+  const completo = t => {
+    const conta = controles.contas[t.conta];
+    if (conta?.tipo === 'cartao') {
+      return Boolean(controles.faturas[t.conta]?.[t.fatura]);
+    }
+    const ini = conta?.saldo_inicial?.data;
+    const fim = conta?.saldo_final?.data;
+    return Boolean(fim) && t.data <= fim && (!ini || t.data > ini);
+  };
+  for (const c of plano.contas) {
+    const { data: existentes } = await api.aqlQuery(
+      api
+        .q('transactions')
+        .filter({ account: ids[c.nome] })
+        .select([
+          'id',
+          'imported_id',
+          'date',
+          'amount',
+          'imported_payee',
+          'tombstone',
+        ])
+        .options({ splits: 'all' })
+        .withDead(),
+    );
+    const doLote = plano.transacoes.filter(t => t.conta === c.nome);
+    const idsLote = new Set(doLote.map(t => t.imported_id));
+    const porId = Map.groupBy(
+      existentes.filter(e => e.imported_id),
+      e => e.imported_id,
+    );
+    // Importadas por este fluxo que o lote não traz pelo id.
+    const livres = existentes.filter(
+      e => e.imported_id?.startsWith('dfi1-') && !idsLote.has(e.imported_id),
+    );
+    const porConteudo = Map.groupBy(livres, e =>
+      chave(e.date, e.amount, e.imported_payee),
+    );
+    const usadas = new Set();
+    const candidatas = [];
+    const n = {
+      lote: doLote.length,
+      ja_importadas: 0,
+      equivalentes: 0,
+      excluidas: 0,
+      divergentes: 0,
+      suspeitas: 0,
+      novas: 0,
+    };
+    for (const t of doLote) {
+      const mesmoId = porId.get(t.imported_id) ?? [];
+      const viva = mesmoId.find(e => !e.tombstone);
+      const eq = mesmoId.length
+        ? null
+        : porConteudo
+            .get(chave(t.data, t.centavos, t.descricao))
+            ?.find(e => !usadas.has(e.id));
+      if (eq) usadas.add(eq.id);
+      if (viva && (viva.date !== t.data || viva.amount !== t.centavos)) {
+        n.divergentes++;
+        r.divergentes.push({ t, e: viva });
+      } else if (viva) {
+        n.ja_importadas++;
+      } else if (mesmoId.length || eq?.tombstone) {
+        // Excluída no app não volta, nem com --importar-suspeitas.
+        n.excluidas++;
+        r.excluidas.push({ t, e: mesmoId[0] ?? eq });
+      } else if (eq && !completo(t)) {
+        n.suspeitas++;
+        r.suspeitas.push({ t, e: eq, igual: true });
+      } else if (eq) {
+        n.equivalentes++;
+      } else {
+        candidatas.push(t);
+      }
+    }
+    const sobra = livres.filter(e => !e.tombstone && !usadas.has(e.id));
+    const parecidas = new Set();
+    for (const t of candidatas) {
+      const nd = normalizarDescricao(t.descricao);
+      const e = sobra.find(
+        x =>
+          (x.amount === t.centavos && diasEntre(x.date, t.data) <= 7) ||
+          (x.date === t.data &&
+            normalizarDescricao(x.imported_payee ?? '') === nd),
+      );
+      if (e) {
+        parecidas.add(e);
+        n.suspeitas++;
+        r.suspeitas.push({ t, e });
+      } else {
+        n.novas++;
+        r.novas.push(t);
+      }
+    }
+    // Já importadas, dentro do período do lote, que o lote não traz: o banco
+    // pode ter cancelado ou mudado a transação. Só informadas.
+    const datas = doLote.map(t => t.data).sort();
+    for (const e of sobra) {
+      if (!parecidas.has(e) && e.date >= datas[0] && e.date <= datas.at(-1)) {
+        r.ausentes.push({ conta: c.nome, e });
+      }
+    }
+    r.por_conta[c.nome] = n;
+  }
+  return r;
+}
+
+async function atualizar(plano, api, lib, opts, controles) {
+  // Contas e categorias têm de existir: atualizar não cria nenhuma. Uma conta
+  // renomeada no app viraria outra conta, com o histórico todo duplicado.
+  const contasApi = await api.getAccounts();
+  const ids = {};
+  for (const c of plano.contas) {
+    const achadas = contasApi.filter(a => a.name === c.nome && !a.closed);
+    if (achadas.length !== 1) {
+      throw new Error(
+        `conta "${c.nome}" ${achadas.length ? 'repetida' : 'inexistente, renomeada ou fechada'} no orçamento; atualizar não cria contas`,
+      );
+    }
+    ids[c.nome] = achadas[0].id;
+  }
+  const catId = {};
+  for (const c of await api.getCategories()) catId[c.name] ??= c.id;
+  const semCategoria = [
+    ...new Set(
+      plano.transacoes.map(t => t.categoria).filter(n => n && !catId[n]),
+    ),
+  ];
+  if (semCategoria.length) {
+    throw new Error(
+      `categorias inexistentes no orçamento: ${semCategoria.join(', ')} (renomeadas no app?); atualizar não cria categorias`,
+    );
+  }
+  const payees = await api.getPayees();
+  const payeeTransfer = Object.fromEntries(
+    Object.entries(ids).map(([n, id]) => [
+      n,
+      payees.find(p => p.transfer_acct === id)?.id,
+    ]),
+  );
+
+  const res = {
+    ...(await classificar(api, plano, ids, controles)),
+    aplicado: false,
+    fusoes: [],
+    travadas: [],
+    agendamentos_criados: 0,
+    agendamentos_existentes: 0,
+    saldos: [],
+    falhas: [],
+  };
+  const enviar = [
+    ...res.novas,
+    ...(opts['importar-suspeitas'] ? res.suspeitas.map(s => s.t) : []),
+  ];
+  const porConta = Map.groupBy(enviar, t => t.conta);
+
+  // Prévia do próprio Actual (nada é gravado): casamento com lançamento
+  // manual (mesmo valor, até 7 dias, sem imported_id) ou com lançamento já
+  // conciliado, que fica travado.
+  for (const [nome, txs] of porConta) {
+    const p = await api.importTransactions(
+      ids[nome],
+      txs.map(t => paraTransacaoApi(t, catId, payeeTransfer)),
+      { defaultCleared: true, dryRun: true },
+    );
+    if (p.errors?.length) {
+      throw new Error(
+        `prévia ${nome}: ${JSON.stringify(p.errors).slice(0, 300)}`,
+      );
+    }
+    for (const u of p.updatedPreview) {
+      const t = txs.find(x => x.imported_id === u.transaction.imported_id);
+      if (u.existing) res.fusoes.push({ t, e: u.existing });
+      else if (u.ignored) res.travadas.push({ t });
+    }
+  }
+  const fundidas = new Set(res.fusoes.map(f => f.t));
+  const travadas = new Set(res.travadas.map(f => f.t));
+  const entram = enviar.filter(t => !fundidas.has(t) && !travadas.has(t));
+  for (const [nome, c] of Object.entries(controles.contas)) {
+    if (!c.saldo_final || !ids[nome]) continue;
+    const data = c.saldo_final.data;
+    const antes = await api.getAccountBalance(ids[nome], data);
+    const efeito = entram
+      .filter(t => t.data <= data)
+      .reduce(
+        (s, t) =>
+          s +
+          (t.conta === nome ? t.centavos : 0) -
+          (t.transferir_para === nome ? t.centavos : 0),
+        0,
+      );
+    res.saldos.push({
+      conta: nome,
+      data,
+      antes,
+      previsto: antes + efeito,
+      declarado: parseValor(c.saldo_final.valor),
+    });
+  }
+  if (!opts.confirmar) return res;
+  // Divergência ou suspeita sem resolução bloqueia o lote inteiro, antes de
+  // qualquer gravação. Resolver é explícito: corrigir o CSV ou o app,
+  // --importar-suspeitas ou --aplicar-parcial.
+  const semResolucao =
+    res.divergentes.length +
+    (opts['importar-suspeitas'] ? 0 : res.suspeitas.length);
+  if (semResolucao && !opts['aplicar-parcial']) {
+    res.bloqueado = true;
+    return res;
+  }
+
+  // Na fusão, o lançamento manual recebe só o imported_id e a descrição do
+  // banco. O Actual regravaria favorecido, categoria, notas e "conferido" com
+  // o valor que leu, e uma edição ainda não sincronizada de outro aparelho
+  // perderia para essa regravação.
+  for (const { t, e } of res.fusoes) {
+    await atualizarTransacao(lib, e.id, {
+      imported_id: t.imported_id,
+      imported_payee: t.descricao,
+    });
+  }
+  for (const [nome, txs] of porConta) {
+    const resto = txs.filter(t => !fundidas.has(t));
+    if (!resto.length) continue;
+    const r = await api.importTransactions(
+      ids[nome],
+      resto.map(t => paraTransacaoApi(t, catId, payeeTransfer)),
+      { defaultCleared: true, dryRun: false },
+    );
+    if (r.errors?.length) {
+      throw new Error(
+        `importação ${nome}: ${JSON.stringify(r.errors).slice(0, 300)}`,
+      );
+    }
+    const previstas = resto.filter(t => !travadas.has(t)).length;
+    if (r.updated.length || r.added.length !== previstas) {
+      res.falhas.push(
+        `${nome}: o Actual incluiu ${r.added.length} e alterou ${r.updated.length}; a prévia indicava ${previstas} e 0`,
+      );
+    }
+  }
+  if (!opts['sem-agendamentos']) {
+    // Inclusive os excluídos no app: agendamento apagado não volta.
+    const { data } = await api.aqlQuery(
+      api.q('schedules').select(['name']).withDead(),
+    );
+    const existentes = new Set(data.map(s => s.name));
+    await criarAgendamentos(api, plano, ids, existentes, res);
+  }
+  await api.sync();
+  res.aplicado = true;
+
+  // Conferência depois de sincronizar: nenhum imported_id do lote repetido, e
+  // cada linha incluída presente uma vez.
+  for (const c of plano.contas) {
+    const { data } = await api.aqlQuery(
+      api
+        .q('transactions')
+        .filter({ account: ids[c.nome] })
+        .select(['imported_id'])
+        .options({ splits: 'all' }),
+    );
+    const vezes = new Map();
+    for (const { imported_id: id } of data) {
+      if (id) vezes.set(id, (vezes.get(id) ?? 0) + 1);
+    }
+    for (const t of plano.transacoes.filter(x => x.conta === c.nome)) {
+      const k = vezes.get(t.imported_id) ?? 0;
+      if (k > 1 || ((entram.includes(t) || fundidas.has(t)) && k !== 1)) {
+        res.falhas.push(
+          `${t.origem}: imported_id ${t.imported_id} presente ${k} vez(es) depois da sincronização`,
+        );
+      }
+    }
+  }
+  for (const s of res.saldos) {
+    s.depois = await api.getAccountBalance(ids[s.conta], s.data);
+    if (s.depois !== s.previsto) {
+      res.falhas.push(
+        `saldo ${s.conta} em ${s.data}: ${fmt(s.depois)} ≠ previsto ${fmt(s.previsto)}`,
+      );
+    }
+  }
+  return res;
+}
+
+function imprimirAtualizacao(r, opts) {
+  const estado = r.aplicado
+    ? 'aplicado e sincronizado'
+    : r.bloqueado
+      ? 'BLOQUEADO: nada foi gravado'
+      : 'prévia: nada foi gravado';
+  out(`\nATUALIZAR (${estado}) — orçamento "${opts.orcamento}"`);
+  for (const [nome, n] of Object.entries(r.por_conta)) {
+    out(
+      `  ${nome}: ${n.lote} no lote | já no orçamento: ${n.ja_importadas} pelo id, ${n.equivalentes} pelo conteúdo | excluídas no app: ${n.excluidas} | novas: ${n.novas} | divergentes: ${n.divergentes} | suspeitas: ${n.suspeitas}`,
+    );
+  }
+  const linha = t => `${t.origem} ${t.data} ${fmt(t.centavos)} ${t.descricao}`;
+  const doOrcamento = e =>
+    `${e.date} ${fmt(e.amount)} ${e.imported_payee ?? ''}`.trim();
+  for (const { t, e } of r.fusoes) {
+    out(
+      `  MANUAL     ${linha(t)} — casa com o lançamento manual de ${e.date}${e.payee_name ? ` (${e.payee_name})` : ''}: ele recebe só o imported_id`,
+    );
+  }
+  for (const { t } of r.travadas) {
+    out(
+      `  TRAVADA    ${linha(t)} — casa com lançamento já conciliado no app: não entra`,
+    );
+  }
+  for (const { t, e } of r.divergentes) {
+    out(
+      `  DIVERGENTE ${linha(t)} — no orçamento: ${doOrcamento(e)}; mantido o do orçamento`,
+    );
+  }
+  for (const { t, e, igual } of r.suspeitas) {
+    out(
+      `  SUSPEITA   ${linha(t)} — ${igual ? `igual a ${doOrcamento(e)}, sem controle de saldo ou fatura que prove o lote completo` : `parece ${doOrcamento(e)}`}; ${opts['importar-suspeitas'] ? 'importada por --importar-suspeitas' : 'não importada'}`,
+    );
+  }
+  for (const { t } of r.excluidas) {
+    out(`  EXCLUÍDA   ${linha(t)} — excluída no app; não volta`);
+  }
+  for (const { conta, e } of r.ausentes) {
+    out(
+      `  AUSENTE    ${conta} ${doOrcamento(e)} — já importada, no período do lote, mas fora dele`,
+    );
+  }
+  for (const s of r.saldos) {
+    const valor = s.depois ?? s.previsto;
+    out(
+      `  [${valor === s.declarado ? 'ok' : 'DIVERGE'}] saldo ${s.conta} em ${s.data}: orçamento ${fmt(s.antes)} → ${fmt(valor)}${s.depois === undefined ? ' (previsto)' : ''} / declarado ${fmt(s.declarado)}`,
+    );
+  }
+  if (r.aplicado) {
+    out(
+      `  agendamentos: criados ${r.agendamentos_criados}, já existentes ${r.agendamentos_existentes}`,
+    );
+  } else if (r.bloqueado) {
+    out(
+      '  há divergência ou suspeita sem resolução: corrija o CSV ou o app e rode de novo; ou, depois de revisar, use --importar-suspeitas (suspeitas entram como novas) e/ou --aplicar-parcial (entram só as novas)',
+    );
+  } else {
+    out('  prévia: rode de novo com --confirmar para aplicar');
+  }
+  for (const f of r.falhas) out(`  FALHA ${f}`);
+}
+
+/** Itens que pedem revisão: o lote foi (ou seria) aplicado só em parte. */
+function pendencias(r, opts) {
+  return (
+    r.divergentes.length +
+    (opts['importar-suspeitas'] ? 0 : r.suspeitas.length) +
+    r.saldos.filter(s => (s.depois ?? s.previsto) !== s.declarado).length +
+    r.falhas.length
+  );
+}
+
 // ---------------------------------------------------------------- main
 
 async function main() {
   const { cmd, opts } = parseArgs(process.argv.slice(2));
-  if (!['validar', 'planejar', 'aplicar', 'conferir'].includes(cmd)) {
+  if (
+    !['validar', 'planejar', 'aplicar', 'conferir', 'atualizar'].includes(cmd)
+  ) {
     out(
-      'Uso: importar.mjs validar|planejar|aplicar|conferir --controles <json> [opções] <csv...>',
+      'Uso: importar.mjs validar|planejar|aplicar|conferir|atualizar --controles <json> [opções] <csv...>',
     );
     out('Veja deploy/importacao/README.md.');
     process.exit(cmd ? 2 : 0);
@@ -1222,6 +1730,7 @@ async function main() {
   if (cmd === 'aplicar' && !opts.confirmar) {
     sair('aplicar exige --confirmar (rode planejar antes e revise o plano)');
   }
+  if (cmd === 'atualizar') verificarServidor(opts);
   const api = carregarApi(opts.api);
   const marcador =
     cmd === 'aplicar' ? prepararDataDir(verificado) : verificado.marcador;
@@ -1230,32 +1739,56 @@ async function main() {
     opts.verbose,
   );
   let resultado;
+  const sessao = {};
   try {
-    const { criado, id } = await abrirOrcamento(
-      api,
-      opts,
-      cmd === 'aplicar',
-      verificado,
-      marcador,
-    );
-    if (cmd === 'aplicar') {
-      resultado = {
-        orcamento: { nome: opts.orcamento, id, criado },
-        ...(await aplicar(plano, api, opts)),
-      };
-      if (opts.exportar) {
-        if (dentroDe(opts.exportar, REPO_ROOT)) {
-          throw new Error('--exportar dentro do repositório');
-        }
-        fs.writeFileSync(opts.exportar, await api.exportBudget());
-        resultado.exportado = opts.exportar;
-      }
+    if (cmd === 'atualizar') {
+      const lib = await abrirOrcamentoServidor(api, opts, verificado, sessao);
+      resultado = await atualizar(plano, api, lib, opts, controles);
     } else {
-      resultado = await conferir(plano, api, controles);
+      const { lib, criado, id } = await abrirOrcamento(
+        api,
+        opts,
+        cmd === 'aplicar',
+        verificado,
+        marcador,
+      );
+      if (cmd === 'aplicar') {
+        resultado = {
+          orcamento: { nome: opts.orcamento, id, criado },
+          ...(await aplicar(plano, api, lib, opts)),
+        };
+        if (opts.exportar) {
+          if (dentroDe(opts.exportar, REPO_ROOT)) {
+            throw new Error('--exportar dentro do repositório');
+          }
+          fs.writeFileSync(opts.exportar, await api.exportBudget());
+          resultado.exportado = opts.exportar;
+        }
+      } else {
+        resultado = await conferir(plano, api, controles);
+      }
     }
   } finally {
-    await api.shutdown().catch(() => undefined);
+    if (sessao.lib && !resultado) {
+      // Erro no `atualizar`: fecha sem sincronizar (a cópia local é
+      // descartável). Não há atomicidade: o Actual sincroniza sozinho 1 s
+      // depois de cada gravação, então etapas anteriores podem já estar no
+      // servidor.
+      await sessao.lib.send('close-budget').catch(() => undefined);
+      if (opts.confirmar) {
+        process.stderr.write(
+          'se o erro veio durante a gravação, parte do lote pode já estar no servidor: rode o mesmo comando de novo (o que entrou é reconhecido pelo id e não duplica)\n',
+        );
+      }
+    } else {
+      await api.shutdown().catch(() => undefined);
+    }
     restaurar();
+  }
+  if (cmd === 'atualizar') {
+    imprimirAtualizacao(resultado, opts);
+    if (pendencias(resultado, opts)) process.exit(1);
+    return;
   }
   out(`\n${cmd.toUpperCase()}:`);
   if (cmd === 'aplicar') {
