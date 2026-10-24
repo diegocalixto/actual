@@ -7,6 +7,7 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { useHomeCategorySpending } from '#components/home/useHomeCategorySpending';
 import { useHomeMonth } from '#components/home/useHomeMonth';
 import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
+import { useMonthTotals } from '#components/home/v2/useMonthTotals';
 import { getPrettyPayee } from '#components/mobile/utils';
 import { iconForAccount, iconForCategory } from '#components/v2lab/LabStyle';
 import { useAccounts } from '#hooks/useAccounts';
@@ -20,7 +21,7 @@ import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useTransactions } from '#hooks/useTransactions';
 import * as queries from '#queries';
 import * as bindings from '#spreadsheet/bindings';
-import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
+import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { hueForId } from './overviewPresentation';
 import type {
@@ -63,28 +64,30 @@ export function useRealOverviewData(): OverviewData {
   );
 
   // --- This month -----------------------------------------------------------
-  const totalIncome = useHomeSheetCell(
-    sheetName,
-    isTracking ? trackingBudget.totalIncome : envelopeBudget.totalIncome,
-  );
-  const totalSpent = useHomeSheetCell(
-    sheetName,
-    isTracking ? trackingBudget.totalSpent : envelopeBudget.totalSpent,
-  );
+  // Read under the rules in `@actual-app/core/shared/month-indicators`, the same ones the
+  // Reports print: classified receipts, spending with and without a category,
+  // refunds netted, transfers and starting balances out. The budget engine's
+  // own month cells stay on the Budget screen, where they mean what they say.
+  const {
+    income: classifiedIncome,
+    spent: monthSpent,
+    net: monthNet,
+    details: monthDetails,
+    isLoading: isMonthTotalsLoading,
+  } = useMonthTotals(month);
 
   const monthTotals = useMemo(() => {
-    if (totalIncome === null || totalSpent === null) {
+    if (classifiedIncome === null || monthSpent === null || monthNet === null) {
       return null;
     }
 
     return {
-      income: totalIncome,
-      spent: totalSpent,
-      // `totalSpent` is already negative, so the month's result is a sum.
-      net: totalIncome + totalSpent,
+      income: classifiedIncome,
+      spent: monthSpent,
+      net: monthNet,
       label: monthUtils.format(month, "MMMM ''yy", locale),
     };
-  }, [totalIncome, totalSpent, month, locale]);
+  }, [classifiedIncome, monthSpent, monthNet, month, locale]);
 
   // --- Accounts -------------------------------------------------------------
   const { data: onBudgetAccounts = [], isLoading: isOnBudgetLoading } =
@@ -108,8 +111,13 @@ export function useRealOverviewData(): OverviewData {
   );
 
   // --- Spending -------------------------------------------------------------
-  const { categories: spendingCategories, isLoading: isSpendingLoading } =
-    useHomeCategorySpending({ sheetName, budgetType, limit: 6 });
+  const {
+    categories: spendingCategories,
+    credits: spendingCredits,
+    outflows: spendingOutflows,
+    totalSpent,
+    isLoading: isSpendingLoading,
+  } = useHomeCategorySpending({ month, limit: 6 });
 
   const categories: OverviewCategory[] = useMemo(
     () =>
@@ -119,8 +127,24 @@ export function useRealOverviewData(): OverviewData {
         Icon: iconForCategory(entry.category.name),
         hue: hueForId(entry.category.id),
         amount: entry.amount,
+        isUncategorized: entry.isUncategorized,
       })),
     [spendingCategories],
+  );
+
+  // What the ranked rows do not add up to on their own. The panel states the
+  // subtraction rather than letting the list disagree with the summary above
+  // it.
+  const spendingComposition = useMemo(
+    () =>
+      totalSpent === null
+        ? null
+        : {
+            credits: spendingCredits,
+            outflows: spendingOutflows,
+            net: totalSpent,
+          },
+    [spendingCredits, spendingOutflows, totalSpent],
   );
 
   // --- Recent activity ------------------------------------------------------
@@ -173,11 +197,13 @@ export function useRealOverviewData(): OverviewData {
   return {
     balances: { available, toBudget },
     monthTotals,
+    monthDetails,
     accounts,
     categories,
+    spendingComposition,
     movements,
     isAccountsLoading: isOnBudgetLoading || isOffBudgetLoading,
-    isMonthLoading: totalIncome === null || totalSpent === null,
+    isMonthLoading: isMonthTotalsLoading || monthTotals === null,
     isSpendingLoading,
     isActivityLoading,
   };

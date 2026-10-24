@@ -81,13 +81,19 @@ export function HomeMobileMonthMetric({
         containerType: 'inline-size',
       }}
     >
+      {/* Two lines reserved in every column, whether its label needs them or
+          not: that keeps the three figures on one baseline while a longer
+          label wraps instead of being cut. "Receitas classificadas" does not
+          fit a third of a phone on one line, and cutting it would hide which
+          receipts the figure is about. */}
       <Text
         style={{
           fontSize: 9.5,
           fontWeight: 600,
           letterSpacing: 0.9,
           textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
+          lineHeight: 1.25,
+          minHeight: '2.5em',
           color: 'var(--dfl-text-3)',
         }}
       >

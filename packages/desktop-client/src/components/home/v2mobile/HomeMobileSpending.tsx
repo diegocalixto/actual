@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
@@ -8,15 +9,14 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import { useHomeCategorySpending } from '#components/home/useHomeCategorySpending';
-import type { HomeBudgetType } from '#components/home/useHomeMonth';
 import { useNavigate } from '#hooks/useNavigate';
 
 import { HomeMobileMoney } from './HomeMobileMoney';
 import { HomeMobileSpendingRow } from './HomeMobileSpendingRow';
 
 type HomeMobileSpendingProps = {
-  sheetName: string;
-  budgetType: HomeBudgetType;
+  /** `YYYY-MM`. */
+  month: string;
 };
 
 /**
@@ -30,19 +30,18 @@ type HomeMobileSpendingProps = {
  * previous Home's "See in budget" button had — folded into the header so the
  * chevron the approved composition draws there means something instead of
  * sitting on the panel as decoration.
+ *
+ * Outflows without a category are a row like any other, named "Sem
+ * categoria", and the one row that opens somewhere else: the list of
+ * transactions still waiting for one.
  */
-export function HomeMobileSpending({
-  sheetName,
-  budgetType,
-}: HomeMobileSpendingProps) {
+export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { categories, totalSpent, isLoading } = useHomeCategorySpending({
-    sheetName,
-    budgetType,
-  });
+  const { categories, credits, outflows, credited, totalSpent, isLoading } =
+    useHomeCategorySpending({ month });
 
-  const denominator = totalSpent !== null && totalSpent < 0 ? totalSpent : null;
+  const hasRows = categories.length > 0 || credits.length > 0;
 
   return (
     <View
@@ -115,7 +114,7 @@ export function HomeMobileSpending({
         </View>
       </Button>
 
-      {categories.length === 0 ? (
+      {!hasRows ? (
         <View style={{ alignItems: 'center', padding: '18px 14px' }}>
           <Text
             style={{
@@ -133,15 +132,122 @@ export function HomeMobileSpending({
         </View>
       ) : (
         <View style={{ paddingTop: 2, paddingBottom: 4 }}>
-          {categories.map(entry => (
-            <HomeMobileSpendingRow
-              key={entry.category.id}
-              entry={entry}
-              denominator={denominator}
-            />
-          ))}
+          {categories.map(entry =>
+            entry.isUncategorized ? (
+              <Button
+                key={entry.category.id}
+                variant="bare"
+                aria-label={t('Revisar as transações sem categoria')}
+                onPress={() => void navigate('/accounts/uncategorized')}
+                className={css({
+                  width: '100%',
+                  padding: 0,
+                  borderRadius: 0,
+                  textAlign: 'left',
+                  '&[data-pressed]': { backgroundColor: 'var(--dfl-inset)' },
+                })}
+              >
+                <HomeMobileSpendingRow entry={entry} outflows={outflows} />
+              </Button>
+            ) : (
+              <HomeMobileSpendingRow
+                key={entry.category.id}
+                entry={entry}
+                outflows={outflows}
+              />
+            ),
+          )}
+
+          {credited > 0 && (
+            <View
+              style={{
+                margin: '6px 14px 2px',
+                paddingTop: 10,
+                gap: 6,
+                borderTop: '1px solid var(--dfl-line)',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  letterSpacing: 1.2,
+                  textTransform: 'uppercase',
+                  color: 'var(--dfl-text-3)',
+                }}
+              >
+                <Trans>Refunds that lower the total</Trans>
+              </Text>
+
+              {credits.map(credit => (
+                <SpendingCompositionLine
+                  key={credit.id}
+                  label={credit.name}
+                  value={credit.amount}
+                  positive
+                />
+              ))}
+
+              {/* The subtraction behind the figure in the header, so the list
+                  explains it instead of contradicting it. */}
+              <SpendingCompositionLine
+                label={<Trans>Month outflows</Trans>}
+                value={-outflows}
+              />
+              <SpendingCompositionLine
+                label={<Trans>Net spending</Trans>}
+                value={totalSpent}
+                emphasized
+              />
+            </View>
+          )}
         </View>
       )}
+    </View>
+  );
+}
+
+type SpendingCompositionLineProps = {
+  label: ReactNode;
+  value: number | null;
+  positive?: boolean;
+  emphasized?: boolean;
+};
+
+/** One line of what the month's spending is made of. */
+function SpendingCompositionLine({
+  label,
+  value,
+  positive = false,
+  emphasized = false,
+}: SpendingCompositionLineProps) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 12,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 12.5,
+          fontWeight: emphasized ? 600 : 400,
+          color: emphasized ? 'var(--dfl-text)' : 'var(--dfl-text-2)',
+        }}
+      >
+        {label}
+      </Text>
+      <HomeMobileMoney
+        value={value}
+        withCurrency
+        style={{
+          fontSize: 12.5,
+          fontWeight: emphasized ? 700 : 600,
+          color: positive ? 'var(--dfl-positive)' : 'var(--dfl-text)',
+        }}
+      />
     </View>
   );
 }

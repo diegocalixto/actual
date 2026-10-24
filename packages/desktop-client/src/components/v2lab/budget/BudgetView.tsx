@@ -71,6 +71,13 @@ export type BudgetViewData = {
    */
   totalBudgeted: number | null;
   totalSpent: number | null;
+  /**
+   * One line under the band saying what its figures are and are not — the
+   * engine's own income and categorized spending — and how much of the
+   * month's spending has no category and so is not in them. Absent ⇒ the
+   * laboratory, which has no month to say it about.
+   */
+  bandNote?: ReactNode;
   /** Absent ⇒ rows have no trailing control at all. */
   envelopeActions?: EnvelopeActions;
   envelopes: LabEnvelope[];
@@ -171,6 +178,19 @@ export function BudgetView({ data }: { data: BudgetViewData }) {
           spent={bandSpent}
           toDistribute={data.toDistribute}
         />
+
+        {data.bandNote && (
+          <Text
+            style={{
+              fontSize: 12,
+              lineHeight: 1.45,
+              paddingLeft: 2,
+              color: 'var(--dfl-text-3)',
+            }}
+          >
+            {data.bandNote}
+          </Text>
+        )}
 
         {/* The approved split holds wherever both columns fit. Each carries
             the least width it works at, so a window too narrow for the pair

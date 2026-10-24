@@ -30,7 +30,8 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Good evening': 'Boa noite',
     Overview: 'Visão geral',
     Available: 'Disponível',
-    'Sum of on-budget accounts': 'Soma das contas no orçamento',
+    'Sum of on-budget accounts':
+      'Contas no orçamento somadas, cartões já descontados',
     'Total balance': 'Saldo total',
     'Loading accounts…': 'Carregando contas…',
     'No accounts yet': 'Nenhuma conta ainda',
@@ -40,6 +41,38 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Money in': 'Receitas',
     'Money out': 'Despesas',
     'Monthly net': 'Saldo do mês',
+    // The month under the shared counting rules (`@actual-app/core/shared/month-indicators`):
+    // the income the month is judged by, the spending with and without a
+    // category, and what the first left after the second — a result for the
+    // month, not the growth of a net worth.
+    'Classified receipts': 'Receitas classificadas',
+    Spending: 'Gastos',
+    'Result of classified receipts': 'Resultado das receitas classificadas',
+    // The tile's own title is short because the tile gives it one line; the
+    // strip under the four tiles is where the figure is defined.
+    Result: 'Resultado',
+    'Extraordinary inflows, outside the classified receipts':
+      'Entradas extraordinárias, fora das receitas classificadas',
+    'Result including extraordinary inflows':
+      'Resultado incluindo entradas extraordinárias',
+    'Inflows awaiting a category, counted nowhere':
+      'Entradas a revisar (sem categoria), fora dos totais',
+    'Uncategorized, already included in spending':
+      'Sem categoria, já incluído nos gastos',
+    'Refunds, already deducted from spending':
+      'Estornos, já abatidos dos gastos',
+    // The composition of the month's spending, when a category gave back more
+    // than it took: the list has to show the subtraction or its rows would add
+    // up to more than the figure above them.
+    'Refunds that lower the total': 'Devoluções que abatem o total',
+    'Month outflows': 'Saídas do mês',
+    Refunds: 'Devoluções',
+    'Net spending': 'Gastos do mês',
+    'Outflows listed by category': 'Saídas listadas por categoria',
+    'Provisional result while inflows await a category':
+      'Resultado provisório: há entradas a revisar',
+    'Review the transactions without a category':
+      'Revisar as transações sem categoria',
     'Spending by category': 'Despesas por categoria',
     'Loading spending…': 'Carregando despesas…',
     'No spending recorded this month.': 'Nenhuma despesa registrada neste mês.',
@@ -49,7 +82,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Open transaction {{title}}': 'Abrir transação {{title}}',
 
     // Home dashboard V2 — strings introduced by the new Overview composition.
-    'Available balance': 'Saldo disponível',
+    // The hero's figure is the sum of the budget's accounts, credit cards'
+    // debt included: what is in the accounts, not what is free to spend.
+    'Available balance': 'Saldo nas contas',
     'New transaction': 'Nova transação',
     'Spending this month': 'Despesas do mês',
     'See in budget': 'Ver no orçamento',
@@ -634,6 +669,13 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Close: 'Fechar',
     'Modal dialog': 'Caixa de diálogo modal',
 
+    // Budget — the line under the band, which says what the engine's figures
+    // are and names the spending they leave out.
+    'Envelope figures: income here includes starting balances and extraordinary inflows, and spending only what has a category. Uncategorized spending this month, not in these figures: {{uncategorizedAmount}}.':
+      'Números do orçamento por envelopes: as receitas aqui incluem saldos iniciais e entradas extraordinárias, e o gasto só o que tem categoria. Gasto sem categoria neste mês, fora destes números: {{uncategorizedAmount}}.',
+    'Envelope figures: income here includes starting balances and extraordinary inflows, and spending only what has a category. Nothing is uncategorized this month.':
+      'Números do orçamento por envelopes: as receitas aqui incluem saldos iniciais e entradas extraordinárias, e o gasto só o que tem categoria. Nada está sem categoria neste mês.',
+
     // Home.
     'This month': 'Este mês',
     'Loading this month…': 'Carregando o mês…',
@@ -673,6 +715,22 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Total expenses': 'Total de despesas',
     // Not "Saldo total", which on the Accounts page is the sum of the balances.
     'Total net result': 'Resultado líquido do período',
+    // The Reports under the shared counting rules. "Taxa de poupança" keeps
+    // its name; the strip under the tiles says it is taken on the regular
+    // income.
+    'Classified receipts, spending and result':
+      'Receitas classificadas, gastos e resultado',
+    'Total classified receipts': 'Total das receitas classificadas',
+    'Total spending': 'Total de gastos',
+    'Result of classified receipts for the period':
+      'Resultado das receitas classificadas no período',
+    'How this page counts: transfers between your own accounts and starting balances are neither income nor spending; a refund lowers the spending it undoes, and a category refunded more than it was spent lowers the total; spending without a category is counted and shown as such; an inflow without a category is listed for review and counted nowhere; income in a category or group whose note carries the #extraordinária tag stays outside the classified receipts. "Resultado" is the classified receipts less the spending: neither the extraordinary inflows nor the inflows awaiting a category are in it, and it is not the growth of your net worth.':
+      'Como esta página conta: transferências entre as suas contas e saldos iniciais não são receita nem gasto; um estorno abate o gasto que desfaz, e categoria que devolveu mais do que gastou abate o total; gasto sem categoria é contado e mostrado como tal; entrada sem categoria fica listada para revisão e não entra em nenhum total; receita em categoria ou grupo cuja nota traz a tag #extraordinária fica fora das receitas classificadas. O "Resultado" é as receitas classificadas menos os gastos: nem as entradas extraordinárias nem as entradas a revisar entram nele, e ele não é o crescimento do seu patrimônio.',
+    '{{month}} may be incomplete': '{{month}} pode estar incompleto',
+    '{{month}} may be incomplete and is still in progress':
+      '{{month}} pode estar incompleto e ainda está em andamento',
+    '{{month}} still in progress': '{{month}} ainda em andamento',
+    'Partial months: {{parts}}.': 'Meses parciais: {{parts}}.',
     'Top categories': 'Principais categorias',
     'Where your money went': 'Para onde foi o seu dinheiro',
     Category: 'Categoria',
@@ -685,6 +743,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Income (avg)': 'Receitas (média)',
     'Expenses (avg)': 'Despesas (média)',
     'Net Result (avg)': 'Resultado líquido (média)',
+    'Classified receipts (avg)': 'Receitas classificadas (média)',
+    'Spending (avg)': 'Gastos (média)',
+    'Result (avg)': 'Resultado (média)',
     'View full comparison': 'Ver comparativo completo',
     'Loading the period…': 'Carregando o período…',
     'No transactions in this period.': 'Nenhuma transação neste período.',

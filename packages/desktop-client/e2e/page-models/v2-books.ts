@@ -56,35 +56,35 @@ const LABELS = {
     home: {
       available: 'Available balance',
       toDistribute: 'To Budget',
-      income: 'Money in',
-      spent: 'Money out',
-      net: 'Monthly net',
+      income: 'Classified receipts',
+      spent: 'Spending',
+      net: 'Result of classified receipts',
       total: 'Total',
     },
     budget: {
       toDistribute: 'Para distribuir',
       budgeted: 'Orçado',
-      spent: 'Gasto',
+      spent: 'Gasto categorizado',
       income: 'Receitas',
-      monthResult: 'Saldo do mês',
+      monthResult: 'Receitas − gasto',
     },
     accounts: { onBudget: 'On budget', offBudget: 'Off budget' },
   },
   mobile: {
     home: {
-      available: 'Saldo disponível',
+      available: 'Saldo nas contas',
       toDistribute: 'Para distribuir',
-      income: 'Receitas',
-      spent: 'Despesas',
-      net: 'Saldo do mês',
+      income: 'Receitas classificadas',
+      spent: 'Gastos',
+      net: 'Resultado',
       total: 'Total',
     },
     budget: {
       toDistribute: 'Para distribuir',
       budgeted: 'Orçado',
-      spent: 'Gasto',
+      spent: 'Gasto categorizado',
       income: 'Total recebido',
-      monthResult: 'Saldo do mês',
+      monthResult: 'Receitas − gasto',
     },
     accounts: { onBudget: 'No orçamento', offBudget: 'Fora do orçamento' },
   },
@@ -97,9 +97,10 @@ const LABELS = {
 const OVERBUDGETED = 'Orçado a mais';
 
 const REPORTS_LABELS = {
-  income: 'Income',
-  expenses: 'Expenses',
-  net: 'Net Result',
+  income: 'Classified receipts',
+  expenses: 'Spending',
+  // The tile's title is short; the page defines it in the strip below.
+  net: 'Result',
 };
 
 /** "R$ 1.234,56", "-R$312.500,00", "R$-60,00" or "1,234.56", as cents. */

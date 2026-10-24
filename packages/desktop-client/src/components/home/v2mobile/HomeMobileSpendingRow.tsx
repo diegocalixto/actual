@@ -14,13 +14,11 @@ import { currencySymbol, formatAmount } from './mobileMoneyFormat';
 type HomeMobileSpendingRowProps = {
   entry: HomeCategorySpending;
   /**
-   * The month's official `total-spent` cell when it is an outflow, else `null`.
-   * Shares are taken against the month's own total rather than the sum of the
-   * rows shown, which is the financially correct denominator — and also why the
-   * visible shares need not add up to 100%: refunded categories are left out of
-   * the list but still counted in the total.
+   * The month's outflows, positive: the base this row is a share of. Taken on
+   * the month's net total instead, a category refunded elsewhere would claim
+   * more than the whole month; the refunds are reported under the list.
    */
-  denominator: number | null;
+  outflows: number;
 };
 
 /**
@@ -33,18 +31,16 @@ type HomeMobileSpendingRowProps = {
  */
 export function HomeMobileSpendingRow({
   entry,
-  denominator,
+  outflows,
 }: HomeMobileSpendingRowProps) {
   const Icon = iconForCategory(entry.category.name);
 
-  // Both values are negative, so the ratio comes out positive.
-  const share = denominator === null ? null : entry.amount / denominator;
-  const barWidth = share === null ? 0 : Math.min(Math.max(share, 0.02), 1);
-  // A share above 100% is real — refunds elsewhere can shrink the month's net
-  // total below a single category's outflow — but printing "118%" reads as a
-  // bug, so the bar saturates and the number is left off.
-  const percent =
-    share !== null && share >= 0 && share <= 1 ? Math.round(share * 100) : null;
+  // The row's amount carries Actual's sign; the base does not.
+  const share = outflows > 0 ? Math.abs(entry.amount) / outflows : 0;
+  // A floor so a very small share still draws something. No ceiling: on this
+  // base a share cannot pass 1, so there is nothing to saturate away.
+  const barWidth = share === 0 ? 0 : Math.max(share, 0.02);
+  const percent = outflows > 0 ? Math.round(share * 100) : null;
 
   const amount = `${currencySymbol()} ${formatAmount(Math.abs(entry.amount))}`;
 

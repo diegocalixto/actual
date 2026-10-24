@@ -121,7 +121,7 @@ export function BudgetBand({
         </View>
 
         <Metric
-          label={<Trans>Gasto</Trans>}
+          label={<Trans>Gasto categorizado</Trans>}
           value={spent}
           figureSize={figureSize}
           share={shareOf(spent)}
@@ -129,7 +129,7 @@ export function BudgetBand({
         />
         <Divider />
         <Metric
-          label={<Trans>Saldo do mês</Trans>}
+          label={<Trans>Receitas − gasto</Trans>}
           value={available}
           figureSize={figureSize}
           share={shareOf(available)}

@@ -89,7 +89,7 @@ export function HomeMobilePage({
     sheetName,
     budgetType,
   );
-  const { income, spent, net } = useMonthTotals(sheetName, budgetType);
+  const { income, spent, net, details } = useMonthTotals(month);
 
   return (
     <Page
@@ -161,7 +161,12 @@ export function HomeMobilePage({
               </Text>
             }
           />
-          <HomeMobileMonthSummary income={income} spent={spent} net={net} />
+          <HomeMobileMonthSummary
+            income={income}
+            spent={spent}
+            net={net}
+            details={details}
+          />
         </View>
 
         <HomeMobileAccounts
@@ -170,7 +175,7 @@ export function HomeMobilePage({
           total={total}
         />
 
-        <HomeMobileSpending sheetName={sheetName} budgetType={budgetType} />
+        <HomeMobileSpending month={month} />
 
         {/* The previous Home's two cards paint with the app theme, which is
             white under a light appearance; this scope hands them the page's

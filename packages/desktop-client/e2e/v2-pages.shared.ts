@@ -291,9 +291,11 @@ export function describeV2Pages(layout: V2Layout) {
         ).toBeVisible();
       }
       for (const indicator of [
-        'Income',
-        'Expenses',
-        'Net Result',
+        'Classified receipts',
+        'Spending',
+        // Short in the tile, which gives its title one line; the full name is
+        // on the chart's legend and the strip under the tiles defines it.
+        'Result',
         'Savings Rate',
       ]) {
         await expect(
@@ -303,7 +305,7 @@ export function describeV2Pages(layout: V2Layout) {
       // The period has transactions, so the chart is drawn and not its
       // empty state.
       await expect(
-        shell.main.getByText('Income, Expenses & Net Result'),
+        shell.main.getByText('Classified receipts, spending and result'),
       ).toBeVisible();
       await expect(
         shell.main.getByText('No transactions in this period.'),
@@ -910,7 +912,7 @@ export function describeV2Pages(layout: V2Layout) {
           shell.main.getByText('No transactions in this period.'),
         ).toBeVisible();
         await expect(
-          shell.main.getByText('Income, Expenses & Net Result'),
+          shell.main.getByText('Classified receipts, spending and result'),
         ).toHaveCount(0);
         await expect(
           shell.main.getByRole('heading', {

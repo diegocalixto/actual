@@ -154,13 +154,17 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await goTo('Início');
 
       await expectLabels([
-        'Saldo disponível',
-        'Soma das contas no orçamento',
+        'Saldo nas contas',
+        'Contas no orçamento somadas, cartões já descontados',
         'Para distribuir',
         'Este mês',
-        'Receitas',
-        'Despesas',
-        'Saldo do mês',
+        'Receitas classificadas',
+        'Gastos',
+        // The desktop says the result in full; the phone's third of a row
+        // holds one word of it.
+        layout === 'desktop'
+          ? 'Resultado das receitas classificadas'
+          : 'Resultado',
         'Contas',
         'Despesas do mês',
         'Transações recentes',
@@ -170,9 +174,13 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         'Available balance',
         'To Budget',
         'This month',
+        'Classified receipts',
+        'Spending',
+        'Result of classified receipts',
         'Money in',
         'Money out',
         'Monthly net',
+        'Saldo do mês',
         'Accounts',
         'Spending this month',
         'Recent activity',
@@ -191,8 +199,8 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await expectLabels([
         'Para distribuir',
         'Orçado',
-        'Gasto',
-        'Saldo do mês',
+        'Gasto categorizado',
+        'Receitas − gasto',
       ]);
       if (layout === 'desktop') {
         await expectLabels([
@@ -201,6 +209,10 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
           'Disponível',
           'Transações recentes',
         ]);
+        // The line under the band names the engine's figures for what they are.
+        await expect(
+          main.getByText(/^Números do orçamento por envelopes:/),
+        ).toBeVisible();
         await expect(main.getByText('Janeiro de 2017')).toBeVisible();
       } else {
         await expectLabels(['do orçado']);
@@ -208,8 +220,15 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
           page.getByRole('button', { name: 'Ações do mês' }),
         ).toHaveText(/Janeiro 2017/);
       }
-      // "Planejado" and "Renda" were second names for "Orçado" and "Receitas".
-      await expectAbsent(['Planejado', 'Renda', 'Atividade recente']);
+      // "Planejado" and "Renda" were second names for "Orçado" and "Receitas";
+      // "Saldo do mês" promised a balance the band's figure is not. (The bare
+      // "Gasto" stays: it is the envelope list's column.)
+      await expectAbsent([
+        'Planejado',
+        'Renda',
+        'Atividade recente',
+        'Saldo do mês',
+      ]);
     });
 
     test('Accounts is labelled in Portuguese, and money is written in reais', async () => {
@@ -264,20 +283,25 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         ).toBeVisible();
       }
       await expectLabels([
-        'Receitas',
-        'Despesas',
-        'Resultado líquido',
+        'Receitas classificadas',
+        'Gastos',
+        // The tile's title, short; the full name is still on the page, on the
+        // chart's legend, and the strip under the tiles defines the figure.
+        'Resultado',
+        'Resultado das receitas classificadas',
         'Taxa de poupança',
-        'Receitas, despesas e resultado líquido',
-        'Receitas (média)',
-        'Despesas (média)',
-        'Resultado líquido (média)',
+        'Receitas classificadas, gastos e resultado',
+        'Receitas classificadas (média)',
+        'Gastos (média)',
+        'Resultado (média)',
       ]);
+      // The strip under the tiles states the counting rules, in Portuguese.
+      await expect(main.getByText(/^Como esta página conta:/)).toBeVisible();
       if (layout === 'desktop') {
         await expectLabels([
-          'Total de receitas',
-          'Total de despesas',
-          'Resultado líquido do período',
+          'Total das receitas classificadas',
+          'Total de gastos',
+          'Resultado das receitas classificadas no período',
           'Para onde foi o seu dinheiro',
           'Categoria',
           'Valor',
@@ -319,6 +343,13 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
         'Expenses',
         'Net Result',
         'Savings Rate',
+        'Classified receipts',
+        'Spending',
+        'Result of classified receipts',
+        'Classified receipts, spending and result',
+        'Total classified receipts',
+        'Total spending',
+        'Result of classified receipts for the period',
         'Income, Expenses & Net Result',
         'Total income',
         'Total expenses',

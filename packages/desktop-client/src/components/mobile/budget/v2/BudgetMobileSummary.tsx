@@ -1,14 +1,17 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
+import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 
 import { useSheetValue } from '#hooks/useSheetValue';
+import { useMonthIndicators } from '#reports/useMonthIndicators';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import { BudgetMobileHero } from './BudgetMobileHero';
 import { BudgetMobileMetrics } from './BudgetMobileMetrics';
+import { formatCurrency } from './budgetMobileMoney';
 import { budgetLayout } from './BudgetMobileStyle';
 import { useBudgetMobileTotals } from './useBudgetMobileTotals';
 
@@ -34,6 +37,13 @@ export function BudgetMobileSummary({
   onShowBudgetSummary,
 }: BudgetMobileSummaryProps) {
   const totals = useBudgetMobileTotals(month, budgetType);
+  // The three figures above are the engine's own month. This says so, and
+  // names the one thing they cannot see — the month's spending with no
+  // category — in the same words the desktop's Budget uses, so the two layouts
+  // make the same statement about the same figures.
+  const { totals: monthTotals } = useMonthIndicators(month);
+  const uncategorized = monthTotals?.uncategorizedSpending ?? 0;
+  const uncategorizedAmount = formatCurrency(uncategorized);
 
   return (
     <View
@@ -67,6 +77,31 @@ export function BudgetMobileSummary({
         monthBalance={totals.monthBalance}
         income={totals.income}
       />
+
+      {monthTotals !== null && (
+        <Text
+          style={{
+            fontSize: 11.5,
+            lineHeight: 1.45,
+            color: 'var(--dfl-text-3)',
+          }}
+        >
+          {uncategorized > 0 ? (
+            <Trans>
+              Envelope figures: income here includes starting balances and
+              extraordinary inflows, and spending only what has a category.
+              Uncategorized spending this month, not in these figures:{' '}
+              {{ uncategorizedAmount }}.
+            </Trans>
+          ) : (
+            <Trans>
+              Envelope figures: income here includes starting balances and
+              extraordinary inflows, and spending only what has a category.
+              Nothing is uncategorized this month.
+            </Trans>
+          )}
+        </Text>
+      )}
     </View>
   );
 }
@@ -103,7 +138,7 @@ function EnvelopeHero({ usedPercent, onPress }: HeroVariantProps) {
         isOverbudgeted ? (
           <Trans>Você orçou mais do que tem disponível</Trans>
         ) : (
-          <Trans>Dinheiro disponível no orçamento</Trans>
+          <Trans>Entradas ainda não reservadas em envelopes</Trans>
         )
       }
       amount={amount}

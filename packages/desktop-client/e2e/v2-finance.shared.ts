@@ -116,13 +116,20 @@ function budgetOf({ month }: Ledger): BudgetBooks {
  * what the expense categories paid out. Its balance is the money inside the
  * budget, and its total every open account.
  */
+/**
+ * Início reads the month through the shared counting rules, the same ones
+ * Relatórios reads — not the budget engine's cells, which stay on the Budget.
+ * So its three figures are the month's cash flow: what came into the on-budget
+ * accounts and what left them, transfers and starting balances aside. A
+ * transfer out of the budget is spending for the Budget and not for this.
+ */
 function homeOf(ledger: Ledger): HomeBooks {
   return {
     available: ledger.onBudget,
     toDistribute: ledger.month.toDistribute,
-    income: ledger.month.income,
-    spent: ledger.month.spent,
-    net: ledger.month.income - ledger.month.spent,
+    income: ledger.month.classifiedIncome,
+    spent: ledger.month.netSpending,
+    net: ledger.month.classifiedIncome - ledger.month.netSpending,
     total: ledger.total,
     balances: Object.fromEntries(
       ACCOUNTS.map(name => [name, ledger.balances[name]]),
@@ -131,15 +138,16 @@ function homeOf(ledger: Ledger): HomeBooks {
 }
 
 /**
- * The Reports read the month as a cash flow: what came into the on-budget
- * accounts and what left them, transfers aside. That is not the Budget's
- * "spent" — a transfer out of the budget is spending there and not here.
+ * Relatórios prints the same month Início does, under the same rules: the cash
+ * flow of the on-budget accounts, transfers and starting balances aside. That
+ * is not the Budget's "spent" — a transfer out of the budget is spending there
+ * and not here.
  */
 function reportsOf({ month }: Ledger): ReportsBooks {
   return {
-    income: month.cashIn,
-    expenses: month.cashOut,
-    net: month.cashIn - month.cashOut,
+    income: month.classifiedIncome,
+    expenses: month.netSpending,
+    net: month.classifiedIncome - month.netSpending,
   };
 }
 
@@ -352,8 +360,8 @@ export function describeV2Finance(layout: V2Layout) {
       // another name.
       const lastMonth = await ledger.read(LAST_MONTH);
       expect(reportsOf(lastMonth)).not.toEqual(reportsOf(opening));
-      expect(lastMonth.month.cashIn).toBeGreaterThan(0);
-      expect(lastMonth.month.cashOut).toBeGreaterThan(0);
+      expect(lastMonth.month.classifiedIncome).toBeGreaterThan(0);
+      expect(lastMonth.month.netSpending).toBeGreaterThan(0);
 
       await shell.goTo('reports');
       const period = page.getByRole('button', { name: /^Period: / });
@@ -436,7 +444,7 @@ export function describeV2Finance(layout: V2Layout) {
         file.transactionCount += 1;
         move(file, SAVINGS, -1234);
         file.month.spent += 1234;
-        file.month.cashOut += 1234;
+        file.month.netSpending += 1234;
         file.month.categories.Food.spent += 1234;
         file.month.categories.Food.available -= 1234;
       });
@@ -458,7 +466,7 @@ export function describeV2Finance(layout: V2Layout) {
         file.transactionCount += 1;
         move(file, SAVINGS, 10005);
         file.month.income += 10005;
-        file.month.cashIn += 10005;
+        file.month.classifiedIncome += 10005;
         // Income nobody has planned yet is money left to distribute.
         file.month.toDistribute += 10005;
       });
@@ -479,7 +487,7 @@ export function describeV2Finance(layout: V2Layout) {
       const repriced = await fileAfter(before, file => {
         move(file, SAVINGS, -3333);
         file.month.spent += 3333;
-        file.month.cashOut += 3333;
+        file.month.netSpending += 3333;
         file.month.categories.Food.spent += 3333;
         file.month.categories.Food.available -= 3333;
       });
@@ -582,8 +590,8 @@ export function describeV2Finance(layout: V2Layout) {
         file.month.spent += 5000;
         file.month.categories.General.spent += 5000;
         file.month.categories.General.available -= 5000;
-        // …but it is still the person's own money: `cashOut` does not move,
-        // and neither does anything the Reports print.
+        // …but it is still the person's own money: `netSpending` does not move,
+        // and so neither Início nor Relatórios moves either.
       });
       expect(after.total).toBe(before.total);
       expect(after.onBudget).toBe(before.onBudget - 5000);
@@ -761,7 +769,7 @@ export function describeV2Finance(layout: V2Layout) {
           file.transactionCount += 1;
           move(file, SAVINGS, -3000);
           file.month.spent += 3000;
-          file.month.cashOut += 3000;
+          file.month.netSpending += 3000;
           file.month.categories.Food.spent += 2000;
           file.month.categories.Food.available -= 2000;
           file.month.categories.Restaurants.spent += 1000;
@@ -792,7 +800,7 @@ export function describeV2Finance(layout: V2Layout) {
       const after = await fileAfter(before, file => {
         file.transactionCount += 1;
         move(file, SAVINGS, -3210);
-        file.month.cashOut += 3210;
+        file.month.netSpending += 3210;
       });
       expect(after.month.spent).toBe(before.month.spent);
       await expectPagesToAgree(after);
@@ -856,7 +864,7 @@ export function describeV2Finance(layout: V2Layout) {
         file.transactionCount += 1;
         move(file, WALLET, -25075);
         file.month.spent += 25075;
-        file.month.cashOut += 25075;
+        file.month.netSpending += 25075;
         file.month.categories.Food.spent += 25075;
         file.month.categories.Food.available -= 25075;
       });
@@ -1083,7 +1091,7 @@ export function describeV2Finance(layout: V2Layout) {
           file.transactionCount += 1;
           move(file, SAVINGS, -1999);
           file.month.spent += 1999;
-          file.month.cashOut += 1999;
+          file.month.netSpending += 1999;
           file.month.categories.Food.spent += 1999;
           file.month.categories.Food.available -= 1999;
         });
@@ -1093,7 +1101,7 @@ export function describeV2Finance(layout: V2Layout) {
         const changed = await fileAfter(added, file => {
           move(file, SAVINGS, -1000);
           file.month.spent += 1000;
-          file.month.cashOut += 1000;
+          file.month.netSpending += 1000;
           file.month.categories.Food.spent += 1000;
           file.month.categories.Food.available -= 1000;
         });
@@ -1141,14 +1149,16 @@ export function describeV2Finance(layout: V2Layout) {
 
       await entries.addAccount(NEW_ACCOUNT, NEW_ACCOUNT_BALANCE);
 
-      // An opening balance is money the budget did not have: it arrives as
-      // income of today, and is left to be distributed.
+      // An opening balance is money the budget did not have: the envelopes may
+      // be filled from it, so the engine counts it as income of today and
+      // leaves it to be distributed. Início and Relatórios do not: a starting
+      // balance belongs to the account's balance and to no month, so it moves
+      // the balances and nothing a month is judged by.
       const after = await fileAfter(before, file => {
         file.transactionCount += 1;
         file.balances[NEW_ACCOUNT] = 0;
         move(file, NEW_ACCOUNT, NEW_ACCOUNT_BALANCE);
         file.month.income += NEW_ACCOUNT_BALANCE;
-        file.month.cashIn += NEW_ACCOUNT_BALANCE;
         file.month.toDistribute += NEW_ACCOUNT_BALANCE;
       });
       await expectPagesToAgree(after);
@@ -1202,7 +1212,7 @@ export function describeV2Finance(layout: V2Layout) {
           file.month.budgeted += 8000;
           file.month.toDistribute -= 8000;
           file.month.spent += 3015;
-          file.month.cashOut += 3015;
+          file.month.netSpending += 3015;
           file.month.categories[NEW_CATEGORY] = row;
         });
         await expectPagesToAgree(after);

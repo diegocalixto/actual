@@ -60,9 +60,9 @@ const COMPACT_PLOT_HEIGHT = 168;
 const ORDER: SeriesKey[] = ['income', 'expenses', 'net'];
 
 const LABEL: Record<SeriesKey, ReactNode> = {
-  income: <Trans>Income</Trans>,
-  expenses: <Trans>Expenses</Trans>,
-  net: <Trans>Net Result</Trans>,
+  income: <Trans>Classified receipts</Trans>,
+  expenses: <Trans>Spending</Trans>,
+  net: <Trans>Result of classified receipts</Trans>,
 };
 
 /**
@@ -366,19 +366,21 @@ export function ReportsHeroChart({
             }}
           >
             <Total
-              label={<Trans>Total income</Trans>}
+              label={<Trans>Total classified receipts</Trans>}
               value={totals.income}
               color={SERIES.income}
             />
             <Divider />
             <Total
-              label={<Trans>Total expenses</Trans>}
+              label={<Trans>Total spending</Trans>}
               value={totals.expenses}
               color={SERIES.expenses}
             />
             <Divider />
             <Total
-              label={<Trans>Total net result</Trans>}
+              label={
+                <Trans>Result of classified receipts for the period</Trans>
+              }
               value={totals.net}
               color={SERIES.net}
             />
@@ -430,7 +432,7 @@ function Header({ period, detailReports, compact }: HeaderProps) {
               color: 'var(--dfl-text)',
             }}
           >
-            <Trans>Income, Expenses &amp; Net Result</Trans>
+            <Trans>Classified receipts, spending and result</Trans>
           </Text>
           {/* A pointer gets the explanation on rest. */}
           {!compact && (

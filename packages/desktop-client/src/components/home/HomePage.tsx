@@ -103,13 +103,11 @@ export function HomePage() {
   );
   const monthSummary = (
     <SectionHeading title={<Trans>This month</Trans>} action={monthLabel}>
-      <MonthSummaryCard sheetName={sheetName} budgetType={budgetType} />
+      <MonthSummaryCard month={month} />
     </SectionHeading>
   );
   const accounts = <AccountsCard />;
-  const spending = (
-    <SpendingByCategoryCard sheetName={sheetName} budgetType={budgetType} />
-  );
+  const spending = <SpendingByCategoryCard month={month} />;
   const trend = <BalanceTrendCard />;
   const recent = <RecentActivityCard />;
 

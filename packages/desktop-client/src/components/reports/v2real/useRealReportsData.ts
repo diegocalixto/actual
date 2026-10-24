@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import {
+  comparison,
+  emptyTotals,
+  reportsKpis,
+  spendingShare,
+} from '@actual-app/core/shared/month-indicators';
+import type {
+  IndicatorTotals,
+  MonthWindow,
+} from '@actual-app/core/shared/month-indicators';
 import * as monthUtils from '@actual-app/core/shared/months';
-import { q } from '@actual-app/core/shared/query';
-import type { CategoryEntity } from '@actual-app/core/types/models';
 import { ptBR } from 'date-fns/locale';
+import type { TFunction } from 'i18next';
 
 import { iconForCategory } from '#components/v2lab/LabStyle';
 import type {
@@ -12,33 +21,39 @@ import type {
   ExpenseCategory,
   ReportsViewData,
 } from '#components/v2lab/reports/ReportsView';
-import { useCategories } from '#hooks/useCategories';
-import { useQuery } from '#hooks/useQuery';
+import {
+  useMonthIndicators,
+  useMonthlyIndicatorWindow,
+} from '#reports/useMonthIndicators';
 
 import { hueForId } from './reportsPresentation';
 
-/** How many months the comparison panel looks back over, this one included. */
+/** How many months the comparison panel looks back over at most, this one included. */
 const MONTH_WINDOW = 6;
 
-type DateSum = { date: string; amount: number };
-type CategorySum = { category: string | null; amount: number };
-
 /**
- * Everything the real Reports shows, read from the application's own queries.
+ * Everything the real Reports shows, read through the rules in
+ * `@actual-app/core/shared/month-indicators` — the same rules the Home's "Este mês" reads, so
+ * the two screens print one month.
  *
- * Nothing is invented and nothing is recomputed twice: five aggregations run in
- * the engine — daily income, daily expenses, spending by category, and the same
- * two totals grouped by month — and every figure on screen is derived from
- * those. The filters are the ones Actual's own cash-flow report uses
- * (`account.offbudget: false`, `payee.transfer_acct: null`), so a transfer
- * between your accounts never counts as income or as spending.
+ * What those rules decide, in short: transfers between the file's own
+ * accounts and starting balances are neither income nor spending; a refund
+ * into an expense category lowers that spending instead of counting as
+ * income, and a category refunded more than it was spent lowers the total; an
+ * outflow without a category is spending, shown as "Sem categoria"; an inflow
+ * without a category is listed for review and counted nowhere; and an income
+ * category — or group — whose note carries the #extraordinária tag is kept
+ * apart from the classified receipts the tiles are about.
+ *
+ * The comparison looks back at most six months and never past the file's
+ * oldest transaction: a month before the history is not a month with no
+ * movement. The months it cannot vouch for whole are named as partial.
  *
  * Dates are formatted in pt-BR because this screen's own copy is Portuguese.
  *
- * `month` is the period, as `YYYY-MM`: the curve and the categories are that
- * month's, the indicators compare it with the one before, and the comparison
- * window ends on it. The desktop and the phone both call this with the month
- * in the address, which is why their figures cannot differ.
+ * `month` is the period, as `YYYY-MM`. The desktop and the phone both call
+ * this with the month in the address, which is why their figures cannot
+ * differ.
  */
 export function useRealReportsData(
   month: string = monthUtils.currentMonth(),
@@ -47,135 +62,24 @@ export function useRealReportsData(
 
   const monthStart = monthUtils.firstDayOfMonth(month);
   const monthEnd = monthUtils.lastDayOfMonth(month);
-  const windowStart = monthUtils.subMonths(month, MONTH_WINDOW - 1);
 
-  // ---- the period, day by day ------------------------------------------------
-  // Written out per query rather than through a helper: `useQuery` memoises on
-  // the dependency list the caller gives it, and a helper closed over these
-  // dates would just be a second name for the same thing.
-  const { data: incomeDays, isLoading: loadingIncome } = useQuery<DateSum>(
-    () =>
-      q('transactions')
-        .filter({
-          $and: [{ date: { $gte: monthStart } }, { date: { $lte: monthEnd } }],
-          'account.offbudget': false,
-          'payee.transfer_acct': null,
-          amount: { $gt: 0 },
-        })
-        .groupBy(['date'])
-        .select(['date', { amount: { $sum: '$amount' } }]),
-    [monthStart, monthEnd],
-  );
+  const period = useMonthIndicators(month);
+  const history = useMonthlyIndicatorWindow(month, MONTH_WINDOW);
 
-  const { data: expenseDays, isLoading: loadingExpenses } = useQuery<DateSum>(
-    () =>
-      q('transactions')
-        .filter({
-          $and: [{ date: { $gte: monthStart } }, { date: { $lte: monthEnd } }],
-          'account.offbudget': false,
-          'payee.transfer_acct': null,
-          amount: { $lt: 0 },
-        })
-        .groupBy(['date'])
-        .select(['date', { amount: { $sum: '$amount' } }]),
-    [monthStart, monthEnd],
-  );
-
-  // ---- spending by category, this period -------------------------------------
-  const { data: categorySums, isLoading: loadingCategories } =
-    useQuery<CategorySum>(
-      () =>
-        q('transactions')
-          .filter({
-            $and: [
-              { date: { $gte: monthStart } },
-              { date: { $lte: monthEnd } },
-            ],
-            'account.offbudget': false,
-            'payee.transfer_acct': null,
-            amount: { $lt: 0 },
-          })
-          .groupBy(['category'])
-          .select(['category', { amount: { $sum: '$amount' } }]),
-      [monthStart, monthEnd],
-    );
-
-  // ---- the last months, for the comparison -----------------------------------
-  const { data: incomeMonths, isLoading: loadingIncomeMonths } =
-    useQuery<DateSum>(
-      () =>
-        q('transactions')
-          .filter({
-            $and: [
-              { date: { $transform: '$month', $gte: windowStart } },
-              { date: { $transform: '$month', $lte: month } },
-            ],
-            'account.offbudget': false,
-            'payee.transfer_acct': null,
-            amount: { $gt: 0 },
-          })
-          .groupBy([{ $month: '$date' }])
-          .select([
-            { date: { $month: '$date' } },
-            { amount: { $sum: '$amount' } },
-          ]),
-      [windowStart, month],
-    );
-
-  const { data: expenseMonths, isLoading: loadingExpenseMonths } =
-    useQuery<DateSum>(
-      () =>
-        q('transactions')
-          .filter({
-            $and: [
-              { date: { $transform: '$month', $gte: windowStart } },
-              { date: { $transform: '$month', $lte: month } },
-            ],
-            'account.offbudget': false,
-            'payee.transfer_acct': null,
-            amount: { $lt: 0 },
-          })
-          .groupBy([{ $month: '$date' }])
-          .select([
-            { date: { $month: '$date' } },
-            { amount: { $sum: '$amount' } },
-          ]),
-      [windowStart, month],
-    );
-
-  // Read with the element type stated rather than through a destructuring
-  // default: `= { list: [] }` types the fallback as `never[]`, which made this
-  // `CategoryEntity[] | never[]`, and `.map` over a union of array types hands
-  // the callback an `any` — that is where the category names lost their type on
-  // the way to the panel below. Memoised so an unresolved query does not yield
-  // a fresh array on every render.
-  const { data: categoryViews } = useCategories();
-  const categories: CategoryEntity[] = useMemo(
-    () => categoryViews?.list ?? [],
-    [categoryViews],
-  );
-
-  const isLoading =
-    loadingIncome ||
-    loadingExpenses ||
-    loadingCategories ||
-    loadingIncomeMonths ||
-    loadingExpenseMonths;
+  const isLoading = period.isLoading || history.isLoading;
 
   const view = useMemo(() => {
+    const totals = period.totals ?? emptyTotals();
+
     // ---- the curve: a running total per day, so every point answers
     //      "so far this period", exactly as the approved chart reads ----------
-    // `range` walks months; days need `dayRangeInclusive`.
     const days = monthUtils.dayRangeInclusive(monthStart, monthEnd);
-    const incomeByDay = sumByKey(incomeDays);
-    const expenseByDay = sumByKey(expenseDays);
-
     let income = 0;
     let expenses = 0;
     const series: DayPoint[] = days.map((day, index) => {
-      income += incomeByDay[day] ?? 0;
-      // Outflows arrive negative; the chart plots them as an amount spent.
-      expenses += -(expenseByDay[day] ?? 0);
+      const dayTotals = period.byDay.get(day);
+      income += dayTotals?.classifiedIncome ?? 0;
+      expenses += dayTotals?.spending ?? 0;
 
       return {
         day: index + 1,
@@ -186,81 +90,48 @@ export function useRealReportsData(
       };
     });
 
-    const totals = {
-      income,
-      expenses,
-      net: income - expenses,
-    };
-
     const axis = axisFor(
-      totals.income,
-      totals.expenses,
+      totals.classifiedIncome,
+      totals.spending,
       Math.min(0, ...series.map(point => point.net)),
     );
 
     // ---- monthly window --------------------------------------------------------
-    const monthKeys = Array.from({ length: MONTH_WINDOW }, (_, index) =>
-      monthUtils.addMonths(windowStart, index),
-    );
-    const incomeByMonth = sumByKey(incomeMonths);
-    const expenseByMonth = sumByKey(expenseMonths);
-    const monthlyIncome = monthKeys.map(key => incomeByMonth[key] ?? 0);
-    const monthlyExpenses = monthKeys.map(key => -(expenseByMonth[key] ?? 0));
-    const monthlyNet = monthlyIncome.map(
-      (value, index) => value - monthlyExpenses[index],
-    );
+    const monthKeys = history.window.months;
+    const totalsFor = (key: string): IndicatorTotals =>
+      history.byMonth.get(key) ?? emptyTotals();
+    const monthlyIncome = monthKeys.map(key => totalsFor(key).classifiedIncome);
+    const monthlyExpenses = monthKeys.map(key => totalsFor(key).spending);
+    const monthlyNet = monthKeys.map(key => totalsFor(key).classifiedResult);
 
-    const previousIndex = monthKeys.length - 2;
-    const previousIncome = monthlyIncome[previousIndex] ?? 0;
-    const previousExpenses = monthlyExpenses[previousIndex] ?? 0;
-    const previousNet = previousIncome - previousExpenses;
+    const previousMonth = monthUtils.subMonths(month, 1);
+    const previousTotals = history.byMonth.get(previousMonth) ?? null;
 
-    const kpis = {
-      income: {
-        value: totals.income,
-        change: change(totals.income, previousIncome),
-      },
-      expenses: {
-        value: totals.expenses,
-        change: change(totals.expenses, previousExpenses),
-      },
-      net: { value: totals.net, change: change(totals.net, previousNet) },
-      savingsRate: {
-        value: rate(totals.income, totals.net),
-        points:
-          (rate(totals.income, totals.net) -
-            rate(previousIncome, previousNet)) *
-          100,
-      },
-    };
+    const kpis = reportsKpis(totals, previousTotals);
 
     // ---- categories ------------------------------------------------------------
-    // The type arguments are what make the pair a tuple: without them the
-    // literal infers as an array and `Map` has no matching overload.
-    const namesById = new Map<CategoryEntity['id'], CategoryEntity['name']>(
-      categories.map(c => [c.id, c.name]),
-    );
-    const ranked = (categorySums ?? [])
-      .map(row => {
-        const id = row.category ?? 'uncategorised';
-        const name = row.category
-          ? (namesById.get(row.category) ?? t('Sem categoria'))
-          : t('Sem categoria');
-
+    // The donut and the list show the outflow side, and every share is taken
+    // on that side's total. A category refunded more than it was spent has no
+    // slice to draw — a negative one does not exist — so it is not in the list
+    // and the strip above declares it instead, which is why the list can add
+    // up to more than the "Gastos" tile without either being wrong.
+    const ranked = period.composition.entries
+      .map(entry => {
+        const name = entry.isUncategorized
+          ? t('Sem categoria')
+          : (entry.name ?? t('Sem categoria'));
         return {
-          id,
+          id: entry.id,
           name,
-          amount: -row.amount,
-          hue: hueForId(id),
+          amount: entry.amount,
+          hue: hueForId(entry.id),
           Icon: iconForCategory(name),
           priorMonths: [],
         } satisfies ExpenseCategory;
       })
-      .filter(category => category.amount > 0)
-      .sort((a, b) => b.amount - a.amount)
       .map(category => ({
         ...category,
-        share: totals.expenses > 0 ? category.amount / totals.expenses : 0,
+        share: spendingShare(category.amount, period.composition),
       }));
 
     const periodLabel = `${monthUtils.format(monthStart, 'd MMM', ptBR)} – ${monthUtils.format(monthEnd, "d MMM 'de' yyyy", ptBR)}`;
@@ -270,11 +141,7 @@ export function useRealReportsData(
       periodLabel,
       scopeLabel: t('Contas no orçamento'),
       // After "vs.", so in the lower case Portuguese gives a month's name.
-      previousPeriodLabel: monthUtils.format(
-        monthKeys[previousIndex] ?? month,
-        'MMMM',
-        ptBR,
-      ),
+      previousPeriodLabel: monthUtils.format(previousMonth, 'MMMM', ptBR),
       kpis,
       series,
       axisMin: axis.min,
@@ -284,7 +151,20 @@ export function useRealReportsData(
       // The axis names the month it is actually showing.
       formatXTick: (day: number) =>
         monthUtils.format(days[day - 1] ?? monthStart, 'd MMM', ptBR),
-      totals,
+      totals: {
+        income: totals.classifiedIncome,
+        expenses: totals.spending,
+        net: totals.classifiedResult,
+      },
+      breakdown: {
+        extraordinaryIncome: totals.extraordinaryIncome,
+        resultWithExtraordinary: totals.resultWithExtraordinary,
+        pendingInflows: totals.pendingInflows,
+        uncategorizedSpending: totals.uncategorizedSpending,
+        refunds: totals.refunds,
+        outflows: period.composition.outflows,
+        credited: period.composition.credited,
+      },
       defaultHoverIndex: Math.max(0, series.length - 1),
       categories: ranked,
       monthly: {
@@ -292,35 +172,23 @@ export function useRealReportsData(
         expenses: comparison(monthlyExpenses),
         net: comparison(monthlyNet),
       },
-      monthCount: MONTH_WINDOW,
+      monthCount: monthKeys.length,
+      monthlyNote: partialNote(history.window, t),
       // Deliberately absent: the panel's three statements need a per-category
       // history this page does not query, and writing them without it would be
       // claiming an analysis the product has not done.
       insights: undefined,
       isLoading,
     };
-  }, [
-    incomeDays,
-    expenseDays,
-    categorySums,
-    incomeMonths,
-    expenseMonths,
-    categories,
-    monthStart,
-    monthEnd,
-    windowStart,
-    month,
-    isLoading,
-    t,
-  ]);
+  }, [period, history, monthStart, monthEnd, month, isLoading, t]);
 
   // While another period's queries are out, the rows in hand are still the
-  // previous period's, and the five of them do not come back together. Drawn
-  // as they arrive, the page would spend a moment as a month that never was:
-  // the new period's days over the old one's categories, with zeros between.
-  // So the last period that arrived whole stays on screen, whole, until the
-  // next one has. This is the pattern React documents for keeping a value
-  // from an earlier render; nothing here is computed differently.
+  // previous period's, and they do not come back together. Drawn as they
+  // arrive, the page would spend a moment as a month that never was: the new
+  // period's days over the old one's categories, with zeros between. So the
+  // last period that arrived whole stays on screen, whole, until the next one
+  // has. This is the pattern React documents for keeping a value from an
+  // earlier render; nothing here is computed differently.
   const [settled, setSettled] = useState<ReportsViewData | null>(null);
   if (!isLoading && settled !== view) {
     setSettled(view);
@@ -329,44 +197,37 @@ export function useRealReportsData(
   return isLoading && settled ? settled : view;
 }
 
-function sumByKey(rows: ReadonlyArray<DateSum> | null): Record<string, number> {
-  const out: Record<string, number> = {};
+/**
+ * The months the comparison cannot vouch for whole, said in one sentence, or
+ * `undefined` when every month in the window is complete.
+ */
+function partialNote(window: MonthWindow, t: TFunction): string | undefined {
+  const parts: string[] = [];
+  for (const key of window.months) {
+    const reasons = window.partial[key] ?? [];
+    if (reasons.length === 0) {
+      continue;
+    }
 
-  for (const row of rows ?? []) {
-    out[row.date] = (out[row.date] ?? 0) + row.amount;
+    const month = monthUtils.format(key, 'MMM', ptBR);
+    // Not "only from the 14th": the first transaction recorded says nothing
+    // about what was never written down before it, so a month where the
+    // records begin is called uncertain rather than dated. The file's first
+    // month can also be the current one, and then it is both things at once.
+    if (reasons.includes('start') && reasons.includes('inProgress')) {
+      parts.push(
+        t('{{month}} may be incomplete and is still in progress', { month }),
+      );
+    } else if (reasons.includes('start')) {
+      parts.push(t('{{month}} may be incomplete', { month }));
+    } else {
+      parts.push(t('{{month}} still in progress', { month }));
+    }
   }
-
-  return out;
-}
-
-/**
- * A ratio against a non-positive base is arithmetic without meaning — "up
- * 1184% from a loss" tells a reader nothing — so those come back `null` and the
- * chip is simply left out.
- */
-function change(current: number, previous: number): number | null {
-  return previous > 0 ? current / previous - 1 : null;
-}
-
-function rate(income: number, net: number): number {
-  return income > 0 ? net / income : 0;
-}
-
-/**
- * The window's averages, with the trend across it: the mean of the second half
- * against the mean of the first. A single month-over-month step would call a
- * quiet month a collapse.
- */
-function comparison(values: number[]) {
-  const half = Math.floor(values.length / 2);
-  const mean = (list: number[]) =>
-    list.length === 0 ? 0 : list.reduce((sum, v) => sum + v, 0) / list.length;
-
-  return {
-    average: Math.round(mean(values)),
-    change: change(mean(values.slice(half)), mean(values.slice(0, half))),
-    spark: values,
-  };
+  if (parts.length === 0) {
+    return undefined;
+  }
+  return t('Partial months: {{parts}}.', { parts: parts.join('; ') });
 }
 
 /**

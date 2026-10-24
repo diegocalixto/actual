@@ -62,6 +62,8 @@ export type LabCategory = {
   Icon: LabIcon;
   hue: LabHue;
   amount: number;
+  /** The month's outflows with no category, when the data has such a row. */
+  isUncategorized?: boolean;
 };
 
 export type LabMovement = {

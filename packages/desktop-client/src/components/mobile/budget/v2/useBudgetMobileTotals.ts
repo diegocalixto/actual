@@ -1,10 +1,10 @@
 import * as monthUtils from '@actual-app/core/shared/months';
 
-import { useMonthTotals } from '#components/home/v2/useMonthTotals';
 import { useSheetValue } from '#hooks/useSheetValue';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import { asMagnitude, usedPercent } from './budgetMobileMoney';
+import { useBudgetMonthCells } from './useBudgetMonthCells';
 
 export type BudgetMobileTotals = {
   /** What the month plans to spend, as a positive magnitude. */
@@ -22,11 +22,14 @@ export type BudgetMobileTotals = {
 /**
  * The four figures the top of the Budget reads, and nothing else.
  *
- * Three of them arrive from `useMonthTotals`, which is the application's single
- * definition of what a month took in, spent and netted — the mobile Home reads
- * the same hook, so the two screens cannot disagree about a figure, and the
- * "Saldo do mês" printed here means exactly what "Resultado" means there:
- * income minus spending. It is deliberately *not* `total-leftover`, which is
+ * Three of them are the budget engine's own month cells, read through
+ * `useBudgetMonthCells`: what the envelopes could be filled from, what has
+ * left an envelope, and the difference. They are kept as the engine computes
+ * them — a starting balance or an extraordinary inflow counts, an outflow
+ * without a category does not — because this screen is about assigning
+ * envelopes. The Home and the Reports answer "what did I spend" under
+ * `@actual-app/core/shared/month-indicators`, and the labels here say what this screen's
+ * figures are. The third is deliberately *not* `total-leftover`, which is
  * what is left inside the envelopes and a different number; each group prints
  * its own share of that further down the page.
  *
@@ -42,7 +45,7 @@ export function useBudgetMobileTotals(
 ): BudgetMobileTotals {
   const isTracking = budgetType === 'tracking';
 
-  const { income, spent, net } = useMonthTotals(
+  const { income, spent, net } = useBudgetMonthCells(
     monthUtils.sheetForMonth(month),
     budgetType,
   );

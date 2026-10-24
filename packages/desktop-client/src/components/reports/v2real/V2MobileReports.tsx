@@ -13,6 +13,7 @@ import {
 } from '#components/Page';
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { EmptyPanel } from '#components/v2lab/reports/EmptyPanel';
+import { ReportsBreakdown } from '#components/v2lab/reports/ReportsBreakdown';
 import { ReportsCategoryDonut } from '#components/v2lab/reports/ReportsCategoryDonut';
 import { ReportsHeroChart } from '#components/v2lab/reports/ReportsHeroChart';
 import { ReportsKpis } from '#components/v2lab/reports/ReportsKpis';
@@ -115,6 +116,10 @@ export function V2MobileReports() {
           previousPeriodLabel={data.previousPeriodLabel}
         />
 
+        {data.breakdown && (
+          <ReportsBreakdown compact breakdown={data.breakdown} />
+        )}
+
         {hasActivity ? (
           <ReportsHeroChart
             // A new period is a new plot: the day last pointed at may not
@@ -166,6 +171,7 @@ export function V2MobileReports() {
           compact
           monthly={data.monthly}
           monthCount={data.monthCount}
+          note={data.monthlyNote}
         />
 
         <ReportsMobileMore reports={detailReports} />

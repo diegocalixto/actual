@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
@@ -15,7 +16,6 @@ import {
 } from '#components/appshell/shellTheme';
 import type { HomeCategorySpending } from '#components/home/useHomeCategorySpending';
 import { useHomeCategorySpending } from '#components/home/useHomeCategorySpending';
-import type { HomeBudgetType } from '#components/home/useHomeMonth';
 import { Money } from '#components/v2/Money';
 import { useNavigate } from '#hooks/useNavigate';
 
@@ -23,8 +23,8 @@ import { DashboardCard } from './DashboardCard';
 import { SectionHeading } from './SectionHeading';
 
 type SpendingByCategoryCardProps = {
-  sheetName: string;
-  budgetType: HomeBudgetType;
+  /** `YYYY-MM`. */
+  month: string;
 };
 
 /**
@@ -32,30 +32,28 @@ type SpendingByCategoryCardProps = {
  *
  * A list beats a donut here: five labelled rows answer "which categories cost
  * me the most" at a glance and stay legible at 390px, where a pie's slice
- * labels do not.
+ * labels do not. Outflows without a category are one of the rows, named "Sem
+ * categoria": counted, visible, and one click from the list that needs them.
  */
-export function SpendingByCategoryCard({
-  sheetName,
-  budgetType,
-}: SpendingByCategoryCardProps) {
+export function SpendingByCategoryCard({ month }: SpendingByCategoryCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { categories, totalSpent, isLoading } = useHomeCategorySpending({
-    sheetName,
-    budgetType,
-  });
+  const { categories, credits, outflows, credited, totalSpent, isLoading } =
+    useHomeCategorySpending({ month });
 
-  // The percentages are shares of the month's official `total-spent` cell, not
-  // of the five rows shown. That is the financially correct denominator, and it
-  // is also why the visible shares need not add up to 100%: refunded categories
-  // are excluded from the list but still counted in the total.
-  const denominator = totalSpent !== null && totalSpent < 0 ? totalSpent : null;
+  // Every bar is a share of the month's outflows, never of its net total: a
+  // category refunded elsewhere can cost more than the month ended up
+  // spending, and a share taken on that net would claim more than the whole.
+  // The refunds making up the difference are listed under the rows with the
+  // subtraction spelled out, so what the list says adds up to the figure in
+  // the header.
+  const hasRows = categories.length > 0 || credits.length > 0;
 
   return (
     <SectionHeading
       title={<Trans>Spending this month</Trans>}
       action={
-        categories.length > 0 ? (
+        hasRows ? (
           <Money
             value={totalSpent}
             style={{
@@ -68,7 +66,7 @@ export function SpendingByCategoryCard({
       }
     >
       <DashboardCard>
-        {categories.length === 0 ? (
+        {!hasRows ? (
           <View style={{ padding: 26, alignItems: 'center' }}>
             <Text
               style={{
@@ -91,10 +89,72 @@ export function SpendingByCategoryCard({
                 <CategoryRow
                   key={entry.category.id}
                   entry={entry}
-                  denominator={denominator}
+                  outflows={outflows}
+                  onReview={
+                    entry.isUncategorized
+                      ? () => void navigate('/accounts/uncategorized')
+                      : undefined
+                  }
                 />
               ))}
             </View>
+
+            {credited > 0 && (
+              <View
+                style={{
+                  margin: '2px 16px 0',
+                  paddingTop: 10,
+                  gap: 6,
+                  borderTop: `1px solid ${shellColors.border}`,
+                }}
+              >
+                <Text style={shellEyebrowStyle}>
+                  <Trans>Refunds that lower the total</Trans>
+                </Text>
+
+                {credits.map(credit => (
+                  <View
+                    key={credit.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                    }}
+                  >
+                    <TextOneLine style={{ fontSize: 13 }}>
+                      {credit.name}
+                    </TextOneLine>
+                    <Money
+                      value={credit.amount}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: shellColors.positive,
+                      }}
+                    />
+                  </View>
+                ))}
+
+                {/* The composition of the figure above, so the list explains
+                    it instead of contradicting it. */}
+                <View style={{ gap: 2, paddingTop: 4 }}>
+                  <CompositionLine
+                    label={<Trans>Month outflows</Trans>}
+                    value={-outflows}
+                  />
+                  <CompositionLine
+                    label={<Trans>Refunds</Trans>}
+                    value={credited}
+                  />
+                  <CompositionLine
+                    label={<Trans>Net spending</Trans>}
+                    value={totalSpent}
+                    emphasized
+                  />
+                </View>
+              </View>
+            )}
 
             <Button
               variant="bare"
@@ -129,18 +189,22 @@ export function SpendingByCategoryCard({
 
 type CategoryRowProps = {
   entry: HomeCategorySpending;
-  denominator: number | null;
+  /** The month's outflows, positive: the base this row's bar is a share of. */
+  outflows: number;
+  /** Set on the uncategorized row: opens the transactions that need a category. */
+  onReview?: () => void;
 };
 
-function CategoryRow({ entry, denominator }: CategoryRowProps) {
-  // Both values are negative, so the ratio comes out positive.
-  const share = denominator === null ? null : entry.amount / denominator;
-  const barWidth = share === null ? 0 : Math.min(Math.max(share, 0.02), 1);
-  // A share above 100% is real — refunds elsewhere can shrink the month's net
-  // total below a single category's outflow — but printing "118%" reads as a
-  // bug, so the bar saturates and the number is left off.
-  const percent =
-    share !== null && share >= 0 && share <= 1 ? Math.round(share * 100) : null;
+function CategoryRow({ entry, outflows, onReview }: CategoryRowProps) {
+  const { t } = useTranslation();
+  // The row's amount carries Actual's sign; the base does not.
+  const share = outflows > 0 ? Math.abs(entry.amount) / outflows : 0;
+  // A floor so a very small share still draws something. No ceiling: on this
+  // base a share cannot pass 1, so there is nothing to saturate away.
+  const barWidth = share === 0 ? 0 : Math.max(share, 0.02);
+  // Taken on the outflows, the figure is a share of something a reader can
+  // see, so it is always printable.
+  const percent = outflows > 0 ? Math.round(share * 100) : null;
 
   return (
     <View style={{ gap: 7 }}>
@@ -152,9 +216,28 @@ function CategoryRow({ entry, denominator }: CategoryRowProps) {
           gap: 12,
         }}
       >
-        <TextOneLine style={{ fontSize: 14, fontWeight: 500 }}>
-          {entry.category.name}
-        </TextOneLine>
+        {onReview ? (
+          <Button
+            variant="bare"
+            aria-label={t('Review the transactions without a category')}
+            onPress={onReview}
+            className={css({
+              padding: 0,
+              minWidth: 0,
+              color: shellColors.accent,
+              fontSize: 14,
+              fontWeight: 500,
+            })}
+          >
+            <TextOneLine style={{ fontSize: 14, fontWeight: 500 }}>
+              {entry.category.name}
+            </TextOneLine>
+          </Button>
+        ) : (
+          <TextOneLine style={{ fontSize: 14, fontWeight: 500 }}>
+            {entry.category.name}
+          </TextOneLine>
+        )}
         <Money
           value={entry.amount}
           style={{
@@ -181,7 +264,9 @@ function CategoryRow({ entry, denominator }: CategoryRowProps) {
               width: `${barWidth * 100}%`,
               height: '100%',
               borderRadius: shellRadius.pill,
-              backgroundImage: `linear-gradient(90deg, ${shellColors.accentBold} 0%, ${shellColors.accent} 100%)`,
+              backgroundImage: entry.isUncategorized
+                ? `linear-gradient(90deg, ${shellColors.textSecondary} 0%, ${shellColors.textSecondary} 100%)`
+                : `linear-gradient(90deg, ${shellColors.accentBold} 0%, ${shellColors.accent} 100%)`,
             }}
           />
         </View>
@@ -198,6 +283,56 @@ function CategoryRow({ entry, denominator }: CategoryRowProps) {
           </Text>
         )}
       </View>
+    </View>
+  );
+}
+
+type CompositionLineProps = {
+  label: ReactNode;
+  value: number | null;
+  emphasized?: boolean;
+};
+
+/**
+ * One line of the subtraction that produces the month's spending: the
+ * outflows, what came back, and what is left. Shown only when something came
+ * back, because that is the only time the rows above do not simply add up.
+ */
+function CompositionLine({
+  label,
+  value,
+  emphasized = false,
+}: CompositionLineProps) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 12,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: emphasized ? 600 : 400,
+          color: emphasized
+            ? shellColors.textPrimary
+            : shellColors.textSecondary,
+        }}
+      >
+        {label}
+      </Text>
+      <Money
+        value={value}
+        style={{
+          fontSize: 12,
+          fontWeight: emphasized ? 700 : 600,
+          color: emphasized
+            ? shellColors.textPrimary
+            : shellColors.textSecondary,
+        }}
+      />
     </View>
   );
 }

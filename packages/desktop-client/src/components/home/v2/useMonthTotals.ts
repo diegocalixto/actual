@@ -1,53 +1,53 @@
-import type { HomeBudgetType } from '#components/home/useHomeMonth';
-import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
-import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
+import { useMemo } from 'react';
+
+import { homeSummary } from '@actual-app/core/shared/month-indicators';
+import type { IndicatorTotals } from '@actual-app/core/shared/month-indicators';
+
+import { useMonthIndicators } from '#reports/useMonthIndicators';
 
 export type MonthTotals = {
-  /** Positive integer amount. */
+  /** Classified receipts for the month: positive integer amount, or `null` while loading. */
   income: number | null;
-  /** Negative integer amount, as Actual stores outflows. */
+  /**
+   * The month's spending, categorized or not, refunds deducted. Negative
+   * integer amount, as Actual stores outflows.
+   */
   spent: number | null;
-  /** Income minus spending for the month. */
+  /** `income + spent`: the result of the classified receipts. */
   net: number | null;
+  /**
+   * Everything behind the three figures — extraordinary inflows, inflows
+   * awaiting a category, the uncategorized share of the spending — for the
+   * cards that explain them. `null` while loading.
+   */
+  details: IndicatorTotals | null;
+  isLoading: boolean;
 };
 
 /**
- * The month's headline totals, and the **only** place on the dashboard where
- * two financial values are combined.
+ * The month's headline totals, read through the same rules Relatórios uses
+ * (`@actual-app/core/shared/month-indicators`), so the two screens print one month.
  *
- * A tracking budget publishes the net as its own `real-saved` cell, so that
- * cell is read rather than recomputed. An envelope budget defines no such cell;
- * `income + spent` mirrors exactly what the tracking cell means (spending is
- * already negative), so the same figure is produced instead of inventing a
- * different definition. Any card that needs the month's net asks here, which
- * is what keeps the summary and the trend from ever disagreeing.
+ * This replaced reading the budget engine's `total-income` and `total-spent`
+ * cells. Those are the envelope budget's own figures and stay on the Budget
+ * screen: they count a starting balance and an extraordinary inflow as income
+ * and leave an uncategorized outflow out of the spending, which is right for
+ * assigning envelopes and wrong for answering "how much did I spend".
  */
-export function useMonthTotals(
-  sheetName: string,
-  budgetType: HomeBudgetType,
-): MonthTotals {
-  const isTracking = budgetType === 'tracking';
+export function useMonthTotals(month: string): MonthTotals {
+  const { totals, isLoading } = useMonthIndicators(month);
 
-  const income = useHomeSheetCell(
-    sheetName,
-    isTracking ? trackingBudget.totalIncome : envelopeBudget.totalIncome,
-  );
-  const spent = useHomeSheetCell(
-    sheetName,
-    isTracking ? trackingBudget.totalSpent : envelopeBudget.totalSpent,
-  );
-  const trackingSaved = useHomeSheetCell(
-    sheetName,
-    isTracking ? trackingBudget.totalSaved : null,
-  );
-
-  if (isTracking) {
-    return { income, spent, net: trackingSaved };
-  }
-
-  return {
-    income,
-    spent,
-    net: income === null || spent === null ? null : income + spent,
-  };
+  return useMemo(() => {
+    if (totals === null) {
+      return { income: null, spent: null, net: null, details: null, isLoading };
+    }
+    const summary = homeSummary(totals);
+    return {
+      income: summary.income,
+      spent: summary.spent,
+      net: summary.net,
+      details: totals,
+      isLoading,
+    };
+  }, [totals, isLoading]);
 }

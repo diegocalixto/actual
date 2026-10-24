@@ -5,6 +5,7 @@ import { css, cx } from '@emotion/css';
 
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { OverviewView } from '#components/v2lab/OverviewView';
+import { useNavigate } from '#hooks/useNavigate';
 
 import { Greeting } from './Greeting';
 import { OVERVIEW_ROOT_CLASS, OverviewStyle } from './OverviewStyle';
@@ -24,11 +25,14 @@ const AUTHOR = 'Diego Calixto';
 export function V2RealOverview() {
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
+  const navigate = useNavigate();
   const {
     balances,
     monthTotals,
+    monthDetails,
     accounts,
     categories,
+    spendingComposition,
     movements,
     isAccountsLoading,
     isMonthLoading,
@@ -55,8 +59,13 @@ export function V2RealOverview() {
           available: balances.available,
           toBudget: balances.toBudget,
           monthTotals,
+          monthDetails,
           accounts,
           categories,
+          spendingComposition,
+          // The one row with somewhere to go: the transactions still without a
+          // category, which is where an unexplained outflow gets explained.
+          onReviewUncategorized: () => void navigate('/accounts/uncategorized'),
           movements,
           isAccountsLoading,
           isMonthLoading,

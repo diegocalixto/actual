@@ -38,6 +38,12 @@ type ReportsMonthlyComparisonProps = {
    */
   onOpenFullComparison?: () => void;
   /**
+   * The months the window cannot vouch for whole — the first, when the data
+   * starts after its first day; the current one, still running — in a
+   * sentence. Absent ⇒ every month in the window is complete.
+   */
+  note?: string;
+  /**
    * The phone's arrangement: the three readings one under the other, each on
    * a line of its own. Side by side, a third of a phone is narrower than the
    * words "Net Result (avg)".
@@ -46,12 +52,14 @@ type ReportsMonthlyComparisonProps = {
 };
 
 /**
- * The six-month view, compressed into three readings.
+ * The recent months, compressed into three readings.
  *
- * The trend is the mean of the last three months against the mean of the first
- * three, not a single month-over-month step: one quiet month would otherwise
- * read as a collapse. Each sparkline is the same six closes the average is
- * taken from, so the shape and the number cannot disagree.
+ * The window is at most six months and never reaches before the file's first
+ * transaction: a month before the history is not a month nothing happened in.
+ * The trend is the mean of the later half against the mean of the earlier
+ * half, not a single month-over-month step: one quiet month would otherwise
+ * read as a collapse. Each sparkline is the same closes the average is taken
+ * from, so the shape and the number cannot disagree.
  *
  * The three averages are one size: the design's, or the size the longest of
  * them still fits its third of the card at. In a 1280px window that third is
@@ -61,6 +69,7 @@ export function ReportsMonthlyComparison({
   monthly,
   monthCount,
   onOpenFullComparison,
+  note,
   compact = false,
 }: ReportsMonthlyComparisonProps) {
   const valueSize = fittedFontSize({
@@ -92,7 +101,7 @@ export function ReportsMonthlyComparison({
 
         <View style={{ flexDirection: compact ? 'column' : 'row', gap: 0 }}>
           <Block
-            label={<Trans>Income (avg)</Trans>}
+            label={<Trans>Classified receipts (avg)</Trans>}
             data={monthly.income}
             valueSize={valueSize}
             color={SERIES.income}
@@ -101,7 +110,7 @@ export function ReportsMonthlyComparison({
           />
           <Divider />
           <Block
-            label={<Trans>Expenses (avg)</Trans>}
+            label={<Trans>Spending (avg)</Trans>}
             data={monthly.expenses}
             valueSize={valueSize}
             color={SERIES.expenses}
@@ -111,7 +120,7 @@ export function ReportsMonthlyComparison({
           />
           <Divider />
           <Block
-            label={<Trans>Net Result (avg)</Trans>}
+            label={<Trans>Result (avg)</Trans>}
             data={monthly.net}
             valueSize={valueSize}
             color={SERIES.net}
@@ -119,6 +128,18 @@ export function ReportsMonthlyComparison({
             compact={compact}
           />
         </View>
+
+        {note && (
+          <Text
+            style={{
+              fontSize: 11.5,
+              lineHeight: 1.4,
+              color: 'var(--dfl-text-3)',
+            }}
+          >
+            {note}
+          </Text>
+        )}
 
         {onOpenFullComparison && (
           <CardLink onPress={onOpenFullComparison}>
@@ -189,10 +210,14 @@ function Block({
             containerType: 'inline-size',
           }}
         >
+          {/* The rows are stacked, so a label that needs a second line makes
+              its own row taller and nothing else moves. Held on one line it
+              was cut instead, and a cut label hides which receipts the average
+              is of. */}
           <Text
             style={{
               fontSize: 11.5,
-              whiteSpace: 'nowrap',
+              lineHeight: 1.3,
               color: 'var(--dfl-text-3)',
             }}
           >
@@ -240,10 +265,16 @@ function Block({
         containerType: 'inline-size',
       }}
     >
+      {/* Two lines reserved in all three columns, whether a label needs them
+          or not: that keeps the three averages on one baseline while the
+          longest label wraps instead of being cut. "Receitas classificadas
+          (média)" does not fit a third of the panel on one line, and cutting
+          it would hide which receipts the average is of. */}
       <Text
         style={{
           fontSize: 11.5,
-          whiteSpace: 'nowrap',
+          lineHeight: 1.3,
+          minHeight: '2.6em',
           color: 'var(--dfl-text-3)',
         }}
       >
@@ -326,15 +357,41 @@ const SPARKLINE_BOX = css({
   [STACKED]: { flex: 'none', width: '100%' },
 });
 
-/** Six closes, drawn small. Scaled to its own range so the shape is visible. */
+/**
+ * The window's closes, drawn small and scaled to their own range so the shape
+ * is visible.
+ *
+ * A window of one month has no shape: dividing the width by `length - 1` would
+ * be a division by zero, which is how this drew `M NaN 30` on a file whose
+ * records start this month. One observation is a point, so it is drawn as one;
+ * none is drawn as nothing.
+ */
 function Sparkline({ values, color }: { values: number[]; color: string }) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
+  const yOf = (value: number) => SH - 4 - ((value - min) / span) * (SH - 10);
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  if (values.length === 1) {
+    return (
+      <svg
+        viewBox={`0 0 ${SW} ${SH}`}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        className={SPARKLINE_BOX}
+      >
+        <circle cx={SW / 2} cy={yOf(values[0])} r="2" fill={color} />
+      </svg>
+    );
+  }
 
   const points = values.map((value, index) => ({
     x: (index / (values.length - 1)) * SW,
-    y: SH - 4 - ((value - min) / span) * (SH - 10),
+    y: yOf(value),
   }));
 
   const line = points

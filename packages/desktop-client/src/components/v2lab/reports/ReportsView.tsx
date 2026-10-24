@@ -10,6 +10,8 @@ import { MonthChip } from '#components/v2lab/MonthChip';
 
 import { EmptyPanel } from './EmptyPanel';
 import { LabPill } from './LabPill';
+import { ReportsBreakdown } from './ReportsBreakdown';
+import type { ReportsBreakdownData } from './ReportsBreakdown';
 import { ReportsCategoryDonut } from './ReportsCategoryDonut';
 import type { DayPoint, ExpenseCategory } from './reportsFixtures';
 import { ReportsHeroChart } from './ReportsHeroChart';
@@ -66,12 +68,21 @@ export type ReportsViewData = {
   axisTicks: number[];
   xTicks: number[];
   totals: { income: number; expenses: number; net: number };
+  /**
+   * What the tiles leave out — extraordinary inflows, inflows awaiting a
+   * category, the uncategorized share of the spending, refunds — with the
+   * definition the page counts by. Absent ⇒ the laboratory, whose fixtures
+   * carry none of it.
+   */
+  breakdown?: ReportsBreakdownData;
   defaultHoverIndex: number;
   /** How to write an x-axis tick. Absent ⇒ the laboratory's fixed month. */
   formatXTick?: (day: number) => string;
   categories: (ExpenseCategory & { share: number })[];
   monthly: { income: Comparison; expenses: Comparison; net: Comparison };
   monthCount: number;
+  /** The months the comparison cannot vouch for whole, in one sentence. */
+  monthlyNote?: string;
   /** Absent ⇒ the panel is omitted, which is what happens without a full history. */
   insights?: {
     netChange: number;
@@ -178,6 +189,8 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
           previousPeriodLabel={data.previousPeriodLabel}
         />
 
+        {data.breakdown && <ReportsBreakdown breakdown={data.breakdown} />}
+
         <View
           style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}
         >
@@ -248,6 +261,7 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
             <ReportsMonthlyComparison
               monthly={data.monthly}
               monthCount={data.monthCount}
+              note={data.monthlyNote}
               onOpenFullComparison={data.onOpenFullComparison}
             />
 

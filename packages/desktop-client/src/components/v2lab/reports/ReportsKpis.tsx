@@ -58,7 +58,10 @@ const COMPACT_FIGURE_SIZE = 21;
 const COMPACT_FIGURE_TRACKING = -0.6;
 
 /**
- * The period in four figures.
+ * The period in four figures: the classified receipts, the spending (categorized
+ * or not, refunds deducted), what the first left after the second — labelled
+ * "Resultado", with its definition in the strip below the tiles — and the
+ * share of the classified receipts that was kept.
  *
  * Each carries its own hue on the icon alone; the values stay white so four
  * cards side by side read as one row rather than four competing signals. Every
@@ -97,7 +100,7 @@ export function ReportsKpis({
     >
       <Kpi
         compact={compact}
-        label={<Trans>Income</Trans>}
+        label={<Trans>Classified receipts</Trans>}
         value={income}
         valueSize={valueSize}
         isAmount
@@ -112,7 +115,7 @@ export function ReportsKpis({
       />
       <Kpi
         compact={compact}
-        label={<Trans>Expenses</Trans>}
+        label={<Trans>Spending</Trans>}
         value={expenses}
         valueSize={valueSize}
         isAmount
@@ -130,7 +133,11 @@ export function ReportsKpis({
       />
       <Kpi
         compact={compact}
-        label={<Trans>Net Result</Trans>}
+        /* Short on purpose: the tile gives its label one line, and the full
+           name did not fit it at either width. What the figure is made of is
+           stated under the four tiles, where there is room to say it once for
+           the whole page. */
+        label={<Trans>Result</Trans>}
         value={net}
         valueSize={valueSize}
         isAmount

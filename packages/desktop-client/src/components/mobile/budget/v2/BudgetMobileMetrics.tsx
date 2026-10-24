@@ -33,10 +33,11 @@ type BudgetMobileMetricsProps = {
 /**
  * The month in three figures.
  *
- * The third is labelled "Saldo do mês" in full, never just "Saldo": every group
- * further down carries its own balance — what is left inside its envelopes —
- * and the two are different numbers. Shortening the label here would put two
- * meanings on one word on a single screen.
+ * The third is labelled "Receitas − gasto", never "Saldo": every group further
+ * down carries its own balance — what is left inside its envelopes — and the
+ * two are different numbers. The label is the arithmetic itself because the
+ * figure is the engine's income less its categorized spending, which is not
+ * the month's result the Home and the Reports print.
  *
  * Each bar is that figure's share of the month's income, so the three are
  * measured against the same thing and can be compared by eye. A month with no
@@ -77,7 +78,7 @@ export function BudgetMobileMetrics({
         percent={share(planned)}
       />
       <BudgetMobileMetric
-        label={<Trans>Gasto</Trans>}
+        label={<Trans>Gasto categorizado</Trans>}
         value={spent}
         figureSize={figureSize}
         Icon={SvgArrowThinDown}
@@ -85,7 +86,7 @@ export function BudgetMobileMetrics({
         percent={share(spent)}
       />
       <BudgetMobileMetric
-        label={<Trans>Saldo do mês</Trans>}
+        label={<Trans>Receitas − gasto</Trans>}
         value={monthBalance}
         figureSize={figureSize}
         Icon={SvgArrowThinUp}

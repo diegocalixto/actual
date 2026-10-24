@@ -4,8 +4,10 @@ import { Trans } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
+import type { IndicatorTotals } from '@actual-app/core/shared/month-indicators';
 
 import { FinancialText } from '#components/FinancialText';
+import { monthDetailLines } from '#components/home/v2/MonthSummaryCard';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { fittedFontSize } from './amountFit';
@@ -15,19 +17,30 @@ import type { LabMonthTotals } from './overviewFixtures';
 
 type LabMonthSummaryProps = {
   totals: LabMonthTotals;
+  /**
+   * What the three figures leave out, one line each under them. `null` or
+   * absent ⇒ no lines: the laboratory's fixtures carry none.
+   */
+  details?: IndicatorTotals | null;
 };
 
 const FIGURE_TRACKING = -0.5;
 
 /**
- * Money in, money out, and the month's verdict.
+ * The classified receipts, the spending, and what the first left after the second.
  *
  * Each figure has a third of the panel. That is ample for the month the design
  * was drawn with and not for one in the millions, which ran past its hairline;
  * the three now give up size together, to what the longest of them fits at.
+ *
+ * Under them, when there is something to say, one line per thing the three
+ * figures leave out: an extraordinary inflow kept apart from the regular
+ * income, inflows still without a category, the uncategorized share of the
+ * spending. The rules are `@actual-app/core/shared/month-indicators`, the Reports' own.
  */
-export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
+export function LabMonthSummary({ totals, details }: LabMonthSummaryProps) {
   const figures = [totals.income, totals.spent, totals.net].map(formatMoney);
+  const lines = details ? monthDetailLines(details) : [];
 
   return (
     <LabPanel>
@@ -39,21 +52,21 @@ export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
         }}
       >
         <Cell
-          label={<Trans>Money in</Trans>}
+          label={<Trans>Classified receipts</Trans>}
           value={totals.income}
           figures={figures}
           color="var(--dfl-positive)"
         />
         <Divider />
         <Cell
-          label={<Trans>Money out</Trans>}
+          label={<Trans>Spending</Trans>}
           value={totals.spent}
           figures={figures}
           color="var(--dfl-negative)"
         />
         <Divider />
         <Cell
-          label={<Trans>Monthly net</Trans>}
+          label={<Trans>Result of classified receipts</Trans>}
           value={totals.net}
           figures={figures}
           // The verdict is the one figure whose sign is a judgement.
@@ -67,6 +80,44 @@ export function LabMonthSummary({ totals }: LabMonthSummaryProps) {
           emphasized
         />
       </View>
+
+      {lines.length > 0 && (
+        <View
+          style={{
+            gap: 5,
+            padding: '10px 22px 14px',
+            borderTop: '1px solid var(--dfl-line)',
+          }}
+        >
+          {lines.map(line => (
+            <View
+              key={line.key}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-2)' }}>
+                {line.label}
+              </Text>
+              {line.value !== null && (
+                <FinancialText
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    color: 'var(--dfl-text)',
+                  }}
+                >
+                  <PrivacyFilter>{formatMoney(line.value)}</PrivacyFilter>
+                </FinancialText>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
     </LabPanel>
   );
 }

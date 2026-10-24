@@ -4,11 +4,16 @@ import { Trans } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
+import type { IndicatorTotals } from '@actual-app/core/shared/month-indicators';
+
+import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 
 import { LabAccounts, LabAccountsTotal } from './LabAccounts';
 import { LabHero } from './LabHero';
+import { formatMoney } from './labMoney';
 import { LabMonthSummary } from './LabMonthSummary';
-import { LabSection } from './LabPanel';
+import { LabPanel, LabSection } from './LabPanel';
 import { LabRecentActivity } from './LabRecentActivity';
 import { LabSpending } from './LabSpending';
 import type { LabHue } from './LabTile';
@@ -46,6 +51,8 @@ export type OverviewCategoryItem = {
   Icon: OverviewIcon;
   hue: LabHue;
   amount: number;
+  /** The row for outflows with no category, if the month has any. */
+  isUncategorized?: boolean;
 };
 
 export type OverviewMovementItem = {
@@ -73,8 +80,29 @@ export type OverviewViewData = {
   /** `null` when the budget type has no such cell, or while loading. */
   toBudget: number | null;
   monthTotals: OverviewMonthTotals | null;
+  /**
+   * The facts the three month figures leave out, one line each, or absent:
+   * the laboratory's fixtures carry none.
+   */
+  monthDetails?: IndicatorTotals | null;
   accounts: OverviewAccountItem[];
   categories: OverviewCategoryItem[];
+  /**
+   * What the ranked rows do not add up to on their own: the categories that
+   * gave back more than they took, and the subtraction that reaches the
+   * month's spending. Absent ⇒ nothing came back, or the laboratory, whose
+   * fixtures carry none.
+   */
+  spendingComposition?: {
+    credits: Array<{ id: string; name: string; amount: number }>;
+    outflows: number;
+    net: number;
+  } | null;
+  /**
+   * What the "Sem categoria" row opens. Absent ⇒ the row is plain text, which
+   * is what the laboratory wants.
+   */
+  onReviewUncategorized?: () => void;
   movements: OverviewMovementItem[];
   isAccountsLoading: boolean;
   isMonthLoading: boolean;
@@ -195,7 +223,10 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
                   )}
                 </EmptyPanel>
               ) : (
-                <LabMonthSummary totals={data.monthTotals} />
+                <LabMonthSummary
+                  totals={data.monthTotals}
+                  details={data.monthDetails ?? null}
+                />
               )}
             </LabSection>
 
@@ -209,7 +240,17 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
                   )}
                 </EmptyPanel>
               ) : (
-                <LabSpending categories={data.categories} />
+                <>
+                  <LabSpending
+                    categories={data.categories}
+                    onReviewUncategorized={data.onReviewUncategorized}
+                  />
+                  {(data.spendingComposition?.credits.length ?? 0) > 0 && (
+                    <SpendingCredits
+                      composition={data.spendingComposition ?? null}
+                    />
+                  )}
+                </>
               )}
             </LabSection>
 
@@ -325,5 +366,97 @@ function EmptyPanel({ children }: { children: ReactNode }) {
         {children}
       </Text>
     </View>
+  );
+}
+
+type SpendingCreditsProps = {
+  composition: OverviewViewData['spendingComposition'];
+};
+
+/**
+ * The refunds that lower the month's spending, and the subtraction they belong
+ * to.
+ *
+ * A category refunded more than it was spent has no length to draw on the
+ * ranked list — a negative run does not exist — but it does move the total. So
+ * it is named here instead of dropped, with the outflows the rows above add up
+ * to and the figure the summary prints. Without this, the list would contradict
+ * the panel above it.
+ */
+function SpendingCredits({ composition }: SpendingCreditsProps) {
+  if (!composition) {
+    return null;
+  }
+
+  const lines: Array<{ key: string; label: ReactNode; value: number }> = [
+    ...composition.credits.map(credit => ({
+      key: credit.id,
+      label: credit.name,
+      value: credit.amount,
+    })),
+    {
+      key: 'outflows',
+      label: <Trans>Month outflows</Trans>,
+      value: -composition.outflows,
+    },
+    {
+      key: 'net',
+      label: <Trans>Net spending</Trans>,
+      value: composition.net,
+    },
+  ];
+
+  return (
+    <LabPanel>
+      <View style={{ padding: '12px 22px', gap: 6 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            color: 'var(--dfl-text-3)',
+          }}
+        >
+          <Trans>Refunds that lower the total</Trans>
+        </Text>
+
+        {lines.map((line, index) => (
+          <View
+            key={line.key}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12.5,
+                fontWeight: index === lines.length - 1 ? 600 : 400,
+                color:
+                  index === lines.length - 1
+                    ? 'var(--dfl-text)'
+                    : 'var(--dfl-text-2)',
+              }}
+            >
+              {line.label}
+            </Text>
+            <FinancialText
+              style={{
+                fontSize: 12.5,
+                fontWeight: index === lines.length - 1 ? 700 : 600,
+                whiteSpace: 'nowrap',
+                color:
+                  line.value > 0 ? 'var(--dfl-positive)' : 'var(--dfl-text)',
+              }}
+            >
+              <PrivacyFilter>{formatMoney(line.value)}</PrivacyFilter>
+            </FinancialText>
+          </View>
+        ))}
+      </View>
+    </LabPanel>
   );
 }

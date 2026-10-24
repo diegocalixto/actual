@@ -100,7 +100,7 @@ export function HomeMobileHero({
             color: 'var(--dfl-text-2)',
           }}
         >
-          <Trans>Saldo disponível</Trans>
+          <Trans>Saldo nas contas</Trans>
         </Text>
 
         <View
@@ -149,7 +149,7 @@ export function HomeMobileHero({
         </View>
 
         <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-2)' }}>
-          <Trans>Soma das contas no orçamento</Trans>
+          <Trans>Contas no orçamento somadas, cartões já descontados</Trans>
         </Text>
       </View>
 
