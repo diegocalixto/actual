@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 573 433" role="img" aria-label="Diego Finance">
+  <title>Diego Finance</title>
+  <!-- Monograma DF (símbolo da marca). Geometria medida na arte de referência
+       (1254 px): o D roxo fica na frente; o F azul tem a barra de cima recortada
+       por um arco concêntrico ao D e a parte de baixo encosta no D. A mesma
+       geometria está em src/components/appshell/DiegoFinanceMonogram.tsx. -->
+  <path fill="#4DA0F9" d="M310 230A60 60 0 0 1 370 170H525A18 18 0 0 1 543 188V202A60 60 0 0 1 483 262H393V322A110 110 0 0 1 283 432H174L174 420L304 300V230Z"/>
+  <path fill="#4DA0F9" d="M226 0H551A21 21 0 0 1 572 21A80 80 0 0 1 492 101H317A177 177 0 0 0 226 0Z"/>
+  <path fill="#8F59FB" fill-rule="evenodd" d="M24 0H150A160 160 0 0 1 310 160V296A136 136 0 0 1 174 432H40A40 40 0 0 1 0 392V24A24 24 0 0 1 24 0ZM91 102H148A95 95 0 0 1 243 197V252A76 76 0 0 1 167 328H91Z"/>
+</svg>

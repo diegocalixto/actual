@@ -284,7 +284,9 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // Onboarding / initial screens — the onboarding redesign that introduced
     // the welcome screen landed after the last pt-BR catalog sync, so none of
     // its strings have a translation yet.
-    'Welcome to Actual': 'Bem-vindo(a) ao Actual',
+    // Entry screens carry the product's name; the paragraphs that explain
+    // what Actual is, and credit it, stay as they are.
+    'Welcome to Actual': 'Bem-vindo(a) ao Diego Finance',
     'Your finances - made simple': 'Suas finanças, simplificadas',
     'Actual is a super fast, privacy-focused app for managing your finances. It is 100% free and open source: everything stays on your device, no data is collected, and there is nothing to sign up for.':
       'Actual é um app super rápido focado em privacidade para gerenciar suas finanças. É 100% gratuito e de código aberto: tudo fica no seu dispositivo, nenhum dado é coletado e não é preciso criar conta.',
@@ -335,7 +337,8 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Other: 'Outro',
 
     // Bootstrap — "bem-vindo" is hyphenated; the catalog drops the hyphen.
-    'Welcome to Actual!': 'Bem-vindo(a) ao Actual!',
+    'Welcome to Actual!': 'Bem-vindo(a) ao Diego Finance!',
+    'Sign in to this Actual instance': 'Entrar no Diego Finance',
 
     // Server configuration — the catalog puts a crase before a numeral
     // ("de 1 à 65535") and inside the fixed phrase "passo a passo".

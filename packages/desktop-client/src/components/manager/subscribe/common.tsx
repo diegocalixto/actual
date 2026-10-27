@@ -3,10 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 
 import { theme } from '@actual-app/components/theme';
+import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import { isElectron } from '@actual-app/core/shared/environment';
 import type { Handlers } from '@actual-app/core/types/handlers';
 
+import { BrandMark } from '#components/appshell/BrandMark';
 import {
   useSetLoginMethods,
   useSetMultiuserEnabled,
@@ -143,17 +145,25 @@ export function useBootstrapped(redirect = true) {
 type TitleProps = {
   text: string;
 };
+/**
+ * The heading of the entry screens (sign in, first password, server setup),
+ * under the product mark: these are the first screens a visitor sees, and
+ * the mark is what says whose app this is.
+ */
 export function Title({ text }: TitleProps) {
   return (
-    <h1
-      style={{
-        fontSize: 40,
-        fontWeight: 700,
-        color: theme.pageTextPositive,
-        marginBottom: 20,
-      }}
-    >
-      {text}
-    </h1>
+    <View style={{ alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+      <BrandMark size={44} />
+      <h1
+        style={{
+          fontSize: 40,
+          fontWeight: 700,
+          color: theme.pageTextPositive,
+          margin: 0,
+        }}
+      >
+        {text}
+      </h1>
+    </View>
   );
 }
