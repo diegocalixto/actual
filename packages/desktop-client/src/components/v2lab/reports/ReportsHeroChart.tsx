@@ -11,6 +11,7 @@ import { View } from '@actual-app/components/view';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { fittedFontSize } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 
 import { LabCard } from './LabCard';
 import type { DayPoint } from './reportsFixtures';
@@ -59,10 +60,13 @@ const COMPACT_PLOT_HEIGHT = 168;
 
 const ORDER: SeriesKey[] = ['income', 'expenses', 'net'];
 
+// The result by its short title, as the tile above names it: the long one did
+// not fit a third of a phone, and the card's own title already says whose
+// result it is.
 const LABEL: Record<SeriesKey, ReactNode> = {
   income: <Trans>Classified receipts</Trans>,
   expenses: <Trans>Spending</Trans>,
-  net: <Trans>Result of classified receipts</Trans>,
+  net: <Trans>Result</Trans>,
 };
 
 /**
@@ -157,7 +161,7 @@ export function ReportsHeroChart({
               <Text
                 key={tick}
                 style={{
-                  fontSize: compact ? 10 : 11,
+                  fontSize: 11,
                   lineHeight: 1,
                   whiteSpace: 'nowrap',
                   color: 'var(--dfl-text-3)',
@@ -344,7 +348,7 @@ export function ReportsHeroChart({
                 <Text
                   key={day}
                   style={{
-                    fontSize: compact ? 10.5 : 11.5,
+                    fontSize: compact ? 11 : 11.5,
                     whiteSpace: 'nowrap',
                     color: 'var(--dfl-text-3)',
                   }}
@@ -378,9 +382,7 @@ export function ReportsHeroChart({
             />
             <Divider />
             <Total
-              label={
-                <Trans>Result of classified receipts for the period</Trans>
-              }
+              label={<Trans>Result for the period</Trans>}
               value={totals.net}
               color={SERIES.net}
             />
@@ -526,8 +528,11 @@ function Readout({ point }: { point: DayPoint }) {
               containerType: 'inline-size',
             }}
           >
+            {/* The label may take two lines; it never runs into the next
+                column, which is what drew "Gastos"'s dot over the end of
+                "Receitas classificadas". */}
             <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}
             >
               <View
                 aria-hidden="true"
@@ -535,6 +540,7 @@ function Readout({ point }: { point: DayPoint }) {
                   width: 7,
                   height: 7,
                   flexShrink: 0,
+                  marginTop: 4,
                   borderRadius: 999,
                   backgroundColor: SERIES[key],
                   boxShadow: `0 0 7px -1px ${SERIES[key]}`,
@@ -542,8 +548,10 @@ function Readout({ point }: { point: DayPoint }) {
               />
               <Text
                 style={{
-                  fontSize: 11.5,
-                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: MOBILE_TYPE.label,
+                  lineHeight: 1.25,
                   color: 'var(--dfl-text-2)',
                 }}
               >
@@ -569,7 +577,15 @@ function Readout({ point }: { point: DayPoint }) {
 
 function Legend() {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 22 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        columnGap: 22,
+        rowGap: 6,
+      }}
+    >
       {ORDER.map(key => (
         <View
           key={key}
@@ -755,14 +771,25 @@ function Total({
   color: string;
 }) {
   return (
-    <View style={{ flex: '1 1 0', alignItems: 'center', gap: 7 }}>
+    <View
+      style={{
+        flex: '1 1 0',
+        minWidth: 0,
+        alignItems: 'center',
+        gap: 7,
+        padding: '0 10px',
+      }}
+    >
+      {/* Free to take a second line: one label used to run past its third of
+          the strip and lose "PERÍODO" under the card's edge. */}
       <Text
         style={{
-          fontSize: 10.5,
+          fontSize: 11,
           fontWeight: 600,
           letterSpacing: 1.2,
+          lineHeight: 1.3,
           textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
+          textAlign: 'center',
           color: 'var(--dfl-text-3)',
         }}
       >

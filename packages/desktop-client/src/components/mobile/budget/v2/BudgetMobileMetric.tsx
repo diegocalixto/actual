@@ -6,6 +6,7 @@ import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
 import type { EntityIcon } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 
 import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileProgress } from './BudgetMobileProgress';
@@ -60,23 +61,27 @@ export function BudgetMobileMetric({
         boxShadow: 'var(--dfl-shadow), 0 1px 0 rgba(0, 0, 0, 0.5)',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
         <Icon
           aria-hidden="true"
           width={13}
           height={13}
-          style={{ flexShrink: 0, color: tone }}
+          style={{ flexShrink: 0, marginTop: 1, color: tone }}
         />
+        {/* Free to take a second line, and given room for one in every card
+            so the three figures stay on one baseline. Held to one line and
+            shrunk with the viewport instead, "GASTO CATEGORIZADO" ran 20pt
+            past its card's edge at 428pt and was read as "CATEGORIZAD". */}
         <Text
           style={{
-            // "SALDO DO MÊS" is the longest of the three and must survive a
-            // 375pt screen without being cut: it shrinks with the viewport and
-            // stops at the size the proposal draws.
-            fontSize: 'clamp(8px, 2.3vw, 9.5px)',
+            flex: 1,
+            minWidth: 0,
+            fontSize: MOBILE_TYPE.caption,
             fontWeight: 600,
-            letterSpacing: 0.4,
+            letterSpacing: 0.3,
+            lineHeight: 1.25,
+            minHeight: '2.5em',
             textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
             color: 'var(--dfmb-label)',
           }}
         >

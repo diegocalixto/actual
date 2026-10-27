@@ -5,9 +5,11 @@ import { Button } from '@actual-app/components/button';
 import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
+import { tsToRelativeTime } from '@actual-app/core/shared/util';
 import { css } from '@emotion/css';
 
 import { HomeMobileHeroLight } from '#components/home/v2mobile/HomeMobileHeroLight';
+import { useLocale } from '#hooks/useLocale';
 
 import { AccountsMobileMoney } from './AccountsMobileMoney';
 import { currencyWithSign, magnitude } from './accountsMoneyFormat';
@@ -17,6 +19,8 @@ type AccountsMobileHeroProps = {
   total: number | null;
   /** How many open accounts the file has. A count, never a balance. */
   accountCount: number;
+  /** When the bank was last read, as epoch milliseconds; `null` when never or unlinked. */
+  lastBankRead?: number | null;
   /** Opens the combined register. */
   onOpenAllTransactions: () => void;
 };
@@ -41,9 +45,11 @@ type AccountsMobileHeroProps = {
 export function AccountsMobileHero({
   total,
   accountCount,
+  lastBankRead = null,
   onOpenAllTransactions,
 }: AccountsMobileHeroProps) {
   const { t } = useTranslation();
+  const locale = useLocale();
 
   return (
     <View
@@ -88,7 +94,7 @@ export function AccountsMobileHero({
           >
             <Text
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: 1,
                 textTransform: 'uppercase',
@@ -149,6 +155,13 @@ export function AccountsMobileHero({
         <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-2)' }}>
           <Trans>Soma de todas as contas abertas</Trans>
         </Text>
+        {lastBankRead !== null && (
+          <Text style={{ fontSize: 11.5, color: 'var(--dfl-text-3)' }}>
+            {t('Bank data updated {{when}}', {
+              when: tsToRelativeTime(String(lastBankRead), locale),
+            })}
+          </Text>
+        )}
       </View>
 
       <Button
@@ -158,6 +171,7 @@ export function AccountsMobileHero({
         className={css({
           position: 'relative',
           width: '100%',
+          minHeight: 44,
           padding: '13px 16px 13px 18px',
           borderRadius: 0,
           borderTop: '1px solid var(--dfl-hero-line)',

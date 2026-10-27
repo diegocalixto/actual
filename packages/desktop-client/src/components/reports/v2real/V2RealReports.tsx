@@ -1,10 +1,16 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { viewStyles } from '@actual-app/components/view';
+import { UNCATEGORIZED_ID } from '@actual-app/core/shared/month-indicators';
 import { css, cx } from '@emotion/css';
 
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { ReportsView } from '#components/v2lab/reports/ReportsView';
+import {
+  sliceForSpendingEntry,
+  useOpenIndicatorTransactions,
+} from '#reports/useOpenIndicatorTransactions';
 
 import { REPORTS_ROOT_CLASS, ReportsStyle } from './ReportsStyle';
 import { useRealReportsData } from './useRealReportsData';
@@ -29,6 +35,8 @@ const AUTHOR = 'Diego Calixto';
 export function V2RealReports() {
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
+  const { t } = useTranslation();
+  const openTransactions = useOpenIndicatorTransactions();
   const period = useReportsPeriod();
   const data = useRealReportsData(period.month);
   const detailReports = useReportsDetailLinks();
@@ -58,6 +66,21 @@ export function V2RealReports() {
           period,
           detailReports,
           onOpenFullComparison: cashFlow?.onOpen,
+          // The period on screen, under the indicators' rules.
+          onOpenCategory: category =>
+            openTransactions(
+              period.month,
+              sliceForSpendingEntry(category.id),
+              category.id === UNCATEGORIZED_ID
+                ? t('Uncategorized spending')
+                : category.name,
+            ),
+          onOpenPendingInflows: () =>
+            openTransactions(
+              period.month,
+              { kind: 'pendingInflows' },
+              t('Inflows to review'),
+            ),
           footnote: AUTHOR,
         }}
       />

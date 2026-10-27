@@ -13,6 +13,7 @@ import { css } from '@emotion/css';
 import { FinancialText } from '#components/FinancialText';
 import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
 import { iconForCategory } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 import { useSheetValue } from '#hooks/useSheetValue';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
@@ -25,6 +26,8 @@ import { useCategoryBudgetMenu } from './useCategoryBudgetMenu';
 const ROW_PADDING_Y = 10;
 const ROW_PADDING_X = 12;
 const ROW_GAP = 10;
+/** The smallest target a finger gets. */
+const TARGET = 44;
 /** What a control answers a press with. Touch has no hover to do it. */
 const PRESSED = 'rgba(150, 180, 215, 0.1)';
 
@@ -132,9 +135,10 @@ export function BudgetMobileIncomeRow({
           })}
           className={css({
             width: '100%',
+            // A finger's height at the least: all of the row under an
+            // envelope budget, the upper band when a plan sits underneath.
+            minHeight: TARGET,
             justifyContent: 'flex-start',
-            // As tall as the row lets it be: all of it under an envelope
-            // budget, the upper half when a plan sits underneath.
             padding: `${ROW_PADDING_Y + 2}px 2px ${isTracking ? 2 : ROW_PADDING_Y + 2}px`,
             margin: `-${ROW_PADDING_Y + 1}px 0 -${isTracking ? 1 : ROW_PADDING_Y + 1}px`,
             borderRadius: 6,
@@ -165,6 +169,8 @@ export function BudgetMobileIncomeRow({
             })}
             className={css({
               alignSelf: 'flex-start',
+              minWidth: TARGET,
+              minHeight: TARGET,
               // The rest of the gap, and down to the row's other edge.
               padding: `3px 2px ${ROW_PADDING_Y + 2}px`,
               margin: `-2px 0 -${ROW_PADDING_Y + 1}px`,
@@ -175,7 +181,7 @@ export function BudgetMobileIncomeRow({
           >
             <FinancialText
               style={{
-                fontSize: 'clamp(8px, 2.2vw, 11px)',
+                fontSize: MOBILE_TYPE.caption,
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
                 color: 'var(--dfmb-label)',
@@ -219,7 +225,12 @@ export function BudgetMobileIncomeRow({
           >
             <BudgetMobileAmount value={received} ownsControl />
           </FinancialText>
-          <Text style={{ fontSize: 9, color: 'var(--dfmb-label)' }}>
+          <Text
+            style={{
+              fontSize: MOBILE_TYPE.caption,
+              color: 'var(--dfmb-label)',
+            }}
+          >
             <Trans>Recebido</Trans>
           </Text>
         </View>
@@ -238,8 +249,9 @@ export function BudgetMobileIncomeRow({
           // The row's full height, and every point of width between the
           // amount's ink and the card's edge.
           minHeight: 40 + 2 * ROW_PADDING_Y,
-          padding: `${ROW_PADDING_Y + 2}px ${ROW_PADDING_X + 1}px ${ROW_PADDING_Y + 2}px ${ROW_GAP + 5}px`,
-          margin: `-${ROW_PADDING_Y}px -${ROW_PADDING_X}px -${ROW_PADDING_Y}px -${ROW_GAP + 4}px`,
+          // 45pt wide: the gap and the padding on either side of it.
+          padding: `${ROW_PADDING_Y + 2}px ${ROW_PADDING_X + 1}px ${ROW_PADDING_Y + 2}px ${ROW_GAP + 6}px`,
+          margin: `-${ROW_PADDING_Y}px -${ROW_PADDING_X}px -${ROW_PADDING_Y}px -${ROW_GAP + 5}px`,
           borderRadius: 0,
           color: 'var(--dfl-text-3)',
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },

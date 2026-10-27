@@ -1,19 +1,15 @@
+import { categoryHueVar } from '#components/v2lab/categoryHue';
+
 /**
  * Tile colours for the category lists.
  *
- * Three cold hues cycled by position, not one hue per category. Painting every
- * category a different colour turns a list into a colour chart and — worse on
- * this screen — competes with amber, the one colour that here means something.
- * A short rotation keeps adjacent rows distinguishable and leaves the semantic
- * channel to the state.
+ * A category's own hue, from the definition every screen shares — so a
+ * category is the same colour in this list as on Início and Relatórios —
+ * rather than a rotation by position, which gave one category a different
+ * colour whenever the list above it changed. The shared palette leaves amber
+ * out, so the one colour that means something on this screen stays the
+ * alerts'.
  */
-const TILE_HUES = [
-  'var(--dfl-hue-violet)',
-  'var(--dfl-hue-blue)',
-  'var(--dfl-hue-cyan)',
-];
-
-/** The hue for the row at `index` within its group. */
-export function hueForIndex(index: number): string {
-  return TILE_HUES[index % TILE_HUES.length];
+export function hueForCategoryRow(categoryId: string): string {
+  return categoryHueVar(categoryId);
 }

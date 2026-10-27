@@ -12,7 +12,8 @@ export type LabHue =
   | 'violet'
   | 'rose'
   | 'crimson'
-  | 'amber';
+  | 'amber'
+  | 'neutral';
 
 type LabTileProps = {
   Icon: LabIcon;

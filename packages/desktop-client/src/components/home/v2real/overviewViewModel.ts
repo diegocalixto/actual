@@ -2,6 +2,8 @@ import type { ComponentType, SVGProps } from 'react';
 
 import type { IndicatorTotals } from '@actual-app/core/shared/month-indicators';
 
+import type { CategoryHueName } from '#components/v2lab/categoryHue';
+
 import type { OverviewHue } from './overviewPresentation';
 
 /**
@@ -19,8 +21,11 @@ export type OverviewIcon = ComponentType<SVGProps<SVGSVGElement>>;
 export type OverviewBalances = {
   /** Sum of on-budget account balances. `null` while the cell is unresolved. */
   available: number | null;
-  /** Envelope budgets only; `null` when the budget type has no such cell. */
-  toBudget: number | null;
+  /**
+   * Sum of the card accounts' balances, negative for a debt, when the bank's
+   * entries prove which on-budget accounts are cards; `null` otherwise.
+   */
+  cardsDebt: number | null;
 };
 
 export type OverviewMonthTotals = {
@@ -45,7 +50,8 @@ export type OverviewCategory = {
   id: string;
   name: string;
   Icon: OverviewIcon;
-  hue: OverviewHue;
+  /** The category's own hue, the same on every screen (`categoryHue.ts`). */
+  hue: CategoryHueName;
   amount: number;
   /** The month's outflows with no category, which open the list that needs one. */
   isUncategorized?: boolean;
@@ -58,7 +64,7 @@ export type OverviewMovement = {
   when: string;
   Icon: OverviewIcon;
   /** Shared with the matching spending category, so the two panels agree. */
-  hue: OverviewHue;
+  hue: CategoryHueName;
   amount: number;
 };
 
@@ -76,6 +82,8 @@ export type OverviewSpendingComposition = {
 };
 
 export type OverviewData = {
+  /** `YYYY-MM`: the month the figures and the lists they open are about. */
+  month: string;
   balances: OverviewBalances;
   monthTotals: OverviewMonthTotals | null;
   /**

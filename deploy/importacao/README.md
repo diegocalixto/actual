@@ -251,7 +251,12 @@ excluiu. O `atualizar` usa a sincronização da própria API:
    Avançado) é do orçamento `--orcamento` e só então o baixa, numa pasta
    **vazia**, a cada execução; outro orçamento nunca é baixado nem aberto;
 2. recusa se faltar conta (renomeada ou fechada no app) ou categoria; nunca
-   cria nenhuma das duas;
+   cria nenhuma das duas. Com `--confirmar`, recusa também o lote que tenha
+   conta **vinculada à sincronização bancária** (Pluggy etc.): ao casar o
+   extrato do banco com o histórico, o Actual troca o `imported_id` `dfi1-…`
+   pelo id do banco, e o lote sobreposto voltaria inteiro como "novo". A
+   prévia marca essas contas com `VINCULADA`; `--importar-suspeitas` e
+   `--aplicar-parcial` não liberam;
 3. classifica cada linha contra o orçamento, inclusive o que foi excluído no
    app:
 
@@ -318,6 +323,83 @@ $env:DF_SENHA_SERVIDOR = [Net.NetworkCredential]::new('', $s).Password
 docker exec -e DF_SENHA_SERVIDOR df-v2-dev sh -c "cd /workspaces/actual-v2 && NODE_PATH=/workspaces/actual-v2/node_modules node deploy/importacao/importar.mjs atualizar --servidor http://host.docker.internal:5006 --sync-id <id> --orcamento 'Diego Finance Real' ..."
 Remove-Item Env:DF_SENHA_SERVIDOR
 ```
+
+### 3.2 Ancoragem antes do vínculo Pluggy (`ancorar.mjs`)
+
+Ao vincular à Pluggy uma conta que já tem o histórico do importador, o Actual
+casa cada lançamento do banco com um existente de mesmo valor em ±7 dias, um a
+um, na ordem em que o banco os entrega. No ensaio com dados reais (26/10) isso
+casou Pix repetidos em cascata (o Pix novo de 18/10 tomou a linha de 13/10,
+que empurrou as outras: saldo e contagem fecham, o mês não) e deixou em dobro
+o IOF, que o importador tem somado por fatura e a Pluggy traz por compra.
+`ancorar.mjs` resolve os dois **antes** do vínculo, com prévia:
+
+```
+node deploy/importacao/ancorar.mjs prever  --servidor <url> --sync-id <id> --orcamento <nome> \
+     --data-dir <pasta vazia> --api <index.js> --saida <pasta> \
+     --conta "Itaú Conta Corrente=<id Pluggy>" --conta "Itaú Personnalité Crédito=<id Pluggy>"
+node deploy/importacao/ancorar.mjs aplicar  (mesmas opções) --confirmar [--regras]
+```
+
+1. abre o orçamento do servidor como o `atualizar` (id de sincronização +
+   nome, pasta vazia, senha em `DF_SENHA_SERVIDOR`) e pede ao servidor os
+   lançamentos que o adaptador Pluggy entregaria na sincronização (mesmas
+   datas e valores que o Actual vai ver);
+2. casa existente × banco por **mesmo valor**, do par de datas mais próximo
+   para o mais distante (`--tolerancia`, padrão 5 dias), semelhança de
+   descrição no desempate, **um par só** por lançamento de cada lado. Linha do
+   importador (`dfi1-…`) só casa com lançamento do banco até a **data de
+   corte** do lote (a última data `dfi1-` da conta, ou `--corte`); depois dela,
+   só lançamento manual pode casar. Lançamento já conciliado nunca é tocado;
+3. **IOF agregado**: quando as linhas de IOF do banco do mesmo cartão (final
+   impresso na descrição) e da mesma fatura somam exatamente a linha agregada,
+   propõe apagar a agregada — o banco traz as partes — e uma regra que dá às
+   partes a categoria da agregada. Soma que não fecha: nada é proposto;
+4. a prévia lista as âncoras com data diferente ou descrição pouco parecida, o
+   histórico da janela sem par no banco, e o que o banco traz **até o corte**
+   sem par (entraria como novo no período do histórico: conferir). Sai com
+   código 1 se houver algo a conferir;
+5. `aplicar --confirmar` grava só o `imported_id` do banco nas âncoras e
+   apaga as agregadas comprovadas (`--regras` cria as regras), confere no
+   orçamento e sincroniza. Depois disso o vínculo é feito no aplicativo (ou
+   pelo condutor do ensaio): o Actual casa pelo id, sem fuzzy, e preserva
+   categoria, nota, favorecido, data e transferências.
+
+Resultado no ensaio (cópia da base de 21/10, 26/10): 134 + 83 âncoras, 5
+agregadas de IOF apagadas, cartão igual ao banco (Δ 0,00; sem ancoragem era
+−230,74), corrente Δ −0,24 (rendimento da aplicação automática, que o banco não
+lança), nenhum campo sensível alterado nos casados, duas sincronizações
+seguintes com 0 novos e as 5 edições de teste preservadas.
+
+Depois do vínculo, ligue **`reimport-deleted=false`** em cada conta vinculada
+(configurações de sincronização da conta, "reimportar excluídos"): com o padrão
+ligado, um lançamento apagado no app volta na sincronização seguinte.
+
+**Transferências entre contas vinculadas.** O banco entrega os dois lados de um
+pagamento de fatura ou de um Pix entre contas próprias como lançamentos soltos
+(gasto numa conta, receita na outra):
+
+```
+node deploy/importacao/ancorar.mjs transferencias (opções de servidor) --saida <pasta> \
+     --par "Itaú Conta Corrente=Itaú Personnalité Crédito" [--par ...] [--tolerancia 3] [--confirmar]
+```
+
+pareia saída e entrada de mesmo valor em até 3 dias e só propõe ligar quando há
+**prova**: "pagamento de fatura" × "pagamento recebido", ou o CPF do titular
+**nos dois lados** do Pix — a saída nomeia o titular da conta de destino como
+recebedor e a entrada nomeia o titular da conta de origem como pagador (lidos
+do dado cru da sincronização). Par com categoria em algum lado é só listado;
+par sem prova idem. `--confirmar` liga os
+pares provados como transferência (o "Tornar transferência" da tela: nenhum
+lançamento novo, categoria zerada nos dois lados).
+
+**Adaptador Pluggy do fork** (`packages/sync-server/src/app-pluggyai/`): o dia do
+lançamento é lido no fuso de Brasília (`ACTUAL_PLUGGYAI_TIMEZONE`, padrão
+`America/Sao_Paulo`; o upstream usa UTC e jogava para o dia seguinte o que foi
+feito depois das 21h); parcela que já vem datada pelo banco (anuidade k/12) não
+é deslocada k−1 meses; favorecido nunca é CPF — vale a contraparte nomeada,
+depois a descrição do extrato sem o rótulo da operação ("Pix enviado",
+"Pagamento de boleto"…) e sem o contador de parcela, por fim o merchant.
 
 ## 4. Roteiro da execução real (futura, com o Diego)
 

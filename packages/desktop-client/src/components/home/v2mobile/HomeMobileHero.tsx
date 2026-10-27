@@ -1,19 +1,52 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
-import { css } from '@emotion/css';
+import { tsToRelativeTime } from '@actual-app/core/shared/util';
 
-import type { HomeBudgetType } from '#components/home/useHomeMonth';
 import { amountWidthInEm, fittedFontSize } from '#components/v2lab/LabStyle';
-import { useNavigate } from '#hooks/useNavigate';
+import { useLocale } from '#hooks/useLocale';
 
 import { HomeMobileHeroLight } from './HomeMobileHeroLight';
 import { HomeMobileMoney } from './HomeMobileMoney';
 import { currencySymbol, formatAmount } from './mobileMoneyFormat';
+
+type HeroFactProps = {
+  label: ReactNode;
+  value: number;
+  tone?: 'negative';
+};
+
+/** One of the two parts the headline is made of: a label and its figure. */
+function HeroFact({ label, value, tone }: HeroFactProps) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: 1,
+          textTransform: 'uppercase',
+          color: 'var(--dfl-text-3)',
+        }}
+      >
+        {label}
+      </Text>
+      <HomeMobileMoney
+        value={value}
+        withCurrency
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color:
+            tone === 'negative' ? 'var(--dfl-negative)' : 'var(--dfl-text)',
+        }}
+      />
+    </View>
+  );
+}
 
 /** The symbol is set smaller than the figure it introduces. */
 const SYMBOL_SIZE = 20;
@@ -23,40 +56,52 @@ const FIGURE_TRACKING = -1.1;
 type HomeMobileHeroProps = {
   /** Sum of the on-budget account balances, or `null` while the cell loads. */
   available: number | null;
-  /** The envelope budget's "to budget" cell. Absent under a tracking budget. */
-  toBudget: number | null;
-  budgetType: HomeBudgetType;
+  /**
+   * Sum of the card accounts' balances (negative for a debt), when the bank's
+   * data proves which accounts are cards; `null` otherwise, and the line is
+   * not drawn.
+   */
+  cardsDebt?: number | null;
+  /** When the bank was last read, as epoch milliseconds; `null` when never. */
+  lastBankRead?: number | null;
 };
 
 /**
- * The screen's subject.
- *
- * One surface carrying two related answers: what there is, and how much of it
- * has no job yet. They share a card rather than sitting in two, because the
- * second is a property of the first — splitting them would make the phone look
- * like a stack of unrelated tiles before it has said anything.
+ * The screen's subject: what there is.
  *
  * The headline is the sum of the on-budget account balances: money that exists
- * and is inside the budget. It is deliberately not relabelled "available to
- * spend", which under an envelope budget means a different figure; the caption
- * states the definition so the headline can stay short without over-claiming.
+ * and is inside the budget, cards already netted out. Under it the two parts
+ * it is made of — what sits in the accounts and what the cards owe — because
+ * the question this card answers is "how much do I have", and a reader who
+ * sees R$ 1.300 wants to know it is R$ 6.100 in accounts less R$ 4.800 of
+ * card bills, not one opaque figure.
  *
- * The strip appears only under an envelope budget, because a tracking budget
- * publishes no "to budget" cell — an empty row there would imply a figure the
- * budget does not have.
+ * It is deliberately not relabelled "available to spend", which under an
+ * envelope budget means a different figure; the caption states the definition
+ * so the headline can stay short without over-claiming.
+ *
+ * The envelope budget's "to budget" cell used to sit under the headline as a
+ * strip. It is not a balance — it is the income not yet given an envelope,
+ * added up over the months — and printed on the card that answers "how much do
+ * I have" it was read as one. It lives on the Budget now, as "A planejar", with
+ * the explanation beside it.
  *
  * An overdrawn headline is written the way every other negative on this
  * screen is: the minus leads, ahead of the symbol, and both take the negative
- * tone. It used to read "R$ -2.324,00", with the strip under it saying
- * "-R$ 1.234,00" — two conventions on one card.
+ * tone.
  */
 export function HomeMobileHero({
   available,
-  toBudget,
-  budgetType,
+  cardsDebt = null,
+  lastBankRead = null,
 }: HomeMobileHeroProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const locale = useLocale();
+
+  // The headline nets the cards out; these two say by how much, and only when
+  // both are known, so they always add up to it.
+  const inAccounts =
+    available !== null && cardsDebt !== null ? available - cardsDebt : null;
 
   const isOverdrawn = available !== null && available < 0;
   const symbol = isOverdrawn ? `-${currencySymbol()}` : currencySymbol();
@@ -151,85 +196,38 @@ export function HomeMobileHero({
         <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-2)' }}>
           <Trans>Contas no orçamento somadas, cartões já descontados</Trans>
         </Text>
-      </View>
 
-      {budgetType === 'envelope' && (
-        <Button
-          variant="bare"
-          aria-label={t('Abrir o orçamento')}
-          onPress={() => void navigate('/budget')}
-          className={css({
-            position: 'relative',
-            width: '100%',
-            padding: '13px 16px 13px 18px',
-            borderRadius: 0,
-            borderTop: '1px solid var(--dfl-hero-line)',
-            backgroundColor: 'var(--dfm-hero-strip)',
-            '&[data-pressed]': { backgroundColor: 'rgba(4, 8, 16, 0.72)' },
-          })}
-        >
+        {inAccounts !== null && cardsDebt !== null && (
           <View
             style={{
-              flex: 1,
               flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              minWidth: 0,
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              gap: '4px 14px',
+              paddingTop: 4,
             }}
           >
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}
-            >
-              <View
-                aria-hidden="true"
-                style={{
-                  width: 6,
-                  height: 6,
-                  flexShrink: 0,
-                  borderRadius: 999,
-                  backgroundColor: 'var(--dfl-blue)',
-                }}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: 1.1,
-                  textTransform: 'uppercase',
-                  color: 'var(--dfl-text-2)',
-                }}
-              >
-                <Trans>Para distribuir</Trans>
-              </Text>
-            </View>
-
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-            >
-              <HomeMobileMoney
-                value={toBudget}
-                withCurrency
-                style={{
-                  fontSize: 16.5,
-                  fontWeight: 700,
-                  letterSpacing: -0.2,
-                  color:
-                    toBudget !== null && toBudget < 0
-                      ? 'var(--dfl-negative)'
-                      : 'var(--dfm-hero-value)',
-                }}
-              />
-              <SvgCheveronRight
-                aria-hidden="true"
-                width={16}
-                height={16}
-                style={{ color: 'var(--dfl-text-3)' }}
-              />
-            </View>
+            <HeroFact label={<Trans>In accounts</Trans>} value={inAccounts} />
+            <HeroFact
+              // A card the holder is owed by (a credit after a refund) is not
+              // a debt, so the word is kept for the ordinary case only.
+              label={
+                cardsDebt < 0 ? <Trans>Card debt</Trans> : <Trans>Cards</Trans>
+              }
+              value={cardsDebt}
+              tone={cardsDebt < 0 ? 'negative' : undefined}
+            />
           </View>
-        </Button>
-      )}
+        )}
+
+        {lastBankRead !== null && (
+          <Text style={{ fontSize: 11.5, color: 'var(--dfl-text-3)' }}>
+            {t('Bank data updated {{when}}', {
+              when: tsToRelativeTime(String(lastBankRead), locale),
+            })}
+          </Text>
+        )}
+      </View>
     </View>
   );
 }

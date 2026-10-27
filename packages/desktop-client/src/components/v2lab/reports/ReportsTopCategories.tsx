@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
+import { Button } from '@actual-app/components/button';
+import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
+import { UNCATEGORIZED_ID } from '@actual-app/core/shared/month-indicators';
+import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
@@ -20,6 +24,8 @@ type RankedCategory = ExpenseCategory & { share: number };
 type ReportsTopCategoriesProps = {
   categories: RankedCategory[];
   limit?: number;
+  /** What a row opens: its transactions. Absent ⇒ plain rows (laboratory). */
+  onOpenCategory?: (category: ExpenseCategory) => void;
 };
 
 /**
@@ -36,7 +42,9 @@ type ReportsTopCategoriesProps = {
 export function ReportsTopCategories({
   categories,
   limit = 5,
+  onOpenCategory,
 }: ReportsTopCategoriesProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const hasMore = categories.length > limit;
   const shown = isExpanded ? categories : categories.slice(0, limit);
@@ -71,13 +79,42 @@ export function ReportsTopCategories({
         </View>
 
         <View style={{ gap: 2 }}>
-          {shown.map(category => (
-            <Row
-              key={category.id}
-              category={category}
-              ratio={category.amount / largest}
-            />
-          ))}
+          {shown.map(category =>
+            onOpenCategory ? (
+              <Button
+                key={category.id}
+                variant="bare"
+                aria-label={
+                  category.id === UNCATEGORIZED_ID
+                    ? t('Review the spending without a category this month')
+                    : t('See the transactions of {{name}} this month', {
+                        name: category.name,
+                      })
+                }
+                onPress={() => onOpenCategory(category)}
+                className={css({
+                  width: '100%',
+                  padding: '0 6px',
+                  margin: '0 -6px',
+                  borderRadius: 8,
+                  justifyContent: 'flex-start',
+                  '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+                })}
+              >
+                <Row
+                  category={category}
+                  ratio={category.amount / largest}
+                  opens
+                />
+              </Button>
+            ) : (
+              <Row
+                key={category.id}
+                category={category}
+                ratio={category.amount / largest}
+              />
+            ),
+          )}
         </View>
 
         {hasMore && (
@@ -121,13 +158,23 @@ function ColumnLabel({
   );
 }
 
-function Row({ category, ratio }: { category: RankedCategory; ratio: number }) {
+function Row({
+  category,
+  ratio,
+  opens = false,
+}: {
+  category: RankedCategory;
+  ratio: number;
+  /** Ends in a chevron: the row opens its transactions. */
+  opens?: boolean;
+}) {
   const color = CATEGORY_HUE[category.hue];
   const { Icon } = category;
 
   return (
     <View
       style={{
+        width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 16,
@@ -165,6 +212,7 @@ function Row({ category, ratio }: { category: RankedCategory; ratio: number }) {
             flex: '0 0 96px',
             fontSize: 13.5,
             fontWeight: 500,
+            textAlign: 'left',
             color: 'var(--dfl-text)',
           }}
         >
@@ -218,6 +266,14 @@ function Row({ category, ratio }: { category: RankedCategory; ratio: number }) {
       >
         {formatPercent(category.share)}
       </Text>
+      {opens && (
+        <SvgCheveronRight
+          aria-hidden="true"
+          width={13}
+          height={13}
+          style={{ flexShrink: 0, color: 'var(--dfl-text-3)' }}
+        />
+      )}
     </View>
   );
 }

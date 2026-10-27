@@ -42,8 +42,11 @@ export function V2RealBudget() {
   const { totals: monthTotals } = useMonthIndicators(data.month);
   const uncategorized = monthTotals?.uncategorizedSpending ?? 0;
   const uncategorizedAmount = `${currencySymbol()} ${formatDigits(uncategorized)}`;
-  const bandNote =
-    monthTotals === null ? undefined : uncategorized > 0 ? (
+  // Both notes are about the envelope engine's figures; a tracking budget
+  // reads other cells and gets neither.
+  const isEnvelope = data.budgetType === 'envelope';
+  const figuresNote =
+    !isEnvelope || monthTotals === null ? null : uncategorized > 0 ? (
       <Trans>
         Envelope figures: income here includes starting balances and
         extraordinary inflows, and spending only what has a category.
@@ -56,6 +59,25 @@ export function V2RealBudget() {
         extraordinary inflows, and spending only what has a category. Nothing is
         uncategorized this month.
       </Trans>
+    );
+  // "A planejar" is the band's one figure that is not about this month alone,
+  // and the one most read as a balance; the line says what it is. Tracking
+  // budgets have no such cell and get no such line.
+  const planningNote = !isEnvelope ? null : (
+    <Trans>
+      A planejar is the income not yet given an envelope, added up month after
+      month. It is not a bank balance and not money to spare: the spending of
+      this month is only taken out of it next month, and entries without a
+      category do not count until they are classified.
+    </Trans>
+  );
+  const bandNote =
+    figuresNote === null && planningNote === null ? undefined : (
+      <>
+        {figuresNote}
+        {figuresNote !== null && planningNote !== null ? ' ' : null}
+        {planningNote}
+      </>
     );
 
   return (

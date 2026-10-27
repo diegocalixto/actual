@@ -209,13 +209,17 @@ export function useRealBudgetData() {
             name:
               getPrettyPayee({ t, transaction, payee, transferAccount }) ||
               t('(No payee)'),
-            envelope: category?.name ?? t('Sem categoria'),
+            // A transfer has no category because it needs none; only the rest
+            // is "Sem categoria", the count the header's reminder gives.
+            envelope:
+              category?.name ??
+              (transferAccount ? t('Transfer') : t('Sem categoria')),
             date: monthUtils.format(transaction.date, 'd MMM', ptBR),
             amount: transaction.amount ?? 0,
             Icon: iconForCategory(category?.name ?? ''),
             // The same hue the envelope above carries, so a row and a bar for
-            // one category are visibly the same thing.
-            hue: hueForId(category?.id ?? 'uncategorised'),
+            // one category are visibly the same thing; grey without one.
+            hue: hueForId(category?.id),
           };
         }),
     [transactions, payeesById, accounts, categoriesById, t],
@@ -275,6 +279,10 @@ export function useRealBudgetData() {
     totalSpent,
     month,
     sheetName,
+    // Which engine the cells above came from, so the page can word its notes
+    // for the right one rather than inferring it from a cell that is also
+    // `null` while loading.
+    budgetType: isTracking ? ('tracking' as const) : ('envelope' as const),
     onBudgetAction,
     envelopes,
     movements,

@@ -8,7 +8,9 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
+import type { HomeCategorySpending } from '#components/home/useHomeCategorySpending';
 import { useHomeCategorySpending } from '#components/home/useHomeCategorySpending';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 import { useNavigate } from '#hooks/useNavigate';
 
 import { HomeMobileMoney } from './HomeMobileMoney';
@@ -17,6 +19,8 @@ import { HomeMobileSpendingRow } from './HomeMobileSpendingRow';
 type HomeMobileSpendingProps = {
   /** `YYYY-MM`. */
   month: string;
+  /** Opens the transactions one row is made of. */
+  onOpenEntry: (entry: HomeCategorySpending) => void;
 };
 
 /**
@@ -26,16 +30,17 @@ type HomeMobileSpendingProps = {
  * most" at a glance and stay legible at 375px, where a pie's slice labels do
  * not.
  *
- * The header is the section's one action, and it is the same destination the
- * previous Home's "See in budget" button had — folded into the header so the
- * chevron the approved composition draws there means something instead of
- * sitting on the panel as decoration.
- *
- * Outflows without a category are a row like any other, named "Sem
- * categoria", and the one row that opens somewhere else: the list of
- * transactions still waiting for one.
+ * The header opens the budget, the destination the previous Home's "See in
+ * budget" button had. Every row opens what it is made of: a category, its
+ * transactions of the month — refunds included, transfers left out, as the
+ * figure counts them — and "Sem categoria", the month's outflows still
+ * waiting for one. That row is grey and says it is waiting, because it is not
+ * a category but something to do.
  */
-export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
+export function HomeMobileSpending({
+  month,
+  onOpenEntry,
+}: HomeMobileSpendingProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { categories, credits, outflows, credited, totalSpent, isLoading } =
@@ -57,10 +62,13 @@ export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
     >
       <Button
         variant="bare"
-        aria-label={t('Ver as despesas no orçamento')}
+        aria-label={t('Ver os gastos no orçamento')}
         onPress={() => void navigate('/budget')}
         className={css({
           width: '100%',
+          // 44pt and a point to spare, against the half point a fractional
+          // offset gives away to the list below.
+          minHeight: 46,
           padding: '11px 14px',
           borderRadius: 0,
           borderBottom: '1px solid var(--dfl-line)',
@@ -82,14 +90,14 @@ export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
         >
           <Text
             style={{
-              fontSize: 10.5,
+              fontSize: MOBILE_TYPE.label,
               fontWeight: 600,
-              letterSpacing: 1.2,
+              letterSpacing: 1,
               textTransform: 'uppercase',
               color: 'var(--dfl-text-2)',
             }}
           >
-            <Trans>Despesas do mês</Trans>
+            <Trans>Gastos do mês</Trans>
           </Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -124,39 +132,40 @@ export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
             }}
           >
             {isLoading ? (
-              <Trans>Carregando despesas…</Trans>
+              <Trans>Carregando gastos…</Trans>
             ) : (
-              <Trans>Nenhuma despesa registrada neste mês.</Trans>
+              <Trans>Nenhum gasto registrado neste mês.</Trans>
             )}
           </Text>
         </View>
       ) : (
         <View style={{ paddingTop: 2, paddingBottom: 4 }}>
-          {categories.map(entry =>
-            entry.isUncategorized ? (
-              <Button
-                key={entry.category.id}
-                variant="bare"
-                aria-label={t('Revisar as transações sem categoria')}
-                onPress={() => void navigate('/accounts/uncategorized')}
-                className={css({
-                  width: '100%',
-                  padding: 0,
-                  borderRadius: 0,
-                  textAlign: 'left',
-                  '&[data-pressed]': { backgroundColor: 'var(--dfl-inset)' },
-                })}
-              >
-                <HomeMobileSpendingRow entry={entry} outflows={outflows} />
-              </Button>
-            ) : (
-              <HomeMobileSpendingRow
-                key={entry.category.id}
-                entry={entry}
-                outflows={outflows}
-              />
-            ),
-          )}
+          {categories.map(entry => (
+            <Button
+              key={entry.category.id}
+              variant="bare"
+              aria-label={
+                entry.isUncategorized
+                  ? t('Revisar os gastos sem categoria do mês')
+                  : t('Ver as transações de {{name}} no mês', {
+                      name: entry.category.name,
+                    })
+              }
+              onPress={() => onOpenEntry(entry)}
+              className={css({
+                // The row fills the control: a button centres what it holds,
+                // which is what pushed "Sem categoria" off the others' column.
+                width: '100%',
+                padding: 0,
+                borderRadius: 0,
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                '&[data-pressed]': { backgroundColor: 'var(--dfl-inset)' },
+              })}
+            >
+              <HomeMobileSpendingRow entry={entry} outflows={outflows} />
+            </Button>
+          ))}
 
           {credited > 0 && (
             <View
@@ -169,9 +178,9 @@ export function HomeMobileSpending({ month }: HomeMobileSpendingProps) {
             >
               <Text
                 style={{
-                  fontSize: 10.5,
+                  fontSize: MOBILE_TYPE.label,
                   fontWeight: 600,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1,
                   textTransform: 'uppercase',
                   color: 'var(--dfl-text-3)',
                 }}
@@ -232,7 +241,7 @@ function SpendingCompositionLine({
     >
       <Text
         style={{
-          fontSize: 12.5,
+          fontSize: MOBILE_TYPE.note,
           fontWeight: emphasized ? 600 : 400,
           color: emphasized ? 'var(--dfl-text)' : 'var(--dfl-text-2)',
         }}
@@ -243,7 +252,7 @@ function SpendingCompositionLine({
         value={value}
         withCurrency
         style={{
-          fontSize: 12.5,
+          fontSize: MOBILE_TYPE.note,
           fontWeight: emphasized ? 700 : 600,
           color: positive ? 'var(--dfl-positive)' : 'var(--dfl-text)',
         }}

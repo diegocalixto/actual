@@ -4,6 +4,9 @@ import { Trans } from 'react-i18next';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
+
+import type { CardInsightsByAccount } from './homeData';
 import { useHomeAccounts } from './homeData';
 import { HomeMobileAccountGroup } from './HomeMobileAccountGroup';
 import { HomeMobileMoney } from './HomeMobileMoney';
@@ -14,6 +17,8 @@ type HomeMobileAccountsProps = {
   onBudget: number | null;
   offBudget: number | null;
   total: number | null;
+  /** What the bank's entries say about each linked account (cards, bills). */
+  cards?: CardInsightsByAccount;
 };
 
 /**
@@ -36,6 +41,7 @@ export function HomeMobileAccounts({
   onBudget,
   offBudget,
   total,
+  cards,
 }: HomeMobileAccountsProps) {
   const { accounts, isLoading } = useHomeAccounts();
 
@@ -48,14 +54,18 @@ export function HomeMobileAccounts({
     <View style={{ gap: 10 }}>
       <HomeMobileSectionLabel
         label={<Trans>Contas</Trans>}
+        // With no account outside the budget the whole is the one group's
+        // subtotal, printed again on the group's own line — and it is the
+        // hero's figure too. The total earns its place once there are two
+        // groups to add up.
         trailing={
-          accounts.length > 0 ? (
+          offBudgetAccounts.length > 0 ? (
             <View
               style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
             >
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: MOBILE_TYPE.caption,
                   fontWeight: 600,
                   letterSpacing: 1,
                   textTransform: 'uppercase',
@@ -106,6 +116,7 @@ export function HomeMobileAccounts({
               tone="positive"
               hue="var(--dfl-hue-violet)"
               accounts={onBudgetAccounts}
+              cards={cards?.byAccount}
             />
           )}
           {offBudgetAccounts.length > 0 && (
@@ -115,6 +126,7 @@ export function HomeMobileAccounts({
               tone="negative"
               hue="var(--dfl-hue-blue)"
               accounts={offBudgetAccounts}
+              cards={cards?.byAccount}
             />
           )}
         </>

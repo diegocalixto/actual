@@ -1,11 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { viewStyles } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { OverviewView } from '#components/v2lab/OverviewView';
-import { useNavigate } from '#hooks/useNavigate';
+import { useOpenIndicatorTransactions } from '#reports/useOpenIndicatorTransactions';
 
 import { Greeting } from './Greeting';
 import { OVERVIEW_ROOT_CLASS, OverviewStyle } from './OverviewStyle';
@@ -25,8 +26,10 @@ const AUTHOR = 'Diego Calixto';
 export function V2RealOverview() {
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const openTransactions = useOpenIndicatorTransactions();
   const {
+    month,
     balances,
     monthTotals,
     monthDetails,
@@ -57,15 +60,31 @@ export function V2RealOverview() {
         data={{
           greeting: <Greeting />,
           available: balances.available,
-          toBudget: balances.toBudget,
+          cardsDebt: balances.cardsDebt,
           monthTotals,
           monthDetails,
           accounts,
           categories,
           spendingComposition,
-          // The one row with somewhere to go: the transactions still without a
-          // category, which is where an unexplained outflow gets explained.
-          onReviewUncategorized: () => void navigate('/accounts/uncategorized'),
+          // Every row opens what it is made of, under the indicators' rules:
+          // a category's transactions of the month, or the month's outflows
+          // still without a category.
+          onOpenCategory: category =>
+            openTransactions(
+              month,
+              category.isUncategorized
+                ? { kind: 'uncategorizedSpending' }
+                : { kind: 'category', categoryId: category.id },
+              category.isUncategorized
+                ? t('Uncategorized spending')
+                : category.name,
+            ),
+          onOpenPendingInflows: () =>
+            openTransactions(
+              month,
+              { kind: 'pendingInflows' },
+              t('Inflows to review'),
+            ),
           movements,
           isAccountsLoading,
           isMonthLoading,

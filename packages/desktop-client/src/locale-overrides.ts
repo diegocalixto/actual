@@ -11,12 +11,13 @@
 export const localeOverrides: Record<string, Record<string, string>> = {
   'pt-BR': {
     // Terminology decided for this fork, replacing the catalog wording.
-    // "Para distribuir" is what the V2 Budget and the phone's Home already
-    // print for the money not yet given to a category; the catalog's "Para
-    // Orçar" and the earlier "A orçar" were a second and a third name for it,
-    // one tap away from the first.
-    'To Budget': 'Para distribuir',
-    'To Budget:': 'Para distribuir:',
+    // "A planejar" is the one name for the envelope budget's unassigned
+    // income — on the Budget's band and tiles and in the classic table alike.
+    // It replaced "Para distribuir" (and the catalog's "Para Orçar") because
+    // the figure, set beside the balances, was being read as one; the new
+    // word says it is a plan, and the Home no longer prints it at all.
+    'To Budget': 'A planejar',
+    'To Budget:': 'A planejar:',
     'On budget': 'No orçamento',
     'Closed accounts': 'Contas fechadas',
     'Closed accounts...': 'Contas fechadas...',
@@ -71,11 +72,24 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Outflows listed by category': 'Saídas listadas por categoria',
     'Provisional result while inflows await a category':
       'Resultado provisório: há entradas a revisar',
+    // What each figure of Início and Relatórios opens: its own transactions,
+    // under the same rules (`month-indicator-transactions.ts`). "Gastos" is
+    // the one name for the spending, wherever it is printed.
+    'Uncategorized spending': 'Gastos sem categoria',
+    'Inflows to review': 'Entradas a revisar',
+    'to review': 'a revisar',
+    'Review the spending without a category this month':
+      'Revisar os gastos sem categoria do mês',
+    'See the transactions of {{name}} this month':
+      'Ver as transações de {{name}} no mês',
+    'Result for the period': 'Resultado do período',
+    // The reckoning behind a summary, folded on a phone.
+    'How we count': 'Como calculamos',
     'Review the transactions without a category':
       'Revisar as transações sem categoria',
-    'Spending by category': 'Despesas por categoria',
-    'Loading spending…': 'Carregando despesas…',
-    'No spending recorded this month.': 'Nenhuma despesa registrada neste mês.',
+    'Spending by category': 'Gastos por categoria',
+    'Loading spending…': 'Carregando gastos…',
+    'No spending recorded this month.': 'Nenhum gasto registrado neste mês.',
     'Recent transactions': 'Transações recentes',
     'Loading transactions…': 'Carregando transações…',
     'No transactions recorded yet.': 'Nenhuma transação registrada ainda.',
@@ -86,7 +100,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     // debt included: what is in the accounts, not what is free to spend.
     'Available balance': 'Saldo nas contas',
     'New transaction': 'Nova transação',
-    'Spending this month': 'Despesas do mês',
+    'Spending this month': 'Gastos do mês',
     'See in budget': 'Ver no orçamento',
     'See spending in the budget': 'Ver os gastos no orçamento',
     'Recent activity': 'Transações recentes',
@@ -434,7 +448,7 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'This summary compares your income and expenses to show how much you saved this month. Rather than rolling funds over, a tracking budget plans each month on its own.':
       'Este resumo compara suas receitas e despesas para mostrar quanto você economizou neste mês. Em vez de transportar saldos, o orçamento de acompanhamento planeja cada mês separadamente.',
     'The <1>To Budget</1> amount shows the money you have not assigned to a category yet. Aim to bring it to zero, so that all of your money has a job.':
-      'O valor <1>Para distribuir</1> mostra o dinheiro que você ainda não destinou a nenhuma categoria. Procure zerá-lo, para que todo o seu dinheiro tenha uma função.',
+      'O valor <1>A planejar</1> mostra a receita que você ainda não destinou a nenhuma categoria; não é o saldo das contas. Procure zerá-lo, para que todo o seu dinheiro tenha uma função.',
     Categories: 'Categorias',
     'Each row in the budget is a category. Click the <2>Budgeted</2> amount to assign money to a category, and keep an eye on the <4>Balance</4> column to see how much is left to spend.':
       'Cada linha do orçamento é uma categoria. Clique no valor <2>Orçado</2> para destinar dinheiro a uma categoria e acompanhe a coluna <4>Saldo</4> para ver quanto ainda há para gastar.',
@@ -675,12 +689,134 @@ export const localeOverrides: Record<string, Record<string, string>> = {
       'Números do orçamento por envelopes: as receitas aqui incluem saldos iniciais e entradas extraordinárias, e o gasto só o que tem categoria. Gasto sem categoria neste mês, fora destes números: {{uncategorizedAmount}}.',
     'Envelope figures: income here includes starting balances and extraordinary inflows, and spending only what has a category. Nothing is uncategorized this month.':
       'Números do orçamento por envelopes: as receitas aqui incluem saldos iniciais e entradas extraordinárias, e o gasto só o que tem categoria. Nada está sem categoria neste mês.',
+    // The planning figure, said for what it is: it is read as a balance when
+    // nothing says otherwise, and it exceeds the accounts by everything the
+    // month spent and everything still without a category.
+    'A planejar is the income not yet given an envelope, added up month after month. It is not a bank balance and not money to spare: the spending of this month is only taken out of it next month, and entries without a category do not count until they are classified.':
+      'A planejar é a receita que ainda não foi destinada a nenhum envelope, acumulada mês a mês. Não é saldo bancário nem dinheiro livre: o gasto deste mês só é descontado no mês seguinte, e os lançamentos sem categoria não entram enquanto não forem classificados.',
+    // Subscriptions: a charge in another currency is scheduled by an
+    // approximate amount, and the total that includes it says so.
+    'Includes estimated amounts': 'Inclui valores estimados',
 
     // Home.
     'This month': 'Este mês',
     'Loading this month…': 'Carregando o mês…',
     'Nothing recorded this month.': 'Nada registrado neste mês.',
     'No accounts yet.': 'Nenhuma conta ainda.',
+    // Home — the "needs attention" card and what the bank's data says about the
+    // figures (how fresh they are, what a card's balance is made of).
+    'Needs attention': 'Precisa de atenção',
+    'Uncategorized spending this month': 'Gastos sem categoria neste mês',
+    '{{count}} categories over budget_one':
+      '{{count}} categoria acima do orçado',
+    '{{count}} categories over budget_many':
+      '{{count}} categorias acima do orçado',
+    '{{count}} categories over budget_other':
+      '{{count}} categorias acima do orçado',
+    'Bank sync failed: {{names}}': 'Sincronização com falha: {{names}}',
+    'Bank data last read {{when}}':
+      'Dados do banco lidos pela última vez {{when}}',
+    '{{count}} manual entries not cleared yet · {{name}}_one':
+      '{{count}} lançamento manual ainda não confirmado · {{name}}',
+    '{{count}} manual entries not cleared yet · {{name}}_many':
+      '{{count}} lançamentos manuais ainda não confirmados · {{name}}',
+    '{{count}} manual entries not cleared yet · {{name}}_other':
+      '{{count}} lançamentos manuais ainda não confirmados · {{name}}',
+    'Nothing to review': 'Nada a revisar',
+    'Bank data updated {{when}}': 'Dados do banco atualizados {{when}}',
+    'In accounts': 'Nas contas',
+    Cards: 'Cartões',
+    'Card debt': 'Dívida dos cartões',
+    'Bill of {{month}}': 'Fatura de {{month}}',
+    'still open': 'em aberto',
+    'closed, to pay': 'fechada · a pagar',
+    'paid on {{date}}': 'paga em {{date}}',
+    'partly paid:': 'paga em parte:',
+    'a payment of': 'pagamento de',
+    'does not match it': 'não confere',
+    'check at the bank': 'conferir no banco',
+    'cannot tell if it was paid': 'não dá para saber se foi paga',
+    'Bill of {{month}}: cannot tell if it was paid · check at the bank · {{name}}':
+      'Fatura de {{month}}: não dá para saber se foi paga · conferir no banco · {{name}}',
+    estimated: 'estimado',
+    'Bill of {{month}} closed (estimated), to pay · {{name}}':
+      'Fatura de {{month}} fechada (estimado), a pagar · {{name}}',
+    'Bill of {{month}} partly paid · check at the bank · {{name}}':
+      'Fatura de {{month}} paga em parte · conferir no banco · {{name}}',
+    'Bill of {{month}}: a payment does not match it · check at the bank · {{name}}':
+      'Fatura de {{month}}: pagamento não confere · conferir no banco · {{name}}',
+    '{{count}} bank entries to check for a duplicate · {{name}}_one':
+      '{{count}} lançamento do banco a conferir (possível duplicata) · {{name}}',
+    '{{count}} bank entries to check for a duplicate · {{name}}_many':
+      '{{count}} lançamentos do banco a conferir (possível duplicata) · {{name}}',
+    '{{count}} bank entries to check for a duplicate · {{name}}_other':
+      '{{count}} lançamentos do banco a conferir (possível duplicata) · {{name}}',
+    'updated {{when}}': 'atualizado {{when}}',
+    'Not read from the bank yet': 'Ainda não lido do banco',
+    // Subscriptions — recurring charges read from schedules and from the
+    // patterns "Find schedules" detects; nothing is created there.
+    Subscriptions: 'Assinaturas',
+    'Scheduled charges per month': 'Cobranças agendadas por mês',
+    // The total is the schedules' sum alone, and the line under it says so.
+    'Sum of the {{count}} scheduled charges only_one':
+      'Soma só da cobrança agendada',
+    'Sum of the {{count}} scheduled charges only_many':
+      'Soma só das {{count}} cobranças agendadas',
+    'Sum of the {{count}} scheduled charges only_other':
+      'Soma só das {{count}} cobranças agendadas',
+    'Suggestions are not in it': 'As sugestões não entram',
+    'Scheduled subscriptions': 'Assinaturas agendadas',
+    '{{count}} confirmed; suggestions not included_one':
+      '{{count}} confirmada · sugestões fora',
+    '{{count}} confirmed; suggestions not included_many':
+      '{{count}} confirmadas · sugestões fora',
+    '{{count}} confirmed; suggestions not included_other':
+      '{{count}} confirmadas · sugestões fora',
+    // The window is the one Actual's link rule uses: an approximate date
+    // accepts up to two days either side.
+    'Schedules are reminders and post nothing: the expense that counts is the one the bank brings. Arriving with the expected amount on the expected day, or up to two days before or after, it is linked to its schedule; outside that window the schedule shows as missed until it is linked or skipped. Nothing is counted twice.':
+      'Os agendamentos são lembretes e não lançam nada: a despesa que conta é a que o banco traz. Chegando com o valor previsto no dia previsto, ou até dois dias antes ou depois, ela fica ligada ao agendamento; fora dessa janela, o agendamento fica em atraso até ser ligado ou pulado. Nada é contado duas vezes.',
+    'No scheduled charges yet.': 'Nenhuma cobrança agendada ainda.',
+    'Suggestions, not confirmed': 'Sugestões, não confirmadas',
+    'No new recurring charges detected.': 'Nenhuma recorrência nova detectada.',
+    'Left out, from the bank record: {{list}}':
+      'Fora da lista, pelo registro do banco: {{list}}',
+    '{{count}} installment plans_one': '{{count}} parcelamento',
+    '{{count}} installment plans_many': '{{count}} parcelamentos',
+    '{{count}} installment plans_other': '{{count}} parcelamentos',
+    '{{count}} bank charges (IOF, interest, fees)_one':
+      '{{count}} encargo do banco (IOF, juros, multas)',
+    '{{count}} bank charges (IOF, interest, fees)_many':
+      '{{count}} encargos do banco (IOF, juros, multas)',
+    '{{count}} bank charges (IOF, interest, fees)_other':
+      '{{count}} encargos do banco (IOF, juros, multas)',
+    '{{count}} transfers between your own accounts_one':
+      '{{count}} transferência entre contas suas',
+    '{{count}} transfers between your own accounts_many':
+      '{{count}} transferências entre contas suas',
+    '{{count}} transfers between your own accounts_other':
+      '{{count}} transferências entre contas suas',
+    'Looking for recurring charges…': 'Procurando recorrências…',
+    'A charge is detected after it repeats at least three times with the same payee and amount.':
+      'Uma cobrança é detectada depois de se repetir ao menos três vezes com o mesmo favorecido e valor.',
+    'Manage schedules': 'Gerenciar agendamentos',
+    'Suggestions are read from your transactions, are not posted anywhere and are not in the total above; turn one into a schedule to confirm it and be reminded before it is due.':
+      'As sugestões são lidas dos seus lançamentos, não são lançadas em lugar nenhum e não entram no total acima; transforme uma em agendamento para confirmá-la e ser lembrado antes do vencimento.',
+    'per month': 'por mês',
+    // A schedule's next date is a forecast: said as such, never as a fact.
+    'expected {{date}}': 'prevista {{date}}',
+    suggestion: 'sugestão',
+    'Edit the schedule {{name}}': 'Editar o agendamento {{name}}',
+    'Open subscriptions and recurring charges':
+      'Abrir assinaturas e recorrências',
+    '{{count}} scheduled charges_one': '{{count}} cobrança agendada',
+    '{{count}} scheduled charges_many': '{{count}} cobranças agendadas',
+    '{{count}} scheduled charges_other': '{{count}} cobranças agendadas',
+    // Daily/Weekly/Monthly/Yearly already have entries further down.
+    'Every {{count}} days': 'A cada {{count}} dias',
+    'Every {{count}} weeks': 'A cada {{count}} semanas',
+    'Every {{count}} months': 'A cada {{count}} meses',
+    'Every {{count}} years': 'A cada {{count}} anos',
     'Off budget': 'Fora do orçamento',
     // A split transaction, named in the list where a payee would be: one word,
     // because the Budget's column for it is a narrow one. The bare `Split` key
@@ -736,8 +872,8 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     Category: 'Categoria',
     Amount: 'Valor',
     '% of total': '% do total',
-    'View all spending': 'Ver todas as despesas',
-    'Expenses by category': 'Despesas por categoria',
+    'View all spending': 'Ver todos os gastos',
+    'Expenses by category': 'Gastos por categoria',
     'View all categories': 'Ver todas as categorias',
     'Monthly comparison': 'Comparativo mensal',
     'Income (avg)': 'Receitas (média)',
@@ -2145,6 +2281,6 @@ export const localeOverrides: Record<string, Record<string, string>> = {
     'Learn more': 'Saiba mais',
     'Switch to tracking budgeting': 'Mudar para orçamento de acompanhamento',
     'With <1>tracking budgeting</1>, category balances reset each month, and funds are managed using a "Saved" metric instead of "To Be Budgeted." Income is forecasted to plan future spending, rather than relying on current available funds.':
-      'Com o <1>orçamento de acompanhamento</1>, os saldos das categorias recomeçam a cada mês, e o dinheiro é acompanhado pela métrica "Poupado" em vez de "Para distribuir". As receitas são previstas para planejar os gastos futuros, em vez de depender do dinheiro disponível agora.',
+      'Com o <1>orçamento de acompanhamento</1>, os saldos das categorias recomeçam a cada mês, e o dinheiro é acompanhado pela métrica "Poupado" em vez de "A planejar". As receitas são previstas para planejar os gastos futuros, em vez de depender do dinheiro disponível agora.',
   },
 };

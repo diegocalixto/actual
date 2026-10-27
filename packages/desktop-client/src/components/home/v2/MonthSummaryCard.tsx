@@ -73,6 +73,15 @@ export type MonthDetailLine = {
   label: ReactNode;
   /** `null` ⇒ the line is a statement about the figures, not a figure itself. */
   value: number | null;
+  /**
+   * Something to act on or to keep in mind — an extraordinary inflow, inflows
+   * still to be reviewed, a provisional result — which stays in sight. The
+   * other lines say how the figures were reached, and a phone keeps them under
+   * "Como calculamos".
+   */
+  isNotice: boolean;
+  /** The line opens the transactions it counts. */
+  opens?: 'pendingInflows';
 };
 
 export function monthDetailLines(details: IndicatorTotals): MonthDetailLine[] {
@@ -85,11 +94,13 @@ export function monthDetailLines(details: IndicatorTotals): MonthDetailLine[] {
         <Trans>Extraordinary inflows, outside the classified receipts</Trans>
       ),
       value: details.extraordinaryIncome,
+      isNotice: true,
     });
     lines.push({
       key: 'result-with-extraordinary',
       label: <Trans>Result including extraordinary inflows</Trans>,
       value: details.resultWithExtraordinary,
+      isNotice: false,
     });
   }
   if (details.pendingInflows !== 0) {
@@ -97,13 +108,19 @@ export function monthDetailLines(details: IndicatorTotals): MonthDetailLine[] {
       key: 'pending',
       label: <Trans>Inflows awaiting a category, counted nowhere</Trans>,
       value: details.pendingInflows,
+      isNotice: true,
+      opens: 'pendingInflows',
     });
   }
+  // A share of the spending, so it is printed as the spending is: a positive
+  // magnitude under a label that says what it is. The signs belong to the
+  // registers, where a minus says which way the money went.
   if (details.uncategorizedSpending !== 0) {
     lines.push({
       key: 'uncategorized',
       label: <Trans>Uncategorized, already included in spending</Trans>,
-      value: -details.uncategorizedSpending,
+      value: details.uncategorizedSpending,
+      isNotice: false,
     });
   }
   // Said here too, and not only in the spending list, because a refund inside
@@ -114,6 +131,7 @@ export function monthDetailLines(details: IndicatorTotals): MonthDetailLine[] {
       key: 'refunds',
       label: <Trans>Refunds, already deducted from spending</Trans>,
       value: details.refunds,
+      isNotice: false,
     });
   }
   // An inflow nobody has named yet is in the balance and in no result, so the
@@ -123,6 +141,7 @@ export function monthDetailLines(details: IndicatorTotals): MonthDetailLine[] {
       key: 'provisional',
       label: <Trans>Provisional result while inflows await a category</Trans>,
       value: null,
+      isNotice: true,
     });
   }
 

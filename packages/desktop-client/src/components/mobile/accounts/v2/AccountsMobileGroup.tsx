@@ -116,7 +116,7 @@ export function AccountsMobileGroup({
             />
             <Text
               style={{
-                fontSize: 10.5,
+                fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: 1.2,
                 textTransform: 'uppercase',

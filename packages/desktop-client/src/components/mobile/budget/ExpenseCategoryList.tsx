@@ -139,7 +139,6 @@ export function ExpenseCategoryList({
           onEditCategory={onEditCategory}
           onBudgetAction={onBudgetAction}
           isHidden={shouldHideCategory(category)}
-          index={positions.get(category.id) ?? 0}
           isLast={positions.get(category.id) === categories.length - 1}
         />
       )}

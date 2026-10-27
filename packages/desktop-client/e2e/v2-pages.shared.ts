@@ -182,9 +182,10 @@ export function describeV2Pages(layout: V2Layout) {
           }),
         ).toHaveText(/-R\$\s?312\.500,00/);
 
-        // On the phone the balance card is also the way into the budget.
-        await page.getByRole('button', { name: 'Abrir o orçamento' }).click();
-        await shell.waitForPage('budget');
+        // The balance card no longer carries the envelope's "to budget" strip
+        // (a planning figure that was read as a balance); the Budget is the
+        // bar's own destination, one tap away.
+        await shell.goTo('budget');
       }
 
       await expect

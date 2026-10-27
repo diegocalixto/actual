@@ -25,6 +25,7 @@ import { UserAccessPage } from './admin/UserAccess/UserAccessPage';
 import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
 import { AppBottomNav } from './appshell/AppBottomNav';
 import { AppShell } from './appshell/AppShell';
+import { V2FrameTheme } from './appshell/V2FrameTheme';
 import { BankSyncStatus } from './BankSyncStatus';
 import { V2RealBudget } from './budget/v2real/V2RealBudget';
 import { CommandBar } from './CommandBar';
@@ -272,6 +273,7 @@ export function FinancesApp() {
       >
         {isVisualLab && <LabStyle />}
         <RouterBehaviors />
+        <V2FrameTheme />
         <GlobalKeys />
         <CommandBar />
         <ContextMenu />
@@ -345,6 +347,21 @@ export function FinancesApp() {
                       >
                         <WideNotSupported>
                           <NarrowAlternate name="ScheduleEdit" />
+                        </WideNotSupported>
+                      </ErrorBoundary>
+                    }
+                  />
+                  {/* Recurring charges, read from schedules and detected
+                      patterns. A phone screen; the desktop keeps Schedules. */}
+                  <Route
+                    path="/subscriptions"
+                    element={
+                      <ErrorBoundary
+                        FallbackComponent={FeatureErrorFallback}
+                        resetKeys={[location.pathname]}
+                      >
+                        <WideNotSupported redirectTo="/schedules">
+                          <NarrowAlternate name="Subscriptions" />
                         </WideNotSupported>
                       </ErrorBoundary>
                     }
@@ -623,6 +640,7 @@ export function FinancesApp() {
                 <Route path="/rules" element={<AppBottomNav />} />
                 <Route path="/payees" element={<AppBottomNav />} />
                 <Route path="/schedules" element={<AppBottomNav />} />
+                <Route path="/subscriptions" element={<AppBottomNav />} />
                 <Route path="/tags" element={<AppBottomNav />} />
                 <Route path="*" element={null} />
               </Routes>

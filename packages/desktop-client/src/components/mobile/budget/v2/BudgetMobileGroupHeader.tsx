@@ -11,6 +11,7 @@ import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import type { EntityIcon } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 
 import { BudgetMobileAmount } from './BudgetMobileAmount';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
@@ -187,7 +188,7 @@ export function BudgetMobileGroupHeader({
             >
               <Text
                 style={{
-                  fontSize: 10.5,
+                  fontSize: MOBILE_TYPE.caption,
                   fontWeight: 600,
                   color: 'var(--dfl-text-2)',
                 }}
@@ -260,7 +261,9 @@ function GroupFigure({ figure }: { figure: HeaderFigure }) {
       >
         <BudgetMobileAmount value={figure.value} />
       </FinancialText>
-      <Text style={{ fontSize: 9.5, color: 'var(--dfmb-label)' }}>
+      <Text
+        style={{ fontSize: MOBILE_TYPE.caption, color: 'var(--dfmb-label)' }}
+      >
         {figure.caption}
       </Text>
     </View>

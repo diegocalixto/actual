@@ -18,6 +18,7 @@ import {
   defaultMappings,
   mappingsFromString,
 } from '#server/util/custom-sync-mapping';
+import { withBankSyncDoubtTag } from '#shared/bank-sync';
 import * as monthUtils from '#shared/months';
 import { q } from '#shared/query';
 import {
@@ -617,6 +618,7 @@ export async function reconcileTransactions(
     transactionsStep1,
     transactionsStep2,
     transactionsStep3,
+    transactionsStep4,
   } = await matchTransactions(
     acctId,
     transactions,
@@ -626,7 +628,7 @@ export async function reconcileTransactions(
   );
 
   // Finally, generate & commit the changes
-  for (const { trans, subtransactions, match } of transactionsStep3) {
+  for (const { trans, subtransactions, match } of transactionsStep4) {
     if (match && !trans.forceAddTransaction) {
       // Skip updating already reconciled (locked) transactions
       if (match.reconciled) {
@@ -743,6 +745,7 @@ export async function reconcileTransactions(
     transactionsStep1,
     transactionsStep2,
     transactionsStep3,
+    transactionsStep4,
     added,
     updated,
     updatedPreview,
@@ -842,9 +845,9 @@ export async function matchTransactions(
             | 'reconciled'
             | 'cleared'
             | 'amount'
-          >
+          > & { raw_synced_data: string | null }
         >(
-          `SELECT id, is_parent, date, imported_id, payee, imported_payee, category, notes, reconciled, cleared, amount
+          `SELECT id, is_parent, date, imported_id, payee, imported_payee, category, notes, reconciled, cleared, amount, raw_synced_data
           FROM v_transactions
           WHERE
             -- If both ids are set, and we didn't match earlier then skip dedup
@@ -874,9 +877,9 @@ export async function matchTransactions(
             | 'reconciled'
             | 'cleared'
             | 'amount'
-          >
+          > & { raw_synced_data: string | null }
         >(
-          `SELECT id, is_parent, date, imported_id, payee, imported_payee, category, notes, reconciled, cleared, amount
+          `SELECT id, is_parent, date, imported_id, payee, imported_payee, category, notes, reconciled, cleared, amount, raw_synced_data
           FROM v_transactions
           WHERE date >= ? AND date <= ? AND amount = ? AND account = ?`,
           [sevenDaysBefore, sevenDaysAfter, trans.amount || 0, acctId],
@@ -913,6 +916,21 @@ export async function matchTransactions(
     });
   }
 
+  // Whether a fuzzy candidate may be taken. An existing entry the provider
+  // already identified under another id is never taken on similarity alone:
+  // two distinct Pix of the same amount a few days apart would be merged, and
+  // the older one's id overwritten, as soon as the provider stopped
+  // delivering the older one. It is taken only when the two records describe
+  // the same entry settling (see `isSameEntrySettling`); otherwise the
+  // incoming entry is added, and marked for review when such a candidate
+  // existed (last pass below).
+  const canTake = (data, row) =>
+    !hasMatched.has(row.id) &&
+    (!row.imported_id ||
+      !data.trans.imported_id ||
+      row.imported_id === data.trans.imported_id ||
+      isSameEntrySettling(row, data.trans));
+
   // Next, do the fuzzy matching. This first pass matches based on the
   // payee id. We do this in multiple passes so that higher fidelity
   // matching always happens first, i.e. a transaction should match
@@ -922,7 +940,7 @@ export async function matchTransactions(
     if (!data.match && data.fuzzyDataset) {
       // Try to find one where the payees match.
       const match = data.fuzzyDataset.find(
-        row => !hasMatched.has(row.id) && data.trans.payee === row.payee,
+        row => canTake(data, row) && data.trans.payee === row.payee,
       );
 
       if (match) {
@@ -939,7 +957,7 @@ export async function matchTransactions(
   // around the same date with the same amount.
   const transactionsStep3 = transactionsStep2.map(data => {
     if (!data.match && data.fuzzyDataset) {
-      const match = data.fuzzyDataset.find(row => !hasMatched.has(row.id));
+      const match = data.fuzzyDataset.find(row => canTake(data, row));
       if (match) {
         hasMatched.add(match.id);
         return { ...data, match };
@@ -948,12 +966,120 @@ export async function matchTransactions(
     return data;
   });
 
+  // Last, say what could not be decided: an incoming entry added next to an
+  // existing one of the same amount and date that the provider identified
+  // under another id and did not deliver again in this batch. The entry is
+  // kept, and its note carries the mark for the user to settle.
+  const transactionsStep4 = transactionsStep3.map(data => {
+    if (data.match || !data.trans.imported_id || !data.fuzzyDataset) {
+      return data;
+    }
+    const lookalike = data.fuzzyDataset.some(
+      row =>
+        row.imported_id &&
+        row.imported_id !== data.trans.imported_id &&
+        !hasMatched.has(row.id),
+    );
+    if (!lookalike) {
+      return data;
+    }
+    return {
+      ...data,
+      trans: { ...data.trans, notes: withBankSyncDoubtTag(data.trans.notes) },
+    };
+  });
+
   return {
     payeesToCreate,
     transactionsStep1,
     transactionsStep2,
     transactionsStep3,
+    transactionsStep4,
   };
+}
+
+function payeeText(value: unknown): string {
+  return typeof value === 'string'
+    ? value.trim().toLowerCase().replace(/\s+/g, ' ')
+    : '';
+}
+
+/**
+ * Whether an existing entry the provider identified under another id and an
+ * incoming one are the same entry settling: the existing one was pending at
+ * the provider when stored, the incoming one is booked, the provider names
+ * the same payee on both, and the provider's own trace of the operation is
+ * the same (`sameOperation`). That is the one re-identification a provider
+ * is known to make; anything less is not proof of identity, and the two are
+ * kept apart and marked instead.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseRaw(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'string' || value === '') {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The provider's own trace of continuity between two records of one entry,
+ * which survives the id change when a pending entry is booked: the moment of
+ * the operation (`creditCardMetadata.transactionDateTime`, else the original
+ * date) and, when the provider gives it, the card. Same payee and same
+ * amount are not enough: two distinct purchases at the same shop for the
+ * same price have both.
+ */
+function sameOperation(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): boolean {
+  const text = (value: unknown) =>
+    typeof value === 'string' && value !== '' ? value : null;
+  const existingWhen = text(existing['creditCardMetadata.transactionDateTime']);
+  const incomingWhen = text(incoming['creditCardMetadata.transactionDateTime']);
+  if (existingWhen !== null && incomingWhen !== null) {
+    if (existingWhen !== incomingWhen) {
+      return false;
+    }
+  } else {
+    // The moment of the operation is known on one side at most: the original
+    // date, which both records carry, has to agree.
+    const existingDay = text(existing.originalDate);
+    if (existingDay === null || existingDay !== text(incoming.originalDate)) {
+      return false;
+    }
+  }
+  const existingCard = existing['creditCardMetadata.cardNumber'];
+  const incomingCard = incoming['creditCardMetadata.cardNumber'];
+  if (existingCard !== undefined && incomingCard !== undefined) {
+    return existingCard === incomingCard;
+  }
+  return true;
+}
+
+function isSameEntrySettling(row, trans): boolean {
+  if (!trans.cleared) {
+    return false;
+  }
+  const existingRaw = parseRaw(row.raw_synced_data);
+  const incomingRaw = parseRaw(trans.raw_synced_data);
+  if (!existingRaw || !incomingRaw || existingRaw.booked !== false) {
+    return false;
+  }
+  const existingPayee = payeeText(row.imported_payee);
+  return (
+    existingPayee !== '' &&
+    existingPayee === payeeText(trans.imported_payee) &&
+    sameOperation(existingRaw, incomingRaw)
+  );
 }
 
 // This is similar to `reconcileTransactions` except much simpler: it

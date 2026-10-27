@@ -296,6 +296,19 @@ const configSchema = convict({
       env: 'ACTUAL_CORS_PROXY_ENABLED',
     },
   },
+  pluggyai: {
+    doc: 'Pluggy.ai bank-sync adapter.',
+
+    timeZone: {
+      doc: 'IANA time zone in which the calendar day of a Pluggy entry is read (Pluggy sends instants). Pluggy serves Brazilian banks, so Brasília is the default.',
+      format: value => {
+        // Throws a RangeError on an unknown zone.
+        new Intl.DateTimeFormat('en-US', { timeZone: value });
+      },
+      default: 'America/Sao_Paulo',
+      env: 'ACTUAL_PLUGGYAI_TIMEZONE',
+    },
+  },
 });
 
 let configPath = null;

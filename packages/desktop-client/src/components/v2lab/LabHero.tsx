@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Trans } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
@@ -12,8 +13,11 @@ import { formatMoney } from './labMoney';
 type LabHeroProps = {
   /** Integer minor units, as Actual stores money. */
   available: number;
-  /** Envelope budgets only; `null` hides the strip entirely. */
-  toBudget: number | null;
+  /**
+   * Sum of the card accounts' balances (negative for a debt), when the bank's
+   * data proves which accounts are cards; `null` hides the line entirely.
+   */
+  cardsDebt?: number | null;
 };
 
 /**
@@ -23,8 +27,18 @@ type LabHeroProps = {
  * sweeping in from the top-right — light on machined metal, not a blue card.
  * The arc is drawn as a stroked path with a blurred twin underneath for the
  * halo, so it reads as a highlight with depth rather than as a neon line.
+ *
+ * The headline is the money in the budget's accounts with the cards netted
+ * out; when the bank's data says which accounts are cards, the line under the
+ * caption splits it into what sits in the accounts and what the cards owe, so
+ * the figure is never mistaken for cash in hand. The envelope budget's "to
+ * budget" strip that used to close the card is gone: it is a planning figure,
+ * not a balance, and the Budget prints it as "A planejar", explained.
  */
-export function LabHero({ available, toBudget }: LabHeroProps) {
+export function LabHero({ available, cardsDebt = null }: LabHeroProps) {
+  // The headline nets the cards out; these two say by how much.
+  const inAccounts = cardsDebt === null ? null : available - cardsDebt;
+
   return (
     <View
       style={{
@@ -79,60 +93,65 @@ export function LabHero({ available, toBudget }: LabHeroProps) {
         <Text style={{ fontSize: 13.5, color: 'var(--dfl-text-2)' }}>
           <Trans>Sum of on-budget accounts</Trans>
         </Text>
-      </View>
 
-      {toBudget !== null && (
-        <View
-          style={{
-            position: 'relative',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-            padding: '15px 32px',
-            borderTop: '1px solid var(--dfl-hero-line)',
-            backgroundColor: 'rgba(4, 8, 16, 0.42)',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            {/* White, per the approved reference — the dot, the label and the
-                value all stay out of the violet accent. */}
-            <View
-              aria-hidden="true"
-              style={{
-                width: 6,
-                height: 6,
-                flexShrink: 0,
-                borderRadius: 999,
-                backgroundColor: '#ffffff',
-              }}
-            />
-            <Text
-              style={{
-                fontSize: 11.5,
-                fontWeight: 600,
-                letterSpacing: 1.1,
-                textTransform: 'uppercase',
-                color: '#ffffff',
-              }}
-            >
-              <Trans>To Budget</Trans>
-            </Text>
-          </View>
-
-          <FinancialText
+        {inAccounts !== null && cardsDebt !== null && (
+          <View
             style={{
-              fontSize: 19,
-              fontWeight: 600,
-              letterSpacing: -0.2,
-              color: '#ffffff',
-              whiteSpace: 'nowrap',
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              gap: '6px 24px',
+              paddingTop: 2,
             }}
           >
-            <PrivacyFilter>{formatMoney(toBudget)}</PrivacyFilter>
-          </FinancialText>
-        </View>
-      )}
+            <HeroFact label={<Trans>In accounts</Trans>} value={inAccounts} />
+            <HeroFact
+              // A card the holder is owed by (a credit after a refund) is not
+              // a debt, so the word is kept for the ordinary case only.
+              label={
+                cardsDebt < 0 ? <Trans>Card debt</Trans> : <Trans>Cards</Trans>
+              }
+              value={cardsDebt}
+              tone={cardsDebt < 0 ? 'negative' : undefined}
+            />
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+type HeroFactProps = {
+  label: ReactNode;
+  value: number;
+  tone?: 'negative';
+};
+
+/** One of the two parts the headline is made of: a label and its figure. */
+function HeroFact({ label, value, tone }: HeroFactProps) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+      <Text
+        style={{
+          fontSize: 11.5,
+          fontWeight: 600,
+          letterSpacing: 1.1,
+          textTransform: 'uppercase',
+          color: 'var(--dfl-text-3)',
+        }}
+      >
+        {label}
+      </Text>
+      <FinancialText
+        style={{
+          fontSize: 15,
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          color: tone === 'negative' ? 'var(--dfl-negative)' : '#ffffff',
+        }}
+      >
+        <PrivacyFilter>{formatMoney(value)}</PrivacyFilter>
+      </FinancialText>
     </View>
   );
 }

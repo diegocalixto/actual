@@ -4,6 +4,9 @@ export { Budget } from '#components/budget';
 
 export { Schedules } from '#components/schedules';
 export { Schedules as ScheduleEdit } from '#components/schedules';
+// The subscriptions screen is a phone screen; wide layouts are redirected to
+// Schedules before this entry is ever rendered.
+export { Schedules as Subscriptions } from '#components/schedules';
 
 export { GoCardlessLink } from '#components/gocardless/GoCardlessLink';
 

@@ -18,6 +18,7 @@ import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { iconForCategory } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
 import { useCategoryScheduleGoalTemplateIndicator } from '#hooks/useCategoryScheduleGoalTemplateIndicator';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
@@ -26,7 +27,7 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
 import { BudgetMobileAmount } from './BudgetMobileAmount';
-import { hueForIndex } from './budgetMobileHues';
+import { hueForCategoryRow } from './budgetMobileHues';
 import { BudgetMobileIconTile } from './BudgetMobileIconTile';
 import { asMagnitude, formatCurrency, usedPercent } from './budgetMobileMoney';
 import { BudgetMobileProgress } from './BudgetMobileProgress';
@@ -34,8 +35,13 @@ import { toneFor } from './budgetMobileTone';
 import { useCategoryBalanceMenu } from './useCategoryBalanceMenu';
 import { useCategoryBudgetMenu } from './useCategoryBudgetMenu';
 
-/** The row's own padding, which the controls on it reach across. */
-const ROW_PADDING_Y = 9;
+/**
+ * Each of the row's controls gets a finger's 44pt and a point to spare: the
+ * rows start on fractional offsets, and an exact 44 lost its last half point to
+ * the neighbouring band when the layout rounded.
+ */
+const TARGET = 46;
+/** The row's horizontal padding, which the controls on its edges reach across. */
 const ROW_PADDING_X = 12;
 const ROW_GAP = 8;
 /** What a control answers a press with. Touch has no hover to do it. */
@@ -44,8 +50,6 @@ const PRESSED = 'rgba(150, 180, 215, 0.1)';
 type BudgetMobileCategoryRowProps = {
   category: CategoryEntity;
   month: string;
-  /** Position within its group, which is what chooses the row's tile colour. */
-  index: number;
   /** The last row closes its group, so it draws no divider. */
   isLast: boolean;
   isHidden: boolean;
@@ -72,20 +76,18 @@ type BudgetMobileCategoryRowProps = {
  * cells are read from the budget engine and only combined into a percentage,
  * which is derived rather than stored so it can never disagree with them.
  *
- * Four controls share one row, and each was the size of its own ink: the name
- * 19pt tall, the plan 15pt, the chevron 17pt wide, with strips between them
- * that did nothing. A finger aimed at the plan opened the category's menu
- * about as often as not. The row is now divided between the four with nothing
- * left over — the name has its upper half, the plan its lower half, the
- * balance and the chevron its full height — and what is drawn has not moved:
- * each box is grown with padding and pulled back with an equal negative
- * margin. A press tints the control that took it, which is the only way a
- * phone can say which of the four that was.
+ * Four controls share one row, divided between them with nothing left over —
+ * the name has its upper band, the plan its lower band, the balance and the
+ * chevron the full height — and each of them is at least 44pt on both sides.
+ * The bands used to be 30 and 27pt, which put the name's menu and the plan's
+ * editor under one fingertip; the row is taller instead, and the name still
+ * sits right over its bar, so the two still read as one. A press tints the
+ * control that took it, which is the only way a phone can say which of the
+ * four that was.
  */
 export function BudgetMobileCategoryRow({
   category,
   month,
-  index,
   isLast,
   isHidden,
   onEditCategory,
@@ -208,7 +210,7 @@ export function BudgetMobileCategoryRow({
         flexDirection: 'row',
         alignItems: 'center',
         gap: ROW_GAP,
-        padding: `${ROW_PADDING_Y}px ${ROW_PADDING_X}px`,
+        padding: `0 ${ROW_PADDING_X}px`,
         borderBottom: isLast ? 'none' : '1px solid var(--dfl-line)',
         opacity: isHidden ? 0.5 : undefined,
       }}
@@ -229,7 +231,7 @@ export function BudgetMobileCategoryRow({
 
       <BudgetMobileIconTile
         Icon={Icon}
-        hue={hueForIndex(index)}
+        hue={hueForCategoryRow(category.id)}
         badge={
           schedule &&
           scheduleStatus && (
@@ -253,7 +255,7 @@ export function BudgetMobileCategoryRow({
         }
       />
 
-      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Button
           variant="bare"
           onPress={() => onEditCategory(category.id)}
@@ -262,10 +264,11 @@ export function BudgetMobileCategoryRow({
           })}
           className={css({
             width: '100%',
+            minHeight: TARGET,
             justifyContent: 'flex-start',
-            // Up to the row's edge, and down to its share of the gap.
-            padding: `${ROW_PADDING_Y + 2}px 2px 2px`,
-            margin: `-${ROW_PADDING_Y + 1}px 0 -1px`,
+            // The name rests on the band's floor, over its bar.
+            alignItems: 'flex-end',
+            padding: '0 2px 4px',
             borderRadius: 6,
             '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
             '&[data-pressed]': { backgroundColor: PRESSED },
@@ -291,9 +294,10 @@ export function BudgetMobileCategoryRow({
           aria-label={planLabel}
           className={css({
             width: '100%',
-            // The rest of the gap, and down to the row's other edge.
-            padding: `4px 2px ${ROW_PADDING_Y + 3}px`,
-            margin: `-2px 0 -${ROW_PADDING_Y + 1}px`,
+            minHeight: TARGET,
+            // The bar hangs from the band's ceiling, under its name.
+            alignItems: 'flex-start',
+            padding: '4px 2px 0',
             borderRadius: 6,
             '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
             '&[data-pressed]': { backgroundColor: PRESSED },
@@ -331,7 +335,7 @@ export function BudgetMobileCategoryRow({
                 flex: '0 1 auto',
                 minWidth: 0,
                 maxWidth: '100%',
-                fontSize: 'clamp(8px, 2.2vw, 11px)',
+                fontSize: MOBILE_TYPE.caption,
                 fontWeight: 600,
                 textAlign: 'right',
                 color: tone,
@@ -353,9 +357,8 @@ export function BudgetMobileCategoryRow({
           position: 'relative',
           flexShrink: 0,
           // The row's full height.
-          minHeight: 40 + 2 * ROW_PADDING_Y,
-          padding: `${ROW_PADDING_Y + 2}px 4px`,
-          margin: `-${ROW_PADDING_Y}px 0`,
+          minHeight: 2 * TARGET,
+          padding: '0 4px',
           borderRadius: 8,
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
           '&[data-pressed]': { backgroundColor: PRESSED },
@@ -372,7 +375,12 @@ export function BudgetMobileCategoryRow({
           >
             <BudgetMobileAmount value={balance} ownsControl />
           </FinancialText>
-          <Text style={{ fontSize: 9, color: 'var(--dfmb-label)' }}>
+          <Text
+            style={{
+              fontSize: MOBILE_TYPE.caption,
+              color: 'var(--dfmb-label)',
+            }}
+          >
             <Trans>Saldo</Trans>
           </Text>
         </View>
@@ -384,7 +392,7 @@ export function BudgetMobileCategoryRow({
             style={{
               position: 'absolute',
               right: -2,
-              top: ROW_PADDING_Y,
+              top: 'calc(50% - 16px)',
               borderRadius: '50%',
               color: tone,
             }}
@@ -406,10 +414,10 @@ export function BudgetMobileCategoryRow({
           flexShrink: 0,
           // The row's full height, and every point of width between the
           // balance's ink and the card's edge: the gap, and the padding on
-          // either side of it.
-          minHeight: 40 + 2 * ROW_PADDING_Y,
-          padding: `${ROW_PADDING_Y + 2}px ${ROW_PADDING_X + 1}px ${ROW_PADDING_Y + 2}px ${ROW_GAP + 5}px`,
-          margin: `-${ROW_PADDING_Y}px -${ROW_PADDING_X}px -${ROW_PADDING_Y}px -${ROW_GAP + 4}px`,
+          // either side of it — 45pt in all.
+          minHeight: 2 * TARGET,
+          padding: `0 ${ROW_PADDING_X + 1}px 0 ${ROW_GAP + 9}px`,
+          margin: `0 -${ROW_PADDING_X}px 0 -${ROW_GAP + 8}px`,
           borderRadius: 0,
           color: 'var(--dfl-text-3)',
           '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },

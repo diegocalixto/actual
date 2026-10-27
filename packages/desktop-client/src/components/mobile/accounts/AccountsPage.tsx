@@ -27,6 +27,7 @@ import {
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
 import { useAccountBalances } from '#hooks/useAccountBalances';
 import { useAccounts } from '#hooks/useAccounts';
+import { useSyncFreshness } from '#hooks/useBankData';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useNavigate } from '#hooks/useNavigate';
 import { useSheetValue } from '#hooks/useSheetValue';
@@ -97,6 +98,8 @@ export function AccountsPage() {
   // One bind per account, in a single hook, rather than a hook inside a list
   // whose length changes.
   const balances = useAccountBalances(accounts.map(account => account.id));
+  // When the bank was last read, for the hero: the rows carry their own.
+  const freshness = useSyncFreshness();
 
   const total = useSheetValue<'account', 'accounts-balance'>(
     bindings.allAccountBalance(),
@@ -232,6 +235,7 @@ export function AccountsPage() {
                 accountCount={
                   onBudgetAccounts.length + offBudgetAccounts.length
                 }
+                lastBankRead={freshness.latestSync}
                 onOpenAllTransactions={openRegister('all')}
               />
 

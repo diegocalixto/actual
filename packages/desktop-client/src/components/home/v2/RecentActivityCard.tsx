@@ -96,7 +96,9 @@ export function RecentActivityCard() {
           <Button
             variant="bare"
             aria-label={t('Ver todas as transações')}
-            onPress={() => void navigate('/accounts')}
+            // The combined register, not the list of accounts: "see all" of
+            // the transactions shown here.
+            onPress={() => void navigate('/accounts/all')}
             className={css({
               // One line of small type with a finger-sized target around it:
               // the box is grown with padding and pulled back by the same

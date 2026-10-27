@@ -1,3 +1,5 @@
+import { CATEGORY_HUE_HEX } from '#components/v2lab/categoryHue';
+
 /**
  * Colour map for the Reports laboratory.
  *
@@ -20,14 +22,25 @@ export type CategoryHue =
   | 'amber'
   | 'coral'
   | 'rose'
-  | 'violet';
+  | 'violet'
+  | 'cyan'
+  | 'neutral';
 
-/** Literals, because SVG gradient stops cannot resolve CSS variables. */
+/**
+ * Literals, because SVG gradient stops cannot resolve CSS variables.
+ *
+ * The real Reports only ever receive the hues of `categoryHue.ts` — violet,
+ * cyan, rose and the neutral grey — whose values come from there, so a
+ * category is the same colour here as on every other screen. The others stay
+ * for the laboratory's fixtures.
+ */
 export const CATEGORY_HUE: Record<CategoryHue, string> = {
   blue: '#4d9bf5',
   green: '#3ad07f',
   amber: '#f0a63c',
   coral: '#f2645f',
-  rose: '#f2649c',
-  violet: '#9b7bff',
+  rose: CATEGORY_HUE_HEX.rose,
+  violet: CATEGORY_HUE_HEX.violet,
+  cyan: CATEGORY_HUE_HEX.cyan,
+  neutral: CATEGORY_HUE_HEX.neutral,
 };

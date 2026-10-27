@@ -156,17 +156,15 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await expectLabels([
         'Saldo nas contas',
         'Contas no orçamento somadas, cartões já descontados',
-        'Para distribuir',
         'Este mês',
         'Receitas classificadas',
         'Gastos',
-        // The desktop says the result in full; the phone's third of a row
-        // holds one word of it.
-        layout === 'desktop'
-          ? 'Resultado das receitas classificadas'
-          : 'Resultado',
+        // The result by its short title on both layouts, as the Relatórios
+        // name it; the lines under the figures define it.
+        'Resultado',
         'Contas',
-        'Despesas do mês',
+        // One name for the spending wherever it is printed.
+        'Gastos do mês',
         'Transações recentes',
       ]);
       await expectAbsent([
@@ -197,7 +195,7 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await goTo('Orçamento');
 
       await expectLabels([
-        'Para distribuir',
+        'A planejar',
         'Orçado',
         'Gasto categorizado',
         'Receitas − gasto',
@@ -270,11 +268,11 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       for (const card of layout === 'desktop'
         ? [
             'Principais categorias',
-            'Despesas por categoria',
+            'Gastos por categoria',
             'Comparativo mensal',
           ]
         : [
-            'Despesas por categoria',
+            'Gastos por categoria',
             'Comparativo mensal',
             'Relatórios detalhados',
           ]) {
@@ -285,23 +283,31 @@ export function describeV2PagesInPortuguese(layout: V2Layout) {
       await expectLabels([
         'Receitas classificadas',
         'Gastos',
-        // The tile's title, short; the full name is still on the page, on the
-        // chart's legend, and the strip under the tiles defines the figure.
+        // The tile's title, short, as the chart's legend names it too; the
+        // strip under the tiles defines the figure.
         'Resultado',
-        'Resultado das receitas classificadas',
         'Taxa de poupança',
         'Receitas classificadas, gastos e resultado',
         'Receitas classificadas (média)',
         'Gastos (média)',
         'Resultado (média)',
       ]);
-      // The strip under the tiles states the counting rules, in Portuguese.
+      // The strip under the tiles states the counting rules, in Portuguese —
+      // on a phone, behind "Como calculamos", which has to open it.
+      if (layout === 'mobile') {
+        const howWeCount = main.getByRole('button', {
+          name: 'Como calculamos',
+        });
+        await expect(howWeCount).toHaveAttribute('aria-expanded', 'false');
+        await howWeCount.click();
+        await expect(howWeCount).toHaveAttribute('aria-expanded', 'true');
+      }
       await expect(main.getByText(/^Como esta página conta:/)).toBeVisible();
       if (layout === 'desktop') {
         await expectLabels([
           'Total das receitas classificadas',
           'Total de gastos',
-          'Resultado das receitas classificadas no período',
+          'Resultado do período',
           'Para onde foi o seu dinheiro',
           'Categoria',
           'Valor',

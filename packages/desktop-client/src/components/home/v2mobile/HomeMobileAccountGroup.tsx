@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import type { CardInsights } from '#accounts/bankData';
+
 import type { HomeAccount } from './homeData';
 import { HomeMobileAccountRow } from './HomeMobileAccountRow';
 import { HomeMobileMoney } from './HomeMobileMoney';
@@ -16,6 +18,8 @@ type HomeMobileAccountGroupProps = {
   /** The group's tile colour, shared by all of its rows. */
   hue: string;
   accounts: HomeAccount[];
+  /** By account id; a row with card data prints its open bill. */
+  cards?: Record<string, CardInsights>;
 };
 
 /**
@@ -36,6 +40,7 @@ export function HomeMobileAccountGroup({
   tone,
   hue,
   accounts,
+  cards,
 }: HomeMobileAccountGroupProps) {
   const dot =
     tone === 'positive' ? 'var(--dfl-positive)' : 'var(--dfl-negative)';
@@ -81,7 +86,7 @@ export function HomeMobileAccountGroup({
           />
           <Text
             style={{
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: 600,
               letterSpacing: 1.2,
               textTransform: 'uppercase',
@@ -109,6 +114,7 @@ export function HomeMobileAccountGroup({
           homeAccount={homeAccount}
           hue={hue}
           isLast={index === accounts.length - 1}
+          card={cards?.[homeAccount.account.id]}
         />
       ))}
     </View>

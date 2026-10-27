@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
+import { Button } from '@actual-app/components/button';
+import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
+import { UNCATEGORIZED_ID } from '@actual-app/core/shared/month-indicators';
+import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
@@ -27,7 +31,17 @@ type ReportsCategoryDonutProps = {
    * month. `null` ⇒ no pill, for a page that states its period somewhere else.
    */
   periodLabel?: ReactNode;
+  /** The phone's arrangement: legend rows a finger's height. */
+  compact?: boolean;
+  /**
+   * What a legend row opens: the transactions it adds up. Absent ⇒ the rows
+   * are plain text, which is what the laboratory wants.
+   */
+  onOpenCategory?: (category: ExpenseCategory) => void;
 };
+
+/** Canvas left between two slices, so two of one hue still read as two. */
+const SLICE_GAP = 2.5;
 
 const SIZE = 150;
 const STROKE = 30;
@@ -41,8 +55,10 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
  *
  * The ring and its legend are one block, not two: the donut sits tight against
  * the rows so the eye crosses from a slice to its figure without travelling.
- * Slices meet edge to edge — the hues alone separate them — and every share is
- * computed from the amounts, which sum to the expenses total by construction.
+ * A sliver of canvas separates the slices: a category keeps its colour on
+ * every screen, the palette has few, and two neighbours can share one. Every
+ * share is computed from the amounts, which sum to the expenses total by
+ * construction. Each legend row opens its category's transactions.
  *
  * The legend opens on the largest few, as the approved card does, and its link
  * brings in the rest in place. With nothing more to list there is no link.
@@ -52,7 +68,10 @@ export function ReportsCategoryDonut({
   total,
   limit = 6,
   periodLabel,
+  compact = false,
+  onOpenCategory,
 }: ReportsCategoryDonutProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const hasMore = categories.length > limit;
   const listed = isExpanded ? categories : categories.slice(0, limit);
@@ -124,6 +143,10 @@ export function ReportsCategoryDonut({
                 const rotation = -offset;
                 offset += length;
                 const color = CATEGORY_HUE[category.hue];
+                const drawn =
+                  categories.length > 1
+                    ? Math.max(0, length - SLICE_GAP)
+                    : length;
 
                 return (
                   <g key={category.id}>
@@ -134,7 +157,7 @@ export function ReportsCategoryDonut({
                       fill="none"
                       stroke={color}
                       strokeWidth={STROKE}
-                      strokeDasharray={`${length} ${CIRCUMFERENCE}`}
+                      strokeDasharray={`${drawn} ${CIRCUMFERENCE}`}
                       strokeDashoffset={rotation}
                       filter="url(#dfrDonut)"
                       opacity={0.45}
@@ -146,7 +169,7 @@ export function ReportsCategoryDonut({
                       fill="none"
                       stroke={color}
                       strokeWidth={STROKE}
-                      strokeDasharray={`${length} ${CIRCUMFERENCE}`}
+                      strokeDasharray={`${drawn} ${CIRCUMFERENCE}`}
                       strokeDashoffset={rotation}
                     />
                   </g>
@@ -188,7 +211,7 @@ export function ReportsCategoryDonut({
               </FinancialText>
               <Text
                 style={{
-                  fontSize: 10.5,
+                  fontSize: 11,
                   letterSpacing: 0.4,
                   color: 'var(--dfl-text-3)',
                 }}
@@ -201,70 +224,126 @@ export function ReportsCategoryDonut({
           <View
             style={{ flex: `1 1 ${LEGEND_MIN_WIDTH}px`, minWidth: 0, gap: 2 }}
           >
-            {listed.map(category => (
-              <View
-                key={category.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 9,
-                  height: 25,
-                }}
-              >
+            {listed.map(category => {
+              const isUncategorized = category.id === UNCATEGORIZED_ID;
+              const row = (
                 <View
-                  aria-hidden="true"
+                  key={category.id}
                   style={{
-                    width: 8,
-                    height: 8,
-                    flexShrink: 0,
-                    borderRadius: 999,
-                    backgroundColor: CATEGORY_HUE[category.hue],
-                    boxShadow: `0 0 8px -1px ${CATEGORY_HUE[category.hue]}`,
-                  }}
-                />
-                <TextOneLine
-                  style={{
-                    flex: '1 1 0',
-                    minWidth: 0,
-                    fontSize: 13,
-                    color: 'var(--dfl-text)',
+                    width: '100%',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 9,
+                    minHeight: compact ? 44 : 30,
                   }}
                 >
-                  {category.name}
-                </TextOneLine>
-                <Text
-                  style={{
-                    fontSize: 11.5,
-                    color: 'var(--dfl-text-3)',
-                  }}
+                  <View
+                    aria-hidden="true"
+                    style={{
+                      width: 8,
+                      height: 8,
+                      flexShrink: 0,
+                      borderRadius: 999,
+                      backgroundColor: CATEGORY_HUE[category.hue],
+                      boxShadow: `0 0 8px -1px ${CATEGORY_HUE[category.hue]}`,
+                    }}
+                  />
+                  <View style={{ flex: '1 1 0', minWidth: 0 }}>
+                    <TextOneLine
+                      style={{
+                        fontSize: compact ? 14 : 13,
+                        textAlign: 'left',
+                        color: 'var(--dfl-text)',
+                      }}
+                    >
+                      {category.name}
+                    </TextOneLine>
+                    {/* Not a category but something to do, said in words on a
+                        line of its own so the name keeps its room. */}
+                    {isUncategorized && (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          textAlign: 'left',
+                          color: 'var(--dfl-hue-amber)',
+                        }}
+                      >
+                        <Trans>to review</Trans>
+                      </Text>
+                    )}
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 11.5,
+                      color: 'var(--dfl-text-3)',
+                    }}
+                  >
+                    {currencySymbol()}
+                  </Text>
+                  <FinancialText
+                    style={{
+                      flex: '0 0 76px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      textAlign: 'right',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--dfl-text)',
+                    }}
+                  >
+                    <PrivacyFilter>
+                      {formatPlain(category.amount)}
+                    </PrivacyFilter>
+                  </FinancialText>
+                  <Text
+                    style={{
+                      flex: '0 0 44px',
+                      fontSize: 12,
+                      textAlign: 'right',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--dfl-text-3)',
+                    }}
+                  >
+                    {formatPercent(category.share)}
+                  </Text>
+                  {onOpenCategory && (
+                    <SvgCheveronRight
+                      aria-hidden="true"
+                      width={13}
+                      height={13}
+                      style={{ flexShrink: 0, color: 'var(--dfl-text-3)' }}
+                    />
+                  )}
+                </View>
+              );
+
+              return onOpenCategory ? (
+                <Button
+                  key={category.id}
+                  variant="bare"
+                  aria-label={
+                    isUncategorized
+                      ? t('Review the spending without a category this month')
+                      : t('See the transactions of {{name}} this month', {
+                          name: category.name,
+                        })
+                  }
+                  onPress={() => onOpenCategory(category)}
+                  className={css({
+                    width: '100%',
+                    padding: '0 6px',
+                    margin: '0 -6px',
+                    borderRadius: 8,
+                    justifyContent: 'flex-start',
+                    '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+                    '&[data-pressed]': { backgroundColor: 'var(--dfl-inset)' },
+                  })}
                 >
-                  {currencySymbol()}
-                </Text>
-                <FinancialText
-                  style={{
-                    flex: '0 0 76px',
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    textAlign: 'right',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--dfl-text)',
-                  }}
-                >
-                  <PrivacyFilter>{formatPlain(category.amount)}</PrivacyFilter>
-                </FinancialText>
-                <Text
-                  style={{
-                    flex: '0 0 44px',
-                    fontSize: 12,
-                    textAlign: 'right',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--dfl-text-3)',
-                  }}
-                >
-                  {formatPercent(category.share)}
-                </Text>
-              </View>
-            ))}
+                  {row}
+                </Button>
+              ) : (
+                row
+              );
+            })}
           </View>
         </View>
 

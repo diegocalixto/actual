@@ -25,7 +25,6 @@ export function V2LabOverview() {
   const data: OverviewViewData = {
     greeting: <Trans>Good afternoon</Trans>,
     available: labBalances.available,
-    toBudget: labBalances.toBudget,
     monthTotals: labMonthTotals,
     accounts: labAccounts,
     categories: labCategories,

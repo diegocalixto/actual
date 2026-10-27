@@ -8,12 +8,15 @@ import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
+import { tsToRelativeTime } from '@actual-app/core/shared/util';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
 import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import { parseSyncTimestamp } from '#accounts/bankData';
 import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { iconForAccount } from '#components/v2lab/LabStyle';
+import { useLocale } from '#hooks/useLocale';
 
 import { AccountsMobileMoney } from './AccountsMobileMoney';
 import { currencyWithSign, magnitude } from './accountsMoneyFormat';
@@ -68,12 +71,25 @@ export function AccountsMobileRow({
   onPress,
 }: AccountsMobileRowProps) {
   const { t } = useTranslation();
+  const locale = useLocale();
   const Icon = iconForAccount(account.name);
   const cardBrand = cardBrandForAccount(account.name);
+
+  // When the bank was last read, for a linked account: the dot says whether
+  // the last attempt worked, this says how old the figures are.
+  const lastSync = isConnected ? parseSyncTimestamp(account.last_sync) : null;
+  const freshness = !isConnected
+    ? null
+    : lastSync === null
+      ? t('Not read from the bank yet')
+      : t('updated {{when}}', {
+          when: tsToRelativeTime(String(lastSync), locale),
+        });
 
   const detailParts = [
     account.bankName,
     account.mask ? `•••• ${account.mask}` : null,
+    freshness,
   ].filter(Boolean);
   const detail = detailParts.length > 0 ? detailParts.join(' · ') : null;
 

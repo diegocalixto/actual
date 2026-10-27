@@ -31,7 +31,6 @@ export type BudgetBooks = {
 /** The Home page, in integer cents. */
 export type HomeBooks = {
   available: number;
-  toDistribute: number;
   income: number;
   /** Money out, as a positive amount whichever way the layout signs it. */
   spent: number;
@@ -55,14 +54,14 @@ const LABELS = {
   desktop: {
     home: {
       available: 'Available balance',
-      toDistribute: 'To Budget',
       income: 'Classified receipts',
       spent: 'Spending',
-      net: 'Result of classified receipts',
+      // The short title the Reports and the phone use too.
+      net: 'Result',
       total: 'Total',
     },
     budget: {
-      toDistribute: 'Para distribuir',
+      toDistribute: 'A planejar',
       budgeted: 'Orçado',
       spent: 'Gasto categorizado',
       income: 'Receitas',
@@ -73,14 +72,13 @@ const LABELS = {
   mobile: {
     home: {
       available: 'Saldo nas contas',
-      toDistribute: 'Para distribuir',
       income: 'Receitas classificadas',
       spent: 'Gastos',
       net: 'Resultado',
       total: 'Total',
     },
     budget: {
-      toDistribute: 'Para distribuir',
+      toDistribute: 'A planejar',
       budgeted: 'Orçado',
       spent: 'Gasto categorizado',
       income: 'Total recebido',
@@ -357,9 +355,9 @@ export class V2Books {
 
     return {
       available: V2Books.single(found, labels.available),
-      toDistribute: V2Books.single(found, labels.toDistribute),
       income: V2Books.single(found, labels.income),
-      // The desktop prints money out below zero, the phone as an amount.
+      // Both layouts print the spending as an amount under its label; the
+      // absolute value keeps the reading independent of that choice.
       spent: Math.abs(spent),
       net: V2Books.single(found, labels.net),
       total: V2Books.single(found, labels.total),

@@ -8,30 +8,12 @@
  * name would be exactly that claim, so every envelope gets a neutral glyph.
  */
 import type { BudgetHue } from '#components/v2lab/budget/BudgetView';
+import { hueForCategory } from '#components/v2lab/categoryHue';
 
-const HUES: BudgetHue[] = [
-  'green',
-  'blue',
-  'amber',
-  'violet',
-  'rose',
-  'cyan',
-  'yellow',
-  'neutral',
-];
-
-/** FNV-1a. Small, stable, not trying to be a cryptographic hash. */
-function hashId(id: string): number {
-  let hash = 2166136261;
-
-  for (let index = 0; index < id.length; index++) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return hash >>> 0;
-}
-
-export function hueForId(id: string): BudgetHue {
-  return HUES[hashId(id) % HUES.length];
+/**
+ * The Budget's name for the shared definition: the same category is the same
+ * colour here as on Início and Relatórios, and no category is grey.
+ */
+export function hueForId(id: string | null | undefined): BudgetHue {
+  return hueForCategory(id);
 }

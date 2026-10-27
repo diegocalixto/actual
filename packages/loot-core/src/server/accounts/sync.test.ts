@@ -585,8 +585,8 @@ describe('Account sync', () => {
 
   test(
     'given an imported tx has an imported_id, ' +
-      'when not using fuzzy search V2, existing transaction has an imported_id, matches amount, and is within 7 days of imported tx, ' +
-      'then imported tx should reconcile with existing transaction from fuzzy match',
+      'when not using fuzzy search V2, existing transaction has another imported_id, matches amount, and is within 7 days of imported tx, ' +
+      'then imported tx is kept apart and marked for review (nothing proves the two are one entry)',
     async () => {
       const { id } = await prepareDatabase();
 
@@ -630,11 +630,245 @@ describe('Account sync', () => {
       expect(payees.length).toBe(1);
 
       transactions = await getAllTransactions();
-      expect(transactions.length).toBe(1);
-
-      expect(transactions[0].amount).toBe(-1239);
+      expect(transactions.length).toBe(2);
+      expect(
+        transactions.find(t => t.imported_id === 'something-else-entirely'),
+      ).toMatchObject({
+        amount: -1239,
+        notes: 'TEST TRANSACTION #conferir-duplicata',
+      });
+      expect(
+        transactions.find(
+          t => t.imported_id === 'b85cdd57-5a1c-4ca5-bd54-12e5b56fa02c',
+        ),
+      ).toMatchObject({ amount: -1239, notes: 'TEST TRANSACTION' });
     },
   );
+});
+
+// Bank-sync accounts reconcile with `strictIdChecking` off, so a new entry
+// may fuzzy-match an existing one that already carries a different provider
+// id (`processBankSyncDownload`). Because every id match is resolved before
+// any fuzzy match, an anchored entry the provider delivers again in the same
+// batch is never taken by a new twin: only an entry the provider has stopped
+// delivering is. These pin that down, as the next syncs of an anchored file
+// depend on it.
+describe('Bank sync of an anchored account', () => {
+  const pix = (transactionId: string, date: string, amount = -20) => ({
+    booked: true,
+    date,
+    payeeName: 'Pix',
+    notes: 'PIX',
+    transactionAmount: { amount, currency: 'BRL' },
+    transactionId,
+  });
+
+  async function anchoredAccount() {
+    const { id } = await prepareDatabase();
+    // The entry already matched to the provider's id A, as the anchoring
+    // leaves it: own date, own category and note kept.
+    await db.insertTransaction({
+      id: 'anchored',
+      account: id,
+      date: '2026-10-13',
+      amount: -2000,
+      imported_id: 'pix-A',
+      notes: 'anchored by hand',
+      cleared: true,
+    });
+    return id;
+  }
+
+  const bankSync = (id: string, transactions: unknown[]) =>
+    reconcileTransactions(id, transactions, true, false);
+
+  test.each([
+    ['the anchored entry first', ['pix-A', 'pix-B']],
+    ['the new twin first', ['pix-B', 'pix-A']],
+  ])(
+    'a new twin delivered together with the anchored entry is added, not merged (%s)',
+    async (_order, ids) => {
+      const id = await anchoredAccount();
+      const batch = {
+        'pix-A': pix('pix-A', '2026-10-13'),
+        'pix-B': pix('pix-B', '2026-10-18'),
+      };
+
+      const result = await bankSync(
+        id,
+        ids.map(key => batch[key]),
+      );
+
+      expect(result.added.length).toBe(1);
+      const transactions = await getAllTransactions();
+      expect(transactions.length).toBe(2);
+      const anchored = transactions.find(t => t.id === 'anchored');
+      expect(anchored).toMatchObject({
+        imported_id: 'pix-A',
+        date: 20261013,
+        notes: 'anchored by hand',
+      });
+      const twin = transactions.find(t => t.imported_id === 'pix-B');
+      expect(twin).toMatchObject({ date: 20261018, amount: -2000 });
+    },
+  );
+
+  test('a second sync of the same batch changes nothing', async () => {
+    const id = await anchoredAccount();
+    const batch = [pix('pix-A', '2026-10-13'), pix('pix-B', '2026-10-18')];
+    await bankSync(id, batch);
+
+    const result = await bankSync(id, batch);
+
+    expect(result.added).toEqual([]);
+    expect(result.updated).toEqual([]);
+    expect((await getAllTransactions()).length).toBe(2);
+  });
+
+  test('a twin whose anchored entry the provider no longer delivers is kept apart and marked for review', async () => {
+    const id = await anchoredAccount();
+
+    const result = await bankSync(id, [pix('pix-B', '2026-10-18')]);
+
+    expect(result.added.length).toBe(1);
+    const transactions = await getAllTransactions();
+    expect(transactions.length).toBe(2);
+    // Nothing proves the two are one entry: the anchored one keeps its id,
+    // date and note; the new one is added, carrying the mark.
+    expect(transactions.find(t => t.id === 'anchored')).toMatchObject({
+      imported_id: 'pix-A',
+      date: 20261013,
+      notes: 'anchored by hand',
+    });
+    expect(transactions.find(t => t.imported_id === 'pix-B')).toMatchObject({
+      date: 20261018,
+      amount: -2000,
+      notes: 'PIX #conferir-duplicata',
+    });
+  });
+
+  const pendingPurchase = (id: string) =>
+    db.insertTransaction({
+      id: 'pending',
+      account: id,
+      date: '2026-10-13',
+      amount: -2000,
+      imported_id: 'card-pending-1',
+      imported_payee: 'Padaria Central',
+      cleared: false,
+      raw_synced_data: JSON.stringify({
+        booked: false,
+        status: 'PENDING',
+        originalDate: '2026-10-13',
+        'creditCardMetadata.transactionDateTime': '2026-10-13T14:02:11.000Z',
+        'creditCardMetadata.cardNumber': '7937',
+      }),
+    });
+  const postedPurchase = (overrides: Record<string, unknown> = {}) => ({
+    booked: true,
+    date: '2026-10-15',
+    originalDate: '2026-10-13',
+    'creditCardMetadata.transactionDateTime': '2026-10-13T14:02:11.000Z',
+    'creditCardMetadata.cardNumber': '7937',
+    payeeName: 'Padaria Central',
+    notes: 'PADARIA CENTRAL',
+    transactionAmount: { amount: -20, currency: 'BRL' },
+    transactionId: 'card-posted-1',
+    ...overrides,
+  });
+
+  test('a pending entry the provider settles under another id is matched when the operation is the same', async () => {
+    const { id } = await prepareDatabase();
+    await pendingPurchase(id);
+
+    const result = await bankSync(id, [postedPurchase()]);
+
+    expect(result.added).toEqual([]);
+    const transactions = await getAllTransactions();
+    expect(transactions.length).toBe(1);
+    expect(transactions[0]).toMatchObject({
+      id: 'pending',
+      imported_id: 'card-posted-1',
+      cleared: 1,
+      notes: 'PADARIA CENTRAL',
+    });
+  });
+
+  test('the moment of the operation known on one side only falls back to the original date', async () => {
+    const { id } = await prepareDatabase();
+    await pendingPurchase(id);
+
+    const result = await bankSync(id, [
+      postedPurchase({ 'creditCardMetadata.transactionDateTime': undefined }),
+    ]);
+
+    expect(result.added).toEqual([]);
+    expect((await getAllTransactions()).length).toBe(1);
+  });
+
+  test.each([
+    [
+      'another moment of operation',
+      { 'creditCardMetadata.transactionDateTime': '2026-10-14T09:30:00.000Z' },
+    ],
+    ['another card', { 'creditCardMetadata.cardNumber': '3030' }],
+    [
+      'no trace of the operation at all',
+      {
+        originalDate: undefined,
+        'creditCardMetadata.transactionDateTime': undefined,
+      },
+    ],
+  ])(
+    'same payee and amount are not enough: %s keeps both and marks the new one',
+    async (_case, overrides) => {
+      const { id } = await prepareDatabase();
+      await pendingPurchase(id);
+
+      const result = await bankSync(id, [postedPurchase(overrides)]);
+
+      expect(result.added.length).toBe(1);
+      const transactions = await getAllTransactions();
+      expect(transactions.length).toBe(2);
+      expect(transactions.find(t => t.id === 'pending')).toMatchObject({
+        imported_id: 'card-pending-1',
+        cleared: 0,
+      });
+      expect(
+        transactions.find(t => t.imported_id === 'card-posted-1')?.notes,
+      ).toBe('PADARIA CENTRAL #conferir-duplicata');
+    },
+  );
+
+  test('a booked entry under another id with another payee is kept apart even when pending', async () => {
+    const { id } = await prepareDatabase();
+    await db.insertTransaction({
+      id: 'pending',
+      account: id,
+      date: '2026-10-13',
+      amount: -2000,
+      imported_id: 'card-pending-1',
+      imported_payee: 'Padaria Central',
+      cleared: false,
+      raw_synced_data: JSON.stringify({ booked: false, status: 'PENDING' }),
+    });
+
+    await bankSync(id, [pix('pix-B', '2026-10-14')]);
+
+    const transactions = await getAllTransactions();
+    expect(transactions.length).toBe(2);
+    expect(transactions.find(t => t.imported_id === 'pix-B')?.notes).toBe(
+      'PIX #conferir-duplicata',
+    );
+  });
+
+  test('a twin of another amount is never merged', async () => {
+    const id = await anchoredAccount();
+
+    await bankSync(id, [pix('pix-C', '2026-10-13', -20.5)]);
+
+    expect((await getAllTransactions()).length).toBe(2);
+  });
 });
 
 describe('SimpleFin batch sync', () => {

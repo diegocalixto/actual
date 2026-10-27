@@ -2,9 +2,12 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Trans } from 'react-i18next';
 
+import { Button } from '@actual-app/components/button';
+import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 import type { IndicatorTotals } from '@actual-app/core/shared/month-indicators';
+import { css } from '@emotion/css';
 
 import { FinancialText } from '#components/FinancialText';
 import { monthDetailLines } from '#components/home/v2/MonthSummaryCard';
@@ -22,6 +25,8 @@ type LabMonthSummaryProps = {
    * absent ⇒ no lines: the laboratory's fixtures carry none.
    */
   details?: IndicatorTotals | null;
+  /** Opens the month's inflows still without a category. */
+  onOpenPendingInflows?: () => void;
 };
 
 const FIGURE_TRACKING = -0.5;
@@ -38,8 +43,16 @@ const FIGURE_TRACKING = -0.5;
  * income, inflows still without a category, the uncategorized share of the
  * spending. The rules are `@actual-app/core/shared/month-indicators`, the Reports' own.
  */
-export function LabMonthSummary({ totals, details }: LabMonthSummaryProps) {
-  const figures = [totals.income, totals.spent, totals.net].map(formatMoney);
+export function LabMonthSummary({
+  totals,
+  details,
+  onOpenPendingInflows,
+}: LabMonthSummaryProps) {
+  // The spending is printed as a magnitude under its label, as the Relatórios
+  // and the phone print it; the coral and the word already say which way the
+  // money went. The registers keep the signs.
+  const spent = Math.abs(totals.spent);
+  const figures = [totals.income, spent, totals.net].map(formatMoney);
   const lines = details ? monthDetailLines(details) : [];
 
   return (
@@ -60,13 +73,15 @@ export function LabMonthSummary({ totals, details }: LabMonthSummaryProps) {
         <Divider />
         <Cell
           label={<Trans>Spending</Trans>}
-          value={totals.spent}
+          value={spent}
           figures={figures}
           color="var(--dfl-negative)"
         />
         <Divider />
         <Cell
-          label={<Trans>Result of classified receipts</Trans>}
+          // The short title the Relatórios and the phone already use; the
+          // lines below and the Relatórios' "Como calculamos" define it.
+          label={<Trans>Result</Trans>}
           value={totals.net}
           figures={figures}
           // The verdict is the one figure whose sign is a judgement.
@@ -89,33 +104,95 @@ export function LabMonthSummary({ totals, details }: LabMonthSummaryProps) {
             borderTop: '1px solid var(--dfl-line)',
           }}
         >
-          {lines.map(line => (
-            <View
-              key={line.key}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <Text style={{ fontSize: 12.5, color: 'var(--dfl-text-2)' }}>
-                {line.label}
-              </Text>
-              {line.value !== null && (
-                <FinancialText
+          {lines.map(line => {
+            const isAttention =
+              line.key === 'provisional' || line.opens === 'pendingInflows';
+            const content = (
+              <View
+                style={{
+                  width: '100%',
+                  flexDirection: 'row',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <Text
                   style={{
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                    color: 'var(--dfl-text)',
+                    fontSize: 13,
+                    textAlign: 'left',
+                    color: isAttention
+                      ? 'var(--dfl-text)'
+                      : 'var(--dfl-text-2)',
                   }}
                 >
-                  <PrivacyFilter>{formatMoney(line.value)}</PrivacyFilter>
-                </FinancialText>
-              )}
-            </View>
-          ))}
+                  {isAttention && (
+                    <Text
+                      aria-hidden="true"
+                      style={{
+                        color: 'var(--dfl-hue-amber)',
+                        fontWeight: 700,
+                        marginRight: 6,
+                      }}
+                    >
+                      !
+                    </Text>
+                  )}
+                  {line.label}
+                </Text>
+                {line.value !== null && (
+                  <FinancialText
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      color: 'var(--dfl-text)',
+                    }}
+                  >
+                    <PrivacyFilter>{formatMoney(line.value)}</PrivacyFilter>
+                  </FinancialText>
+                )}
+              </View>
+            );
+
+            return line.opens === 'pendingInflows' && onOpenPendingInflows ? (
+              <Button
+                key={line.key}
+                variant="bare"
+                onPress={onOpenPendingInflows}
+                className={css({
+                  position: 'relative',
+                  // The padding lets the hover tint breathe without moving the
+                  // figure off the column the other lines share.
+                  width: 'calc(100% + 8px)',
+                  // At least the 24px a pointer target needs, taken from the
+                  // gap around the line rather than from the lines beside it.
+                  minHeight: 26,
+                  padding: '4px 4px',
+                  margin: '-4px -4px',
+                  borderRadius: 6,
+                  justifyContent: 'flex-start',
+                  '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
+                })}
+              >
+                {content}
+                {/* In the panel's margin, so the figure keeps its column. */}
+                <SvgCheveronRight
+                  aria-hidden="true"
+                  width={12}
+                  height={12}
+                  style={{
+                    position: 'absolute',
+                    right: -12,
+                    top: 'calc(50% - 6px)',
+                    color: 'var(--dfl-text-3)',
+                  }}
+                />
+              </Button>
+            ) : (
+              <View key={line.key}>{content}</View>
+            );
+          })}
         </View>
       )}
     </LabPanel>
@@ -149,7 +226,7 @@ function Cell({ label, value, figures, color, emphasized = false }: CellProps) {
     >
       <Text
         style={{
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 600,
           letterSpacing: 1,
           textTransform: 'uppercase',

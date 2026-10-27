@@ -34,8 +34,6 @@ export type LabIcon = ComponentType<SVGProps<SVGSVGElement>>;
 export type LabBalances = {
   /** Sum of on-budget account balances. */
   available: number;
-  /** Envelope budgets only; `null` when the budget type has no such cell. */
-  toBudget: number | null;
 };
 
 export type LabMonthTotals = {
@@ -79,7 +77,6 @@ export type LabMovement = {
 
 export const labBalances: LabBalances = {
   available: 1487250,
-  toBudget: 234000,
 };
 
 export const labMonthTotals: LabMonthTotals = {

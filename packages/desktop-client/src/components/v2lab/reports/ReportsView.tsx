@@ -101,6 +101,13 @@ export type ReportsViewData = {
   detailReports?: ReportsDetailLink[];
   /** Opens the report the monthly comparison summarises. Absent ⇒ no link. */
   onOpenFullComparison?: () => void;
+  /**
+   * Opens the transactions a category row adds up, in the period shown.
+   * Absent ⇒ the rows are plain text, which is what the laboratory wants.
+   */
+  onOpenCategory?: (category: ExpenseCategory) => void;
+  /** Opens the period's inflows still without a category. */
+  onOpenPendingInflows?: () => void;
 };
 
 export function ReportsView({ data }: { data: ReportsViewData }) {
@@ -189,7 +196,12 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
           previousPeriodLabel={data.previousPeriodLabel}
         />
 
-        {data.breakdown && <ReportsBreakdown breakdown={data.breakdown} />}
+        {data.breakdown && (
+          <ReportsBreakdown
+            breakdown={data.breakdown}
+            onOpenPendingInflows={data.onOpenPendingInflows}
+          />
+        )}
 
         <View
           style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}
@@ -223,7 +235,10 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
             )}
 
             {hasCategories ? (
-              <ReportsTopCategories categories={data.categories} />
+              <ReportsTopCategories
+                categories={data.categories}
+                onOpenCategory={data.onOpenCategory}
+              />
             ) : (
               <EmptyPanel>
                 {data.isLoading ? (
@@ -240,6 +255,7 @@ export function ReportsView({ data }: { data: ReportsViewData }) {
             {hasCategories ? (
               <ReportsCategoryDonut
                 categories={data.categories}
+                onOpenCategory={data.onOpenCategory}
                 total={data.totals.expenses}
                 // "This month" is true of the current month alone.
                 periodLabel={

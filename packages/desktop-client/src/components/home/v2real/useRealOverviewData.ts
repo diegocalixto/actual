@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -6,22 +6,22 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 
 import { useHomeCategorySpending } from '#components/home/useHomeCategorySpending';
 import { useHomeMonth } from '#components/home/useHomeMonth';
-import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
 import { useMonthTotals } from '#components/home/v2/useMonthTotals';
 import { getPrettyPayee } from '#components/mobile/utils';
+import { hueForCategory } from '#components/v2lab/categoryHue';
 import { iconForAccount, iconForCategory } from '#components/v2lab/LabStyle';
+import { useAccountBalances } from '#hooks/useAccountBalances';
 import { useAccounts } from '#hooks/useAccounts';
+import { useCardInsightsByAccount } from '#hooks/useBankData';
 import { useCategoriesById } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 import { useOffBudgetAccounts } from '#hooks/useOffBudgetAccounts';
 import { useOnBudgetAccounts } from '#hooks/useOnBudgetAccounts';
 import { usePayeesById } from '#hooks/usePayees';
 import { useSheetValue } from '#hooks/useSheetValue';
-import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useTransactions } from '#hooks/useTransactions';
 import * as queries from '#queries';
 import * as bindings from '#spreadsheet/bindings';
-import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { hueForId } from './overviewPresentation';
 import type {
@@ -32,7 +32,6 @@ import type {
 } from './overviewViewModel';
 
 const RECENT_TRANSACTION_COUNT = 5;
-const GLOBAL_SHEET = '__global';
 
 /**
  * Everything the real Overview shows, read from the application's own sources.
@@ -47,8 +46,7 @@ const GLOBAL_SHEET = '__global';
 export function useRealOverviewData(): OverviewData {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { sheetName, month, budgetType } = useHomeMonth();
-  const isTracking = budgetType === 'tracking';
+  const { month } = useHomeMonth();
 
   // --- Hero -----------------------------------------------------------------
   // The published card reads on-budget balances and labels itself "Sum of
@@ -56,11 +54,6 @@ export function useRealOverviewData(): OverviewData {
   // is the same indicator, not a same-sounding one.
   const available = useSheetValue<'account', 'onbudget-accounts-balance'>(
     bindings.onBudgetAccountBalance(),
-  );
-  // Tracking budgets have no "to budget" cell; the read is skipped there.
-  const toBudget = useHomeSheetCell(
-    sheetName,
-    isTracking ? null : envelopeBudget.toBudget,
   );
 
   // --- This month -----------------------------------------------------------
@@ -100,7 +93,10 @@ export function useRealOverviewData(): OverviewData {
     [onBudgetAccounts, offBudgetAccounts],
   );
 
-  const balancesByAccount = useAccountBalances(accountEntities);
+  // The same hook the mobile Accounts page binds its rows with.
+  const balancesByAccount = useAccountBalances(
+    accountEntities.map(account => account.id),
+  );
 
   const accounts = useMemo(
     () =>
@@ -109,6 +105,26 @@ export function useRealOverviewData(): OverviewData {
       ),
     [accountEntities, balancesByAccount, t],
   );
+
+  // --- Cards ----------------------------------------------------------------
+  // Which on-budget accounts the bank's own entries prove to be cards, and
+  // what they add up to, so the hero can say how much of its headline is card
+  // debt. Stated only when every card balance has resolved, so the two parts
+  // always add up to the headline — the same rule the phone's Home applies.
+  const cards = useCardInsightsByAccount(accountEntities);
+  const cardAccounts = onBudgetAccounts.filter(account =>
+    cards.cardAccountIds.includes(account.id),
+  );
+  const cardsDebt =
+    cardAccounts.length > 0 &&
+    cardAccounts.every(
+      account => typeof balancesByAccount[account.id] === 'number',
+    )
+      ? cardAccounts.reduce(
+          (sum, account) => sum + (balancesByAccount[account.id] ?? 0),
+          0,
+        )
+      : null;
 
   // --- Spending -------------------------------------------------------------
   const {
@@ -125,7 +141,7 @@ export function useRealOverviewData(): OverviewData {
         id: entry.category.id,
         name: entry.category.name,
         Icon: iconForCategory(entry.category.name),
-        hue: hueForId(entry.category.id),
+        hue: hueForCategory(entry.category.id),
         amount: entry.amount,
         isUncategorized: entry.isUncategorized,
       })),
@@ -186,8 +202,9 @@ export function useRealOverviewData(): OverviewData {
                 : undefined) ?? '',
             ),
             // Same hue the spending panel gives this category, so a row and a
-            // bar for the same category are visibly the same thing.
-            hue: hueForId(transaction.category ?? transaction.account ?? ''),
+            // bar for the same category are visibly the same thing. No
+            // category — a transfer, or one still to be filed — is grey.
+            hue: hueForCategory(transaction.category),
             amount: transaction.amount ?? 0,
           };
         }),
@@ -195,7 +212,8 @@ export function useRealOverviewData(): OverviewData {
   );
 
   return {
-    balances: { available, toBudget },
+    month,
+    balances: { available, cardsDebt },
     monthTotals,
     monthDetails,
     accounts,
@@ -207,43 +225,6 @@ export function useRealOverviewData(): OverviewData {
     isSpendingLoading,
     isActivityLoading,
   };
-}
-
-/**
- * One balance binding per account, exactly as the published Accounts section
- * does it. Subscriptions only — nothing here writes.
- */
-function useAccountBalances(
-  accounts: AccountEntity[],
-): Record<AccountEntity['id'], number> {
-  const spreadsheet = useSpreadsheet();
-  const [balances, setBalances] = useState<Record<AccountEntity['id'], number>>(
-    {},
-  );
-
-  const accountIds = useMemo(
-    () => accounts.map(account => account.id).join(','),
-    [accounts],
-  );
-
-  useEffect(() => {
-    const ids = accountIds === '' ? [] : accountIds.split(',');
-
-    // Account balances live on the spreadsheet's global sheet, the same one
-    // `useSheetValue` falls back to when no `SheetNameProvider` is in scope.
-    const unbinds = ids.map(id =>
-      spreadsheet.bind(GLOBAL_SHEET, bindings.accountBalance(id), result => {
-        const value = typeof result.value === 'number' ? result.value : 0;
-        setBalances(previous =>
-          previous[id] === value ? previous : { ...previous, [id]: value },
-        );
-      }),
-    );
-
-    return () => unbinds.forEach(unbind => unbind());
-  }, [accountIds, spreadsheet]);
-
-  return balances;
 }
 
 /**

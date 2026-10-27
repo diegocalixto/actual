@@ -6,11 +6,15 @@ import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
+import * as monthUtils from '@actual-app/core/shared/months';
 import { css } from '@emotion/css';
 
 import { cardBrandForAccount } from '#accounts/accountCardBrand';
+import type { CardBill, CardInsights } from '#accounts/bankData';
 import { AccountCardThumbnail } from '#components/accounts/cardThumbnail/AccountCardThumbnail';
 import { iconForAccount } from '#components/v2lab/LabStyle';
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
+import { useLocale } from '#hooks/useLocale';
 import { useNavigate } from '#hooks/useNavigate';
 
 import type { HomeAccount } from './homeData';
@@ -24,6 +28,13 @@ type HomeMobileAccountRowProps = {
   hue: string;
   /** The last row closes its group, so it draws no divider. */
   isLast: boolean;
+  /**
+   * What the bank's entries say about this account. With an open bill the
+   * row's second line is the bill — what has posted and what the bank has not
+   * confirmed — instead of the bank name, because for a card that is the
+   * question the balance raises.
+   */
+  card?: CardInsights;
 };
 
 /**
@@ -45,10 +56,13 @@ export function HomeMobileAccountRow({
   homeAccount,
   hue,
   isLast,
+  card,
 }: HomeMobileAccountRowProps) {
   const { t } = useTranslation();
+  const locale = useLocale();
   const navigate = useNavigate();
   const { account, kind, detail } = homeAccount;
+  const bill = card?.current ?? null;
   const balance = useAccountBalance(account.id);
   const Icon = iconForAccount(account.name);
   const cardBrand = cardBrandForAccount(account.name);
@@ -108,10 +122,42 @@ export function HomeMobileAccountRow({
           >
             {account.name}
           </TextOneLine>
-          {detail !== null && (
-            <TextOneLine style={{ fontSize: 12, color: 'var(--dfl-text-3)' }}>
-              {detail}
-            </TextOneLine>
+          {bill ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'baseline',
+                flexWrap: 'wrap',
+                gap: '0 4px',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: MOBILE_TYPE.label,
+                  color: 'var(--dfl-text-3)',
+                }}
+              >
+                {t('Bill of {{month}}', {
+                  month: monthUtils.format(`${bill.month}-01`, 'MMM', locale),
+                })}
+              </Text>
+              <HomeMobileMoney
+                value={Math.abs(bill.figure)}
+                withCurrency
+                style={{
+                  fontSize: MOBILE_TYPE.label,
+                  fontWeight: 600,
+                  color: 'var(--dfl-text-2)',
+                }}
+              />
+              <BillState bill={bill} />
+            </View>
+          ) : (
+            detail !== null && (
+              <TextOneLine style={{ fontSize: 12, color: 'var(--dfl-text-3)' }}>
+                {detail}
+              </TextOneLine>
+            )
           )}
         </View>
 
@@ -157,4 +203,90 @@ export function HomeMobileAccountRow({
       </View>
     </Button>
   );
+}
+
+type BillStateProps = {
+  bill: CardBill;
+};
+
+/**
+ * Where the bill stands, after its figure, in the words the bank's own
+ * entries justify: open, closed and to pay, paid on a date, paid in part, or
+ * a payment that fits nothing — the last two sending the reader to the bank.
+ */
+function BillState({ bill }: BillStateProps) {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const label = { fontSize: MOBILE_TYPE.label };
+  const money = { fontSize: MOBILE_TYPE.label, fontWeight: 600 };
+  const paidAmount = Math.abs(bill.paid?.amount ?? 0);
+
+  // Open, closed and paid are read off the entries and the payments, not
+  // stated by the bank: each says so.
+  const estimated = ` (${t('estimated')})`;
+  switch (bill.state) {
+    case 'open':
+      return (
+        <Text style={{ ...label, color: 'var(--dfl-hue-amber)' }}>
+          {`· ${t('still open')}${estimated}`}
+        </Text>
+      );
+    case 'closed':
+      return (
+        <Text style={{ ...label, color: 'var(--dfl-negative)' }}>
+          {`· ${t('closed, to pay')}${estimated}`}
+        </Text>
+      );
+    case 'paid':
+      return (
+        <Text style={{ ...label, color: 'var(--dfl-positive)' }}>
+          {`· ${t('paid on {{date}}', {
+            date: bill.paid
+              ? monthUtils.format(bill.paid.on, 'd MMM', locale)
+              : '',
+          })}${estimated}`}
+        </Text>
+      );
+    case 'partial':
+      return (
+        <>
+          <Text style={{ ...label, color: 'var(--dfl-hue-amber)' }}>
+            {`· ${t('partly paid:')}`}
+          </Text>
+          <HomeMobileMoney
+            value={paidAmount}
+            withCurrency
+            style={{ ...money, color: 'var(--dfl-hue-amber)' }}
+          />
+          <Text style={{ ...label, color: 'var(--dfl-text-3)' }}>
+            {`· ${t('check at the bank')}`}
+          </Text>
+        </>
+      );
+    case 'uncertain':
+      if (!bill.paid) {
+        return (
+          <Text style={{ ...label, color: 'var(--dfl-hue-amber)' }}>
+            {`· ${t('cannot tell if it was paid')} · ${t('check at the bank')}`}
+          </Text>
+        );
+      }
+      return (
+        <>
+          <Text style={{ ...label, color: 'var(--dfl-hue-amber)' }}>
+            {`· ${t('a payment of')}`}
+          </Text>
+          <HomeMobileMoney
+            value={paidAmount}
+            withCurrency
+            style={{ ...money, color: 'var(--dfl-hue-amber)' }}
+          />
+          <Text style={{ ...label, color: 'var(--dfl-text-3)' }}>
+            {`${t('does not match it')} · ${t('check at the bank')}`}
+          </Text>
+        </>
+      );
+    default:
+      return null;
+  }
 }

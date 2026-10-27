@@ -1411,6 +1411,19 @@ async function atualizar(plano, api, lib, opts, controles) {
     }
     ids[c.nome] = achadas[0].id;
   }
+  // Conta vinculada à sincronização bancária (Pluggy etc.): ao casar o extrato
+  // do banco com o histórico, o Actual troca o `imported_id` dfi1-… pelo id do
+  // banco, e o lote sobreposto voltaria inteiro como "novo". A prévia avisa;
+  // `--confirmar` recusa o lote.
+  const { data: contasSync } = await api.aqlQuery(
+    api
+      .q('accounts')
+      .filter({ id: { $oneof: Object.values(ids) } })
+      .select(['name', 'account_sync_source']),
+  );
+  const vinculadas = contasSync
+    .filter(a => a.account_sync_source)
+    .map(a => ({ conta: a.name, fonte: a.account_sync_source }));
   const catId = {};
   for (const c of await api.getCategories()) catId[c.name] ??= c.id;
   const semCategoria = [
@@ -1434,6 +1447,7 @@ async function atualizar(plano, api, lib, opts, controles) {
   const res = {
     ...(await classificar(api, plano, ids, controles)),
     aplicado: false,
+    vinculadas,
     fusoes: [],
     travadas: [],
     agendamentos_criados: 0,
@@ -1492,6 +1506,12 @@ async function atualizar(plano, api, lib, opts, controles) {
     });
   }
   if (!opts.confirmar) return res;
+  // Conta vinculada ao banco bloqueia o lote inteiro: --importar-suspeitas e
+  // --aplicar-parcial não liberam.
+  if (res.vinculadas.length) {
+    res.bloqueado = true;
+    return res;
+  }
   // Divergência ou suspeita sem resolução bloqueia o lote inteiro, antes de
   // qualquer gravação. Resolver é explícito: corrigir o CSV ou o app,
   // --importar-suspeitas ou --aplicar-parcial.
@@ -1590,6 +1610,11 @@ function imprimirAtualizacao(r, opts) {
       `  ${nome}: ${n.lote} no lote | já no orçamento: ${n.ja_importadas} pelo id, ${n.equivalentes} pelo conteúdo | excluídas no app: ${n.excluidas} | novas: ${n.novas} | divergentes: ${n.divergentes} | suspeitas: ${n.suspeitas}`,
     );
   }
+  for (const { conta, fonte } of r.vinculadas ?? []) {
+    out(
+      `  VINCULADA  ${conta} — sincroniza pelo banco (${fonte}): o Actual troca o imported_id do lote pelo id do banco e o período sobreposto voltaria como novo; com --confirmar, esta conta bloqueia o lote inteiro`,
+    );
+  }
   const linha = t => `${t.origem} ${t.data} ${fmt(t.centavos)} ${t.descricao}`;
   const doOrcamento = e =>
     `${e.date} ${fmt(e.amount)} ${e.imported_payee ?? ''}`.trim();
@@ -1631,9 +1656,17 @@ function imprimirAtualizacao(r, opts) {
     out(
       `  agendamentos: criados ${r.agendamentos_criados}, já existentes ${r.agendamentos_existentes}`,
     );
+  } else if (r.bloqueado && r.vinculadas?.length) {
+    out(
+      '  conta vinculada à sincronização bancária: tire-a do lote (ou desvincule-a no app) e rode de novo; --importar-suspeitas e --aplicar-parcial não liberam',
+    );
   } else if (r.bloqueado) {
     out(
       '  há divergência ou suspeita sem resolução: corrija o CSV ou o app e rode de novo; ou, depois de revisar, use --importar-suspeitas (suspeitas entram como novas) e/ou --aplicar-parcial (entram só as novas)',
+    );
+  } else if (r.vinculadas?.length) {
+    out(
+      '  prévia: com --confirmar o lote seria bloqueado pela conta vinculada; tire-a do lote antes',
     );
   } else {
     out('  prévia: rode de novo com --confirmar para aplicar');
@@ -1644,6 +1677,7 @@ function imprimirAtualizacao(r, opts) {
 /** Itens que pedem revisão: o lote foi (ou seria) aplicado só em parte. */
 function pendencias(r, opts) {
   return (
+    (r.bloqueado ? 1 : 0) +
     r.divergentes.length +
     (opts['importar-suspeitas'] ? 0 : r.suspeitas.length) +
     r.saldos.filter(s => (s.depois ?? s.previsto) !== s.declarado).length +

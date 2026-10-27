@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
@@ -18,10 +19,10 @@ import type { LabCategory } from './overviewFixtures';
 type LabSpendingProps = {
   categories: LabCategory[];
   /**
-   * What the row for outflows with no category opens. Absent ⇒ every row is
+   * What a row opens: the transactions it is made of. Absent ⇒ every row is
    * plain text, which is what the laboratory's fixtures want.
    */
-  onReviewUncategorized?: () => void;
+  onOpenCategory?: (category: LabCategory) => void;
 };
 
 /**
@@ -33,14 +34,11 @@ type LabSpendingProps = {
  * like data. The name sits in a fixed column so every run starts on the same
  * vertical, which is what lets the lengths be compared at a glance.
  *
- * One row can be pressed: the month's outflows with no category, which open the
- * transactions still waiting for one. It is the only row with somewhere to go,
- * so it is the only one drawn as a control.
+ * Every row opens what it is made of — a category, its transactions of the
+ * month; "Sem categoria", the month's outflows still waiting for one — and is
+ * drawn as the control it is: a hover, a focus ring and a chevron.
  */
-export function LabSpending({
-  categories,
-  onReviewUncategorized,
-}: LabSpendingProps) {
+export function LabSpending({ categories, onOpenCategory }: LabSpendingProps) {
   const { t } = useTranslation();
   const largest = categories.reduce(
     (max, category) => Math.max(max, Math.abs(category.amount)),
@@ -51,15 +49,14 @@ export function LabSpending({
     <LabPanel>
       <View style={{ padding: '10px 22px' }}>
         {categories.map((category, index) => {
-          const review =
-            category.isUncategorized && onReviewUncategorized
-              ? onReviewUncategorized
-              : undefined;
-
           const row = (
             <View
               key={category.id}
               style={{
+                // The full width of the control around it: a button centres
+                // what it holds, which is what pushed "Sem categoria" off the
+                // column the other rows share.
+                width: '100%',
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 14,
@@ -104,19 +101,35 @@ export function LabSpending({
                   {formatMoney(Math.abs(category.amount))}
                 </PrivacyFilter>
               </FinancialText>
+
+              {onOpenCategory && (
+                <SvgCheveronRight
+                  aria-hidden="true"
+                  width={14}
+                  height={14}
+                  style={{ flexShrink: 0, color: 'var(--dfl-text-3)' }}
+                />
+              )}
             </View>
           );
 
-          return review ? (
+          return onOpenCategory ? (
             <Button
               key={category.id}
               variant="bare"
-              aria-label={t('Review the transactions without a category')}
-              onPress={review}
+              aria-label={
+                category.isUncategorized
+                  ? t('Review the spending without a category this month')
+                  : t('See the transactions of {{name}} this month', {
+                      name: category.name,
+                    })
+              }
+              onPress={() => onOpenCategory(category)}
               className={css({
                 width: '100%',
                 padding: 0,
                 borderRadius: 0,
+                justifyContent: 'flex-start',
                 textAlign: 'left',
                 '&[data-hovered]': { backgroundColor: 'var(--dfl-inset)' },
               })}

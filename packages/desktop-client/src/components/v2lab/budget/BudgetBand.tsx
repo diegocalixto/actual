@@ -32,12 +32,16 @@ type BudgetBandProps = {
  * The month in four figures, above everything else.
  *
  * A single horizontal plane rather than four cards: these numbers are one
- * sentence — what came in, what is already promised, what has left, what is
- * still there — and boxing them would ask the eye to re-enter four times. The
- * hairlines between them are the only separation the sentence needs.
+ * sentence — what is promised, what has left, what the month kept, and what
+ * the plan has not assigned yet — and boxing them would ask the eye to
+ * re-enter four times. The hairlines between them are the only separation the
+ * sentence needs.
  *
- * Only `income` is given; the other three are sums of the envelope list, and
- * the two remainders are computed here so nothing on screen can drift from it.
+ * "A planejar" closes the sentence rather than opening it. It is the engine's
+ * planning figure, the income not yet given an envelope across every month,
+ * and set first and in the brightest blue it was read as the balance of the
+ * accounts; last, with a caption that says what it is not, it is read as the
+ * plan.
  */
 export function BudgetBand({
   income,
@@ -93,18 +97,6 @@ export function BudgetBand({
           minHeight: 178,
         }}
       >
-        {toDistribute !== null && (
-          <>
-            <Metric
-              label={<Trans>Para distribuir</Trans>}
-              value={toDistribute}
-              figureSize={figureSize}
-              share={shareOf(toDistribute)}
-              color="var(--dfl-blue)"
-            />
-            <Divider />
-          </>
-        )}
         <Metric
           label={<Trans>Orçado</Trans>}
           value={budgeted}
@@ -125,7 +117,9 @@ export function BudgetBand({
           value={spent}
           figureSize={figureSize}
           share={shareOf(spent)}
-          color="var(--dfl-positive)"
+          // The spending's own colour, the one it has on Início and
+          // Relatórios — green there means money coming in.
+          color="var(--dfl-negative)"
         />
         <Divider />
         <Metric
@@ -135,6 +129,23 @@ export function BudgetBand({
           share={shareOf(available)}
           color="var(--dfl-hue-cyan)"
         />
+        {toDistribute !== null && (
+          <>
+            <Divider />
+            <Metric
+              label={<Trans>A planejar</Trans>}
+              value={toDistribute}
+              figureSize={figureSize}
+              // A share of this month's income would be a false reading of a
+              // figure that spans every month; the caption says what it is.
+              share={null}
+              caption={
+                <Trans>Receitas sem envelope · não é saldo bancário</Trans>
+              }
+              color="var(--dfl-blue)"
+            />
+          </>
+        )}
       </View>
     </View>
   );
@@ -166,10 +177,19 @@ type MetricProps = {
   figureSize: string;
   /** `null` ⇒ the month has no income to be a share of. */
   share: number | null;
+  /** Replaces the share line under the figure, for a figure that has no share. */
+  caption?: ReactNode;
   color: string;
 };
 
-function Metric({ label, value, figureSize, share, color }: MetricProps) {
+function Metric({
+  label,
+  value,
+  figureSize,
+  share,
+  caption,
+  color,
+}: MetricProps) {
   const shareLabel = share === null ? null : formatPercent(share);
 
   return (
@@ -221,11 +241,16 @@ function Metric({ label, value, figureSize, share, color }: MetricProps) {
       <Text
         style={{
           fontSize: 13,
+          lineHeight: 1.35,
           color: 'var(--dfl-text-2)',
-          whiteSpace: 'nowrap',
+          // A share is short and stays on its line; a caption in words is
+          // allowed a second one rather than being cut at the column's edge.
+          whiteSpace: caption !== undefined ? 'normal' : 'nowrap',
         }}
       >
-        {shareLabel === null ? (
+        {caption !== undefined ? (
+          caption
+        ) : shareLabel === null ? (
           <Trans>Sem receitas neste mês</Trans>
         ) : (
           <Trans>{{ shareLabel }} das receitas do mês</Trans>

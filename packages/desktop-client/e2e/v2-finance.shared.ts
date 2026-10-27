@@ -126,7 +126,6 @@ function budgetOf({ month }: Ledger): BudgetBooks {
 function homeOf(ledger: Ledger): HomeBooks {
   return {
     available: ledger.onBudget,
-    toDistribute: ledger.month.toDistribute,
     income: ledger.month.classifiedIncome,
     spent: ledger.month.netSpending,
     net: ledger.month.classifiedIncome - ledger.month.netSpending,

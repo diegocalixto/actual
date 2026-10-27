@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { SvgCheveronRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
@@ -18,7 +17,8 @@ type BudgetTipsProps = {
  *
  * These three lines say nothing about this month's numbers — no "your best
  * category", no score, no comparison. They are habits, and reading them as a
- * verdict is exactly the misunderstanding that keeps them static.
+ * verdict is exactly the misunderstanding that keeps them static. They lead
+ * nowhere, so nothing on them says they do: no chevron, no hover.
  */
 export function BudgetTips({ tips }: BudgetTipsProps) {
   return (
@@ -58,17 +58,6 @@ export function BudgetTips({ tips }: BudgetTipsProps) {
               {tip.body}
             </Text>
           </View>
-
-          <SvgCheveronRight
-            aria-hidden="true"
-            width={16}
-            height={16}
-            style={{
-              flexShrink: 0,
-              marginTop: 14,
-              color: 'var(--dfl-text-3)',
-            }}
-          />
         </View>
       ))}
     </LabPanel>

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import type { HomeBudgetType } from '#components/home/useHomeMonth';
+import { useHomeSheetCell } from '#components/home/useHomeSheetCell';
 import { BalanceTrendCard } from '#components/home/v2/BalanceTrendCard';
 import { RecentActivityCard } from '#components/home/v2/RecentActivityCard';
 import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
@@ -15,9 +16,19 @@ import {
   Page,
 } from '#components/Page';
 import { useRegionalFormatKey } from '#components/v2lab/LabStyle';
+import { useOpenIndicatorTransactions } from '#reports/useOpenIndicatorTransactions';
+import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
 
-import { useHomeBalances, useMonthTotals } from './homeData';
+import {
+  useAccountBalances,
+  useCardInsightsByAccount,
+  useHomeAccounts,
+  useHomeBalances,
+  useMonthTotals,
+  useSyncFreshness,
+} from './homeData';
 import { HomeMobileAccounts } from './HomeMobileAccounts';
+import { HomeMobileAttention } from './HomeMobileAttention';
 import { HomeMobileGreeting } from './HomeMobileGreeting';
 import { HomeMobileHero } from './HomeMobileHero';
 import { HomeMobileMonthSummary } from './HomeMobileMonthSummary';
@@ -33,6 +44,7 @@ import {
   HomeMobileStyle,
   mobileLayout,
 } from './HomeMobileStyle';
+import { HomeMobileSubscriptions } from './HomeMobileSubscriptions';
 
 /** Signature of this fork. A person's name, so it is never translated. */
 const SIGNATURE = 'Diego Calixto';
@@ -68,9 +80,10 @@ type HomeMobilePageProps = {
  *
  * Composition only: every figure arrives from a hook under `home/`, and nothing
  * rendered here performs a financial calculation. The order is an argument —
- * how much money there is, then how the month is going, then where the money
- * sits, then where it went — each section answering the question the one above
- * it raises.
+ * how much money there is, then how the month is going, then where it went,
+ * and only then where the rest of it sits — because the question this screen
+ * is opened for is how much was spent and on what. The accounts already have
+ * a screen of their own one tab away.
  *
  * Below the approved fold the previous Home's trend and activity cards are
  * kept as they are. They are real, they work, and this round was asked to
@@ -83,13 +96,50 @@ export function HomeMobilePage({
   sheetName,
   budgetType,
 }: HomeMobilePageProps) {
+  const { t } = useTranslation();
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
-  const { onBudget, offBudget, total, toBudget } = useHomeBalances(
-    sheetName,
-    budgetType,
-  );
+  const { onBudget, offBudget, total } = useHomeBalances(sheetName, budgetType);
   const { income, spent, net, details } = useMonthTotals(month);
+  const openTransactions = useOpenIndicatorTransactions();
+  // Whether the month has a plan at all, from the engine's own total: the
+  // "over budget" line is only drawn when there is a budget to be over.
+  const totalBudgeted = useHomeSheetCell(
+    sheetName,
+    budgetType === 'envelope'
+      ? envelopeBudget.totalBudgeted
+      : trackingBudget.totalBudgetedExpense,
+  );
+  const hasPlan = totalBudgeted !== null && totalBudgeted !== 0;
+
+  // What the bank's own data adds: which on-budget accounts are cards and what
+  // their open bills hold, and when the bank was last read. The page composes;
+  // the reading is in `accounts/bankData`.
+  const { accounts } = useHomeAccounts();
+  const accountEntities = accounts.map(entry => entry.account);
+  const cards = useCardInsightsByAccount(accountEntities);
+  const freshness = useSyncFreshness();
+  const cardAccounts = accounts.filter(
+    entry =>
+      entry.kind === 'onBudget' &&
+      cards.cardAccountIds.includes(entry.account.id),
+  );
+  const cardBalances = useAccountBalances(
+    cardAccounts.map(entry => entry.account.id),
+  );
+  // The hero's headline already nets the cards out; this says by how much.
+  // Stated only when the data proves a card exists and every card balance has
+  // resolved, so the two figures always add up to the headline.
+  const cardsDebt =
+    cardAccounts.length > 0 &&
+    cardAccounts.every(
+      entry => typeof cardBalances[entry.account.id] === 'number',
+    )
+      ? cardAccounts.reduce(
+          (sum, entry) => sum + (cardBalances[entry.account.id] ?? 0),
+          0,
+        )
+      : null;
 
   return (
     <Page
@@ -140,8 +190,31 @@ export function HomeMobilePage({
 
         <HomeMobileHero
           available={onBudget}
-          toBudget={toBudget}
-          budgetType={budgetType}
+          cardsDebt={cardsDebt}
+          lastBankRead={freshness.latestSync}
+        />
+
+        <HomeMobileAttention
+          month={month}
+          details={details}
+          accounts={accounts}
+          cards={cards}
+          freshness={freshness}
+          hasPlan={hasPlan}
+          onOpenUncategorized={() =>
+            openTransactions(
+              month,
+              { kind: 'uncategorizedSpending' },
+              t('Uncategorized spending'),
+            )
+          }
+          onOpenPendingInflows={() =>
+            openTransactions(
+              month,
+              { kind: 'pendingInflows' },
+              t('Inflows to review'),
+            )
+          }
         />
 
         <View style={{ gap: 10 }}>
@@ -161,21 +234,40 @@ export function HomeMobilePage({
               </Text>
             }
           />
+          {/* Inflows to review are listed under "Precisa de atenção" above;
+              the summary keeps only what explains its own figures. */}
           <HomeMobileMonthSummary
             income={income}
             spent={spent}
             net={net}
             details={details}
+            hidePendingInflows
           />
         </View>
+
+        <HomeMobileSpending
+          month={month}
+          onOpenEntry={entry =>
+            openTransactions(
+              month,
+              entry.isUncategorized
+                ? { kind: 'uncategorizedSpending' }
+                : { kind: 'category', categoryId: entry.category.id },
+              entry.isUncategorized
+                ? t('Uncategorized spending')
+                : entry.category.name,
+            )
+          }
+        />
+
+        <HomeMobileSubscriptions />
 
         <HomeMobileAccounts
           onBudget={onBudget}
           offBudget={offBudget}
           total={total}
+          cards={cards}
         />
-
-        <HomeMobileSpending month={month} />
 
         {/* The previous Home's two cards paint with the app theme, which is
             white under a light appearance; this scope hands them the page's

@@ -13,8 +13,6 @@ type ExpenseCategoryListItemProps = ComponentPropsWithoutRef<
 > & {
   month: string;
   isHidden: boolean;
-  /** Position within its group, which is what chooses the row's tile colour. */
-  index: number;
   /** The last row closes the group's card, so it draws no divider. */
   isLast: boolean;
   onEditCategory: (id: CategoryEntity['id']) => void;
@@ -31,7 +29,6 @@ type ExpenseCategoryListItemProps = ComponentPropsWithoutRef<
 export function ExpenseCategoryListItem({
   month,
   isHidden,
-  index,
   isLast,
   onEditCategory,
   onBudgetAction,
@@ -60,7 +57,6 @@ export function ExpenseCategoryListItem({
       <BudgetMobileCategoryRow
         category={category}
         month={month}
-        index={index}
         isLast={isLast}
         isHidden={isHidden}
         onEditCategory={onEditCategory}

@@ -3,13 +3,11 @@ import { Trans } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { Text } from '@actual-app/components/text';
-import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import {
   shellColors,
   shellEyebrowStyle,
-  shellRadius,
 } from '#components/appshell/shellTheme';
 import type { HomeBudgetType } from '#components/home/useHomeMonth';
 import { Money } from '#components/v2/Money';
@@ -30,13 +28,17 @@ type AvailableHeroCardProps = {
  * spend": under an envelope budget that phrase means the unspent part of the
  * category balances, which is a different figure. The caption states the
  * definition so the headline can stay short without over-claiming.
+ *
+ * The envelope budget's "to budget" cell no longer hangs under it: it is a
+ * planning figure, not a balance, and beside a balance it was read as one. The
+ * Budget prints it as "A planejar", with the explanation.
  */
 export function AvailableHeroCard({
   sheetName,
   budgetType,
 }: AvailableHeroCardProps) {
   const { isNarrowWidth } = useResponsive();
-  const { onBudget, toBudget } = useHomeBalances(sheetName, budgetType);
+  const { onBudget } = useHomeBalances(sheetName, budgetType);
 
   return (
     <DashboardCard emphasized>
@@ -78,47 +80,6 @@ export function AvailableHeroCard({
           <Trans>Sum of on-budget accounts</Trans>
         </Text>
       </View>
-
-      {budgetType === 'envelope' && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: isNarrowWidth ? '14px 20px' : '16px 28px',
-            borderTop: `1px solid ${shellColors.border}`,
-            backgroundColor: shellColors.surfaceSunken,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-            <View
-              aria-hidden="true"
-              style={{
-                width: 6,
-                height: 6,
-                flexShrink: 0,
-                borderRadius: shellRadius.pill,
-                backgroundColor: shellColors.accent,
-              }}
-            />
-            <Text style={{ ...shellEyebrowStyle, color: theme.pageTextLight }}>
-              <Trans>To Budget</Trans>
-            </Text>
-          </View>
-          <Money
-            value={toBudget}
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color:
-                toBudget !== null && toBudget < 0
-                  ? shellColors.negative
-                  : shellColors.accent,
-            }}
-          />
-        </View>
-      )}
     </DashboardCard>
   );
 }

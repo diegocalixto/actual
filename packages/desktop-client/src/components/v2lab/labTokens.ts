@@ -74,6 +74,8 @@ export const DF_TOKEN_DECLARATIONS = `
   --dfl-hue-rose: #f2648c;
   --dfl-hue-crimson: #f0616b;
   --dfl-hue-amber: #f0a63c;
+  /* No category: neither a hue of its own nor one of the money's colours. */
+  --dfl-hue-neutral: #8d9bb0;
 
   --dfl-radius: 18px;
   --dfl-radius-sm: 12px;

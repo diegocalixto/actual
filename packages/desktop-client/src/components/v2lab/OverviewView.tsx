@@ -77,8 +77,11 @@ export type OverviewViewData = {
   greeting: ReactNode;
   /** `null` while the cell has not resolved — never coerce it to zero. */
   available: number | null;
-  /** `null` when the budget type has no such cell, or while loading. */
-  toBudget: number | null;
+  /**
+   * Sum of the card accounts' balances, when the bank's data proves which
+   * accounts are cards; `null` or absent hides the split under the headline.
+   */
+  cardsDebt?: number | null;
   monthTotals: OverviewMonthTotals | null;
   /**
    * The facts the three month figures leave out, one line each, or absent:
@@ -99,10 +102,12 @@ export type OverviewViewData = {
     net: number;
   } | null;
   /**
-   * What the "Sem categoria" row opens. Absent ⇒ the row is plain text, which
-   * is what the laboratory wants.
+   * What a row of the spending list opens: its transactions of the month.
+   * Absent ⇒ the rows are plain text, which is what the laboratory wants.
    */
-  onReviewUncategorized?: () => void;
+  onOpenCategory?: (category: OverviewCategoryItem) => void;
+  /** Opens the month's inflows still without a category. */
+  onOpenPendingInflows?: () => void;
   movements: OverviewMovementItem[];
   isAccountsLoading: boolean;
   isMonthLoading: boolean;
@@ -171,7 +176,10 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
             {data.available === null ? (
               <HeroPending />
             ) : (
-              <LabHero available={data.available} toBudget={data.toBudget} />
+              <LabHero
+                available={data.available}
+                cardsDebt={data.cardsDebt ?? null}
+              />
             )}
 
             <LabSection
@@ -226,6 +234,7 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
                 <LabMonthSummary
                   totals={data.monthTotals}
                   details={data.monthDetails ?? null}
+                  onOpenPendingInflows={data.onOpenPendingInflows}
                 />
               )}
             </LabSection>
@@ -243,7 +252,7 @@ export function OverviewView({ data }: { data: OverviewViewData }) {
                 <>
                   <LabSpending
                     categories={data.categories}
-                    onReviewUncategorized={data.onReviewUncategorized}
+                    onOpenCategory={data.onOpenCategory}
                   />
                   {(data.spendingComposition?.credits.length ?? 0) > 0 && (
                     <SpendingCredits

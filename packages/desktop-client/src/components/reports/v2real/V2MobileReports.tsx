@@ -1,8 +1,9 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
+import { UNCATEGORIZED_ID } from '@actual-app/core/shared/month-indicators';
 
 import { MOBILE_NAV_SPACER } from '#components/mobile/MobileNavTabs';
 import { MobilePrivacyToggle } from '#components/mobile/MobilePrivacyToggle';
@@ -18,6 +19,10 @@ import { ReportsCategoryDonut } from '#components/v2lab/reports/ReportsCategoryD
 import { ReportsHeroChart } from '#components/v2lab/reports/ReportsHeroChart';
 import { ReportsKpis } from '#components/v2lab/reports/ReportsKpis';
 import { ReportsMonthlyComparison } from '#components/v2lab/reports/ReportsMonthlyComparison';
+import {
+  sliceForSpendingEntry,
+  useOpenIndicatorTransactions,
+} from '#reports/useOpenIndicatorTransactions';
 
 import { ReportsMobileMore } from './ReportsMobileMore';
 import { ReportsMobilePeriodBar } from './ReportsMobilePeriodBar';
@@ -55,6 +60,8 @@ const AUTHOR = 'Diego Calixto';
 export function V2MobileReports() {
   // Redrawn whole when the file's number format or currency changes.
   const regionalFormat = useRegionalFormatKey();
+  const { t } = useTranslation();
+  const openTransactions = useOpenIndicatorTransactions();
   const period = useReportsPeriod();
   const data = useRealReportsData(period.month);
   const detailReports = useReportsDetailLinks();
@@ -117,7 +124,17 @@ export function V2MobileReports() {
         />
 
         {data.breakdown && (
-          <ReportsBreakdown compact breakdown={data.breakdown} />
+          <ReportsBreakdown
+            compact
+            breakdown={data.breakdown}
+            onOpenPendingInflows={() =>
+              openTransactions(
+                period.month,
+                { kind: 'pendingInflows' },
+                t('Inflows to review'),
+              )
+            }
+          />
         )}
 
         {hasActivity ? (
@@ -150,8 +167,19 @@ export function V2MobileReports() {
 
         {hasCategories ? (
           <ReportsCategoryDonut
+            compact
             categories={data.categories}
             total={data.totals.expenses}
+            // Each row opens its transactions in the month on screen.
+            onOpenCategory={category =>
+              openTransactions(
+                period.month,
+                sliceForSpendingEntry(category.id),
+                category.id === UNCATEGORIZED_ID
+                  ? t('Uncategorized spending')
+                  : category.name,
+              )
+            }
             // The legend is this screen's ranking, so it opens on the five
             // the desktop's ranked list opens on.
             limit={5}

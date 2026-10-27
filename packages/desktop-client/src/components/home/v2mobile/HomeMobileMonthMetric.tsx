@@ -8,6 +8,8 @@ import {
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import { MOBILE_TYPE } from '#components/v2lab/typeScale';
+
 import { HomeMobileMoney } from './HomeMobileMoney';
 
 /**
@@ -86,15 +88,17 @@ export function HomeMobileMonthMetric({
           label wraps instead of being cut. "Receitas classificadas" does not
           fit a third of a phone on one line, and cutting it would hide which
           receipts the figure is about. */}
+      {/* Set as the Relatórios set their tiles' labels — sentence case at the
+          label step — rather than in spaced capitals at 9.5px, which were the
+          smallest words on the screen and named its three most important
+          figures. */}
       <Text
         style={{
-          fontSize: 9.5,
+          fontSize: MOBILE_TYPE.label,
           fontWeight: 600,
-          letterSpacing: 0.9,
-          textTransform: 'uppercase',
           lineHeight: 1.25,
           minHeight: '2.5em',
-          color: 'var(--dfl-text-3)',
+          color: 'var(--dfl-text-2)',
         }}
       >
         {label}

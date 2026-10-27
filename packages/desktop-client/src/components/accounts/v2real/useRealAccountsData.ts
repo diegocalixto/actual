@@ -6,6 +6,7 @@ import { q } from '@actual-app/core/shared/query';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { formatDistanceToNow } from 'date-fns';
 
+import { parseSyncTimestamp } from '#accounts/bankData';
 import { ACCOUNT_HUE_ORDER } from '#components/v2lab/accounts/AccountsView';
 import type {
   AccountsViewData,
@@ -183,11 +184,12 @@ export function useRealAccountsData(): AccountsViewData {
     // ---- chrome -----------------------------------------------------------
     // Only a sync that actually happened. A file that has never synced gets no
     // stat rather than an invented one.
+    // `last_sync` holds epoch milliseconds in a string, which `new Date(string)`
+    // cannot read; parsed the way the bank-sync screens parse it.
     const lastSync = entities
-      .map(account => account.last_sync)
-      .filter((value): value is string => !!value)
+      .map(account => parseSyncTimestamp(account.last_sync))
+      .filter((value): value is number => value !== null)
       .map(value => new Date(value))
-      .filter(date => !Number.isNaN(date.getTime()))
       .sort((a, b) => b.getTime() - a.getTime())[0];
 
     return {

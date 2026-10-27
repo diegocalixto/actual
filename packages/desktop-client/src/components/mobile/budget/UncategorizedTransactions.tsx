@@ -1,6 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { indicatorTransactionsFilter } from '@actual-app/core/shared/month-indicator-transactions';
+import type { IndicatorSlice } from '@actual-app/core/shared/month-indicator-transactions';
+import { q } from '@actual-app/core/shared/query';
 import { isPreviewId } from '@actual-app/core/shared/transactions';
 import type { TransactionEntity } from '@actual-app/core/types/models';
 
@@ -13,12 +16,37 @@ import { useTransactionsSearch } from '#hooks/useTransactionsSearch';
 import { uncategorizedTransactions } from '#queries';
 import * as bindings from '#spreadsheet/bindings';
 
-export function UncategorizedTransactions() {
+type UncategorizedTransactionsProps = {
+  /**
+   * Opened from a figure of Início or Relatórios: one month's outflows (the
+   * "Sem categoria" row) or inflows (the "entradas a revisar") without a
+   * category, under the indicators' rules. Absent ⇒ every transaction still
+   * waiting for a category, as the budget lists them.
+   */
+  indicatorSlice?: {
+    month: string;
+    slice: Exclude<IndicatorSlice, { kind: 'category' }>;
+  };
+};
+
+export function UncategorizedTransactions({
+  indicatorSlice,
+}: UncategorizedTransactionsProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const month = indicatorSlice?.month;
+  const sliceKind = indicatorSlice?.slice.kind;
   const baseTransactionsQuery = useCallback(
-    () => uncategorizedTransactions().options({ splits: 'inline' }).select('*'),
-    [],
+    () =>
+      (month && sliceKind
+        ? q('transactions').filter(
+            indicatorTransactionsFilter(month, { kind: sliceKind }),
+          )
+        : uncategorizedTransactions()
+      )
+        .options({ splits: 'inline' })
+        .select('*'),
+    [month, sliceKind],
   );
 
   const [transactionsQuery, setTransactionsQuery] = useState(
@@ -51,7 +79,10 @@ export function UncategorizedTransactions() {
     [navigate],
   );
 
-  const balance = bindings.uncategorizedBalance();
+  const balance =
+    month && sliceKind
+      ? bindings.indicatorUncategorizedBalance(month, { kind: sliceKind })
+      : bindings.uncategorizedBalance();
 
   return (
     <SchedulesProvider>
