@@ -38,3 +38,33 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+  # Sincronização bancária diária, com o navegador fechado: a mesma imagem,
+  # outro comando. Só existe com o perfil `sincronizacao` (COMPOSE_PROFILES no
+  # .env); sem ele, nada muda. Ativar, verificar, pausar e reverter:
+  # sincronizacao-bancaria/README.md.
+  sincronizacao-bancaria:
+    image: diego-finance-v2:${DF_IMAGE_TAG:-local}
+    profiles: ['sincronizacao']
+    restart: unless-stopped
+    depends_on:
+      diego-finance:
+        condition: service_healthy
+    command: ['node', 'sincronizacao-bancaria/rotina.mjs']
+    environment:
+      - DF_BANCO_SERVIDOR=http://diego-finance:5006
+      - DF_BANCO_ORCAMENTO=${DF_BANCO_ORCAMENTO:-}
+      - DF_BANCO_ORCAMENTO_NOME=${DF_BANCO_ORCAMENTO_NOME:-}
+      - DF_BANCO_CONTAS=${DF_BANCO_CONTAS:-}
+      - DF_BANCO_HORARIO=${DF_BANCO_HORARIO:-07:00}
+      - DF_BANCO_FUSO=America/Sao_Paulo
+    volumes:
+      # Senha do servidor (gravada à mão), estado e registro da rotina. Fora do
+      # repositório; por padrão ao lado da pasta de dados.
+      - ${DF_BANCO_DIR:-${DF_DATA_DIR}-sincronizacao}:/sincronizacao
+    healthcheck:
+      test: ['CMD', 'node', 'sincronizacao-bancaria/rotina.mjs', 'saude']
+      interval: 5m
+      timeout: 20s
+      retries: 2
+      start_period: 5m

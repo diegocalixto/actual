@@ -22,6 +22,11 @@ o cliente V2 já compilado. Não há Vite, hot reload nem código-fonte servido.
 O Actual é local-first: cada aparelho guarda uma cópia completa do orçamento e
 trabalha nela; o servidor recebe e redistribui as alterações.
 
+Opcional, desligado até ser ativado: a **sincronização bancária diária**
+(serviço `sincronizacao-bancaria`, mesma imagem), que importa da Pluggy uma vez
+por dia sem navegador. Ativar, verificar, pausar e reverter:
+[`sincronizacao-bancaria/README.md`](sincronizacao-bancaria/README.md).
+
 ### Cursor fechado não é computador desligado
 
 - **Cursor fechado, computador ligado:** o container continua no ar. Tudo
@@ -134,6 +139,11 @@ Actual. Ele entra como um arquivo novo, ao lado dos existentes.
 
 Para voltar: restaure `DF_IMAGE_TAG` e `DF_BUILD_CONTEXT` anteriores, suba de
 novo e, se o orçamento já tiver sido migrado, restaure o backup do passo 1.
+
+Com a sincronização bancária ativa, o mesmo `up -d` atualiza a rotina (ela usa a
+mesma imagem). Para voltar a uma imagem que não a tem, desative-a antes
+([`sincronizacao-bancaria/README.md`](sincronizacao-bancaria/README.md),
+"Reverter").
 
 ## Idioma
 
