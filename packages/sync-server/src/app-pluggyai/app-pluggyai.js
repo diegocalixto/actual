@@ -2,6 +2,7 @@ import express from 'express';
 
 import { isAdmin } from '#account-db';
 import { handleError } from '#app-gocardless/util/handle-error';
+import { config } from '#load-config';
 import { SecretName, secretsService } from '#services/secrets-service';
 import * as UserService from '#services/user-service';
 import {
@@ -11,6 +12,13 @@ import {
 import { isValidFileId } from '#util/paths';
 
 import { pluggyaiService } from './pluggyai-service';
+import {
+  flattenObject,
+  getDate,
+  getPayeeName,
+  getTransactionDateCorrected,
+  selfDatedInstallmentSeries,
+} from './util';
 
 const app = express();
 export { app as handlers };
@@ -168,6 +176,7 @@ app.post(
       );
 
       const account = await pluggyaiService.getAccountById(accountId, fileId);
+      const timeZone = config.get('pluggyai.timeZone');
 
       let startingBalance = parseInt(
         Math.round(account.balance * 100).toString(),
@@ -175,7 +184,7 @@ app.post(
       if (account.type === 'CREDIT') {
         startingBalance = -startingBalance;
       }
-      const date = getDate(account.updatedAt);
+      const date = getDate(account.updatedAt, timeZone);
 
       const balances = [
         {
@@ -191,6 +200,14 @@ app.post(
       const all = [];
       const booked = [];
       const pending = [];
+      // Installment series whose parts the bank dates one by one; decided over
+      // the whole batch, before any amount is flipped below.
+      const selfDated = selfDatedInstallmentSeries(
+        Object.values(transactions).filter(
+          trans => typeof trans === 'object' && trans !== null,
+        ),
+        timeZone,
+      );
 
       for (const trans of Object.values(transactions)) {
         if (typeof trans !== 'object' || Object.keys(trans).length === 0) {
@@ -207,7 +224,6 @@ app.post(
           continue;
         }
 
-        newTrans.date = getDate(transactionDate);
         newTrans.payeeName = getPayeeName(trans);
         newTrans.notes = trans.descriptionRaw || trans.description;
 
@@ -230,8 +246,14 @@ app.post(
         newTrans.transactionId = trans.id;
         newTrans.sortOrder = transactionDate.getTime();
 
-        newTrans.originalDate = getDate(transactionDate);
-        newTrans.date = getDate(getTransactionDateCorrected(trans));
+        newTrans.originalDate = getDate(transactionDate, timeZone);
+        // The series key uses the amount, which was flipped above for a card:
+        // pass the magnitude the series was keyed on.
+        newTrans.date = getTransactionDateCorrected(
+          { ...trans, amount: Math.abs(trans.amount) },
+          timeZone,
+          selfDated,
+        );
 
         delete trans.amount;
 
@@ -274,71 +296,3 @@ app.post(
     return;
   }),
 );
-
-function getDate(date) {
-  return date.toISOString().split('T')[0];
-}
-
-function flattenObject(obj, prefix = '') {
-  const result = {};
-
-  for (const [key, value] of Object.entries(obj)) {
-    const newKey = prefix ? `${prefix}.${key}` : key;
-
-    if (value === null) {
-      continue;
-    }
-
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      Object.assign(result, flattenObject(value, newKey));
-    } else {
-      result[newKey] = value;
-    }
-  }
-
-  return result;
-}
-
-function getPayeeName(trans) {
-  if (trans.merchant && (trans.merchant.name || trans.merchant.businessName)) {
-    return trans.merchant.name || trans.merchant.businessName || '';
-  }
-
-  if (trans.paymentData) {
-    const { receiver, payer } = trans.paymentData;
-
-    if (trans.type === 'DEBIT' && receiver) {
-      return receiver.name || receiver.documentNumber?.value || '';
-    }
-
-    if (trans.type === 'CREDIT' && payer) {
-      return payer.name || payer.documentNumber?.value || '';
-    }
-  }
-
-  return '';
-}
-
-//useful to avoid add month to day 31, which would result in day 01 skipping to the next month
-function addMonthsClamped(date, months) {
-  const result = new Date(date);
-  const day = result.getUTCDate();
-  result.setUTCDate(1);
-  result.setUTCMonth(result.getUTCMonth() + months);
-  const lastDay = new Date(
-    Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0),
-  ).getUTCDate();
-  result.setUTCDate(Math.min(day, lastDay));
-  return result;
-}
-
-function getTransactionDateCorrected(trans) {
-  if (trans.creditCardMetadata?.installmentNumber != null) {
-    return addMonthsClamped(
-      trans.creditCardMetadata.purchaseDate || trans.date,
-      trans.creditCardMetadata.installmentNumber - 1,
-    );
-  }
-
-  return trans.date;
-}

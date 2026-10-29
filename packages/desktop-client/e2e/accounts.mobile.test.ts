@@ -33,7 +33,12 @@ test.describe('Mobile Accounts', () => {
     const account = await accountsPage.getNthAccount(1);
 
     await expect(account.name).toHaveText('Ally Savings');
-    await expect(account.balance).toHaveText('7,653.00');
+    // The V2 mobile Accounts prints money in pt-BR with the symbol, and the
+    // `account-balance` testid now covers the symbol and the digits together
+    // (they are set at different sizes, so they are separate elements). A
+    // regex keeps the assertion on the figure itself rather than on the
+    // spacing between the two.
+    await expect(account.balance).toHaveText(/7\.653,00/);
     await expect(page).toMatchThemeScreenshots();
   });
 

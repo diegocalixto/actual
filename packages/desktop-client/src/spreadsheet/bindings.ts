@@ -1,3 +1,5 @@
+import { indicatorTransactionsFilter } from '@actual-app/core/shared/month-indicator-transactions';
+import type { IndicatorSlice } from '@actual-app/core/shared/month-indicator-transactions';
 import { q } from '@actual-app/core/shared/query';
 import type {
   AccountEntity,
@@ -140,6 +142,48 @@ export function uncategorizedBalance<SheetName extends SheetNames>() {
     name: 'uncategorized-balance',
     query: uncategorizedTransactions().calculate({ $sum: '$amount' }),
   } satisfies Binding<SheetName, 'uncategorized-balance'>;
+}
+
+/**
+ * The figure above a list opened from Início or Relatórios: the sum of the
+ * rows under it, read through the very filter the list reads.
+ *
+ * The usual category balance counts every transaction filed under the category
+ * in the month, a categorized transfer included; a list that follows the
+ * indicators' rules needs a total that follows them too. The month is part of
+ * the name because the same category opens a different list each month.
+ */
+export function indicatorCategoryBalance(
+  categoryId: CategoryEntity['id'],
+  month: string,
+) {
+  return {
+    name: categoryParametrizedField('balance')(
+      `${categoryId}-indicators-${month}`,
+    ),
+    query: q('transactions')
+      .filter(
+        indicatorTransactionsFilter(month, { kind: 'category', categoryId }),
+      )
+      .options({ splits: 'inline' })
+      .calculate({ $sum: '$amount' }),
+  } satisfies Binding<'category', 'balance'>;
+}
+
+/** The same, for the outflows or the inflows without a category. */
+export function indicatorUncategorizedBalance(
+  month: string,
+  slice: Exclude<IndicatorSlice, { kind: 'category' }>,
+) {
+  return {
+    name: categoryParametrizedField('uncategorized-balance')(
+      `${slice.kind}-${month}`,
+    ),
+    query: q('transactions')
+      .filter(indicatorTransactionsFilter(month, slice))
+      .options({ splits: 'inline' })
+      .calculate({ $sum: '$amount' }),
+  } satisfies Binding<'category', 'uncategorized-balance'>;
 }
 
 export function uncategorizedCount<SheetName extends SheetNames>() {

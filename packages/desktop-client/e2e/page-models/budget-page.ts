@@ -16,7 +16,17 @@ export class BudgetPage {
     this.page = page;
 
     this.budgetSummary = page.getByTestId('budget-summary');
-    this.budgetTable = page.getByTestId('budget-table');
+    // The desktop budget is no longer the upstream table: it lists its
+    // categories directly under the page's landmark. Either one is "the budget
+    // is on screen", which is what the callers of this locator ask.
+    this.budgetTable = page
+      .getByTestId('budget-table')
+      .or(
+        page
+          .getByRole('main')
+          .filter({ has: page.getByTestId('category-name') }),
+      )
+      .first();
     this.budgetTableTotals = this.budgetTable.getByTestId('budget-totals');
     this.selectedMonthButton = page.getByTestId('selected-budget-month');
     this.nextMonthButton = page.getByTitle('Next month');
@@ -38,7 +48,8 @@ export class BudgetPage {
   /**
    * Wait for the budget page to finish loading. The budget-table is
    * inside AutoSizer which returns null until layout provides width/
-   * height, so it only appears after the page has fully mounted.
+   * height, so it only appears after the page has fully mounted. On the
+   * desktop the categories are drawn once the month's cells have resolved.
    */
   async waitFor(...options: Parameters<Locator['waitFor']>) {
     await this.budgetTable.waitFor(...options);

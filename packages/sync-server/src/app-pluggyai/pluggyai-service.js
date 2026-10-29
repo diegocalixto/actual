@@ -4,6 +4,26 @@ import { SecretName, secretsService } from '#services/secrets-service';
 
 const pluggyClients = new Map();
 
+// pluggy-sdk talks through got 11, which retries network errors. On Node 24.22
+// a request that cannot connect (no DNS, no route) also fails through its end()
+// callback, which settles got's promise at once; the retry got had scheduled
+// for that request still runs, and the request it creates emits an 'error'
+// nobody listens to, crashing the server. Nobody waits for the retry of a
+// request that already failed, and got skips the retry of a destroyed request.
+function dropRetryOfFailedRequest(_options, error) {
+  if (error?.request?.errored) {
+    error.request.destroy();
+  }
+}
+
+function withSafeRetries(client) {
+  const service = client.getServiceInstance().extend({
+    hooks: { beforeRetry: [dropRetryOfFailedRequest] },
+  });
+  client.getServiceInstance = () => service;
+  return client;
+}
+
 function hasCredentials(fileId = null) {
   return !!(
     secretsService.get(SecretName.pluggyai_clientId, fileId) &&
@@ -57,10 +77,12 @@ function getPluggyClient(fileId) {
     getCredentialsCacheEntry(credentialFileId);
   let pluggyClient = pluggyClients.get(cacheKey);
   if (!pluggyClient) {
-    pluggyClient = new PluggyClient({
-      clientId,
-      clientSecret,
-    });
+    pluggyClient = withSafeRetries(
+      new PluggyClient({
+        clientId,
+        clientSecret,
+      }),
+    );
     pluggyClients.set(cacheKey, pluggyClient);
   }
 

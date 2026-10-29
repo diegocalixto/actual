@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { indicatorTransactionsFilter } from '@actual-app/core/shared/month-indicator-transactions';
 import { q } from '@actual-app/core/shared/query';
 import { isPreviewId } from '@actual-app/core/shared/transactions';
 import type {
@@ -19,17 +21,28 @@ import * as bindings from '#spreadsheet/bindings';
 type CategoryTransactionsProps = {
   category: CategoryEntity;
   month: string;
+  /**
+   * Opened from a figure of Início or Relatórios: list what the figure counts
+   * — the budget's accounts, no transfers, no starting balance — total those
+   * rows, and leave scheduled previews out, since no figure includes them.
+   */
+  indicatorScope?: boolean;
 };
 
 export function CategoryTransactions({
   category,
   month,
+  indicatorScope = false,
 }: CategoryTransactionsProps) {
   const schedulesQuery = useMemo(() => q('schedules').select('*'), []);
 
   return (
     <SchedulesProvider query={schedulesQuery}>
-      <TransactionListWithPreviews category={category} month={month} />
+      <TransactionListWithPreviews
+        category={category}
+        month={month}
+        indicatorScope={indicatorScope}
+      />
     </SchedulesProvider>
   );
 }
@@ -37,21 +50,31 @@ export function CategoryTransactions({
 type TransactionListWithPreviewsProps = {
   category: CategoryEntity;
   month: string;
+  indicatorScope: boolean;
 };
 
 function TransactionListWithPreviews({
   category,
   month,
+  indicatorScope,
 }: TransactionListWithPreviewsProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const baseTransactionsQuery = useCallback(
     () =>
       q('transactions')
         .options({ splits: 'inline' })
-        .filter(getCategoryMonthFilter(category, month))
+        .filter(
+          indicatorScope
+            ? indicatorTransactionsFilter(month, {
+                kind: 'category',
+                categoryId: category.id,
+              })
+            : getCategoryMonthFilter(category, month),
+        )
         .select('*'),
-    [category, month],
+    [category, month, indicatorScope],
   );
 
   const [transactionsQuery, setTransactionsQuery] = useState(
@@ -84,7 +107,9 @@ function TransactionListWithPreviews({
     [navigate],
   );
 
-  const balance = bindings.categoryBalance(category.id, month);
+  const balance = indicatorScope
+    ? bindings.indicatorCategoryBalance(category.id, month)
+    : bindings.categoryBalance(category.id, month);
   const balanceCleared = bindings.categoryBalanceCleared(category.id, month);
   const balanceUncleared = bindings.categoryBalanceUncleared(
     category.id,
@@ -97,22 +122,26 @@ function TransactionListWithPreviews({
       month,
     });
 
-  const transactionsToDisplay = !isSearching
-    ? previewTransactions.concat(transactions)
-    : transactions;
+  const transactionsToDisplay =
+    !isSearching && !indicatorScope
+      ? previewTransactions.concat(transactions)
+      : transactions;
 
   return (
     <TransactionListWithBalances
       isLoading={
-        isSearching
+        isSearching || indicatorScope
           ? isTransactionsLoading
           : isTransactionsLoading || isPreviewTransactionsLoading
       }
       transactions={transactionsToDisplay}
       balance={balance}
-      balanceCleared={balanceCleared}
-      balanceUncleared={balanceUncleared}
-      searchPlaceholder={`Search ${category.name}`}
+      // The cleared/uncleared split is the category's, not the figure's.
+      balanceCleared={indicatorScope ? undefined : balanceCleared}
+      balanceUncleared={indicatorScope ? undefined : balanceUncleared}
+      searchPlaceholder={t('Search {{categoryName}}', {
+        categoryName: category.name,
+      })}
       onSearch={onSearch}
       isLoadingMore={isLoadingMoreTransactions}
       onLoadMore={fetchMoreTransactions}

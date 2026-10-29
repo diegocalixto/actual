@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v1';
 
+import { mobileHeaderIconButtonStyle } from '#components/Page';
 import { useNavigate } from '#hooks/useNavigate';
 
 type AddTransactionButtonProps = {
@@ -23,7 +24,7 @@ export function AddTransactionButton({
     <Button
       variant="bare"
       aria-label={t('Add transaction')}
-      style={{ margin: 10 }}
+      style={mobileHeaderIconButtonStyle}
       onPress={() => {
         void navigate(to, { state: { accountId, categoryId } });
       }}

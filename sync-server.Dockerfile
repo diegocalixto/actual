@@ -17,6 +17,7 @@ COPY packages/eslint-plugin-actual/package.json packages/eslint-plugin-actual/pa
 COPY packages/loot-core/package.json packages/loot-core/package.json
 COPY packages/sync-server/package.json packages/sync-server/package.json
 COPY packages/plugins-service/package.json packages/plugins-service/package.json
+COPY packages/vite-plugin-peggy/package.json packages/vite-plugin-peggy/package.json
 
 COPY ./bin/package-browser ./bin/package-browser
 
@@ -39,6 +40,13 @@ RUN git -c init.defaultBranch=master init -q \
     && git -c user.email=build@docker -c user.name=docker-build commit -qm build
 
 RUN yarn build:server
+
+# Diego Finance: the Node build of the Actual API (the app's own core, from this
+# same commit) for the daily bank sync in deploy/sincronizacao-bancaria. No
+# source maps; the package.json keeps it CommonJS under /app's "type": "module".
+RUN yarn workspace @actual-app/api vite build \
+    && rm -f packages/api/dist/*.map \
+    && echo '{"type":"commonjs"}' > packages/api/dist/package.json
 
 # Focus the workspaces in production mode (including @actual-app/web you just built)
 RUN yarn workspaces focus @actual-app/sync-server --production
@@ -70,6 +78,12 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/packages/sync-server/package.json ./
 COPY --from=builder /app/packages/sync-server/build ./build
+
+# Diego Finance: the daily bank sync and the API it drives. The server never
+# loads them; they run only as their own service (the "sincronizacao" profile
+# in deploy/docker-compose.yml).
+COPY --from=builder /app/packages/api/dist ./sincronizacao-bancaria/api
+COPY deploy/sincronizacao-bancaria/rotina.mjs deploy/sincronizacao-bancaria/politica.mjs ./sincronizacao-bancaria/
 
 ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
 EXPOSE 5006

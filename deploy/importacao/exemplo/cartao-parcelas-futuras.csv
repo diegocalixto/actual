@@ -1,0 +1,3 @@
+conta;data;descricao;valor;categoria;favorecido;parcela;tipo;fatura;observacao
+Itaú Personnalité Crédito;2026-10-10;EXEMPLO LOJA;-100,00;Compras;;3/3;parcela_futura;2026-10;projeção
+Itaú Personnalité Crédito;2026-10-25;EXEMPLO ELETRO;-200,00;Compras;;2/2;parcela_futura;2026-10;projeção

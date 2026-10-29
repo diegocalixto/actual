@@ -45,14 +45,26 @@ import {
 
 import { Autocomplete, AutocompleteFooter } from './Autocomplete';
 import { ItemHeader } from './ItemHeader';
+import { PayeeTransferTabs } from './PayeeTransferTabs';
 
 type PayeeAutocompleteItem = PayeeEntity &
   PayeeItemType & {
     nearbyLocationId?: string;
     distance?: number;
+    // Set by the filter on an account whose name is what was typed.
+    isTypedName?: boolean;
+    // Set by the filter on what the search ranks first for what was typed.
+    isBestMatch?: boolean;
   };
 
 const MAX_AUTO_SUGGESTIONS = 5;
+
+// Stands in the list for "create a payee called what was typed".
+const NEW_PAYEE = {
+  id: 'new',
+  favorite: false,
+  name: '',
+} as PayeeAutocompleteItem;
 
 function getPayeeSuggestions(
   commonPayees: PayeeEntity[],
@@ -96,6 +108,25 @@ function getPayeeSuggestions(
   });
 }
 
+// The list is drawn group by group — whoever is nearby, whoever is suggested,
+// then the other payees, then the accounts a transfer can go to — whatever
+// order the items arrive in; see `PayeeList`. The keyboard walks the list by an
+// item's place on screen, and what it lands on is saved by the item's place in
+// the array, so the two have to be one order. This is that order.
+function inDrawnOrder(items: PayeeAutocompleteItem[]): PayeeAutocompleteItem[] {
+  const isNew = (item: PayeeAutocompleteItem) => item.id === 'new';
+  const ofType = (type: ItemTypes) =>
+    items.filter(item => !isNew(item) && item.itemType === type);
+
+  return [
+    ...items.filter(isNew),
+    ...ofType('nearby_payee'),
+    ...ofType('common_payee'),
+    ...ofType('payee'),
+    ...ofType('account'),
+  ];
+}
+
 function filterActivePayees<T extends PayeeEntity>(
   payees: T[],
   accounts: AccountEntity[],
@@ -105,6 +136,48 @@ function filterActivePayees<T extends PayeeEntity>(
 
 function filterTransferPayees<T extends PayeeEntity>(payees: T[]): T[] {
   return payees.filter(payee => !!payee.transfer_acct);
+}
+
+// Orders what the search found when what was typed is, letter for letter, the
+// name of an account. That is how a transfer is asked for — by the name of the
+// account the money goes to or comes from — so the account goes first, and the
+// offer to create a payee of that name last: picked by mistake, it records an
+// expense or an income where a transfer was meant.
+//
+// The order is the one the list is drawn in, group by group, because the list
+// is walked by its place on screen and saved by its place here. Returns
+// nothing when no account has that name.
+function putTypedAccountFirst(
+  found: PayeeAutocompleteItem[],
+  newItem: PayeeAutocompleteItem,
+  typed: string,
+): PayeeAutocompleteItem[] | undefined {
+  const typedName = getNormalisedString(typed);
+  const hasTypedName = (item: PayeeAutocompleteItem) =>
+    getNormalisedString(item.name) === typedName;
+  const isTypedAccount = (item: PayeeAutocompleteItem) =>
+    item.itemType === 'account' && hasTypedName(item);
+
+  if (!found.some(isTypedAccount)) {
+    return undefined;
+  }
+
+  const rest = found.filter(item => !isTypedAccount(item));
+  // A payee of that name there already is needs no making.
+  const isPayeeOnFile = rest.some(
+    item => item.itemType !== 'account' && hasTypedName(item),
+  );
+
+  return [
+    ...found
+      .filter(isTypedAccount)
+      .map(item => ({ ...item, isTypedName: true })),
+    ...rest.filter(item => item.itemType === 'account'),
+    ...rest.filter(item => item.itemType === 'nearby_payee'),
+    ...rest.filter(item => item.itemType === 'common_payee'),
+    ...rest.filter(item => item.itemType === 'payee'),
+    ...(isPayeeOnFile ? [] : [newItem]),
+  ];
 }
 
 function makeNew(id, rawPayee) {
@@ -186,6 +259,11 @@ function PayeeList({
   // with the value of the input so it always shows whatever the user
   // entered
 
+  // The transfers lead, and the offer to create a payee of the same name
+  // trails, when what was typed is the name of an account: the order the
+  // filter gave the items in (see `putTypedAccountFirst`).
+  const transfersFirst = items.some(item => item.isTypedName);
+
   const { newPayee, suggestedPayees, payees, transferPayees, nearbyPayees } =
     useMemo(() => {
       let currentIndex = 0;
@@ -214,9 +292,17 @@ function PayeeList({
       );
 
       // assign indexes in render order
-      const newPayeeWithIndex = result.newPayee
-        ? { ...result.newPayee, highlightedIndex: currentIndex++ }
+      const leadingTransferPayees = transfersFirst
+        ? result.transferPayees.map(item => ({
+            ...item,
+            highlightedIndex: currentIndex++,
+          }))
         : null;
+
+      const leadingNewPayee =
+        result.newPayee && !transfersFirst
+          ? { ...result.newPayee, highlightedIndex: currentIndex++ }
+          : null;
 
       const nearbyPayeesWithIndex = result.nearbyPayees.map(item => ({
         ...item,
@@ -233,10 +319,18 @@ function PayeeList({
         highlightedIndex: currentIndex++,
       }));
 
-      const transferPayeesWithIndex = result.transferPayees.map(item => ({
-        ...item,
-        highlightedIndex: currentIndex++,
-      }));
+      const transferPayeesWithIndex =
+        leadingTransferPayees ??
+        result.transferPayees.map(item => ({
+          ...item,
+          highlightedIndex: currentIndex++,
+        }));
+
+      const newPayeeWithIndex =
+        leadingNewPayee ??
+        (result.newPayee
+          ? { ...result.newPayee, highlightedIndex: currentIndex++ }
+          : null);
 
       return {
         newPayee: newPayeeWithIndex,
@@ -245,7 +339,35 @@ function PayeeList({
         payees: payeesWithIndex,
         transferPayees: transferPayeesWithIndex,
       };
-    }, [items]);
+    }, [items, transfersFirst]);
+
+  // Both are called where they are drawn, not ahead of it: the items take
+  // their place in the list from the order `getItemProps` is called in.
+  const renderCreatePayee = () =>
+    newPayee &&
+    renderCreatePayeeButton({
+      ...(getItemProps ? getItemProps({ item: newPayee }) : {}),
+      payeeName: inputValue,
+      highlighted: newPayee.highlightedIndex === highlightedIndex,
+      embedded,
+    });
+
+  const renderTransferPayees = () => (
+    <>
+      {transferPayees.length > 0 &&
+        renderPayeeItemGroupHeader({ title: t('Transfer To/From') })}
+      {transferPayees.map(item => (
+        <Fragment key={item.id}>
+          {renderPayeeItem({
+            ...(getItemProps ? getItemProps({ item }) : {}),
+            item,
+            highlighted: highlightedIndex === item.highlightedIndex,
+            embedded,
+          })}
+        </Fragment>
+      ))}
+    </>
+  );
 
   // We limit the number of payees shown to 100.
   // So we show a hint that more are available via search.
@@ -260,13 +382,7 @@ function PayeeList({
           ...(!embedded && { maxHeight: 175 }),
         }}
       >
-        {newPayee &&
-          renderCreatePayeeButton({
-            ...(getItemProps ? getItemProps({ item: newPayee }) : {}),
-            payeeName: inputValue,
-            highlighted: newPayee.highlightedIndex === highlightedIndex,
-            embedded,
-          })}
+        {transfersFirst ? renderTransferPayees() : renderCreatePayee()}
 
         {nearbyPayees.length > 0 &&
           renderPayeeItemGroupHeader({ title: t('Nearby Payees') })}
@@ -308,18 +424,7 @@ function PayeeList({
           </Fragment>
         ))}
 
-        {transferPayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Transfer To/From') })}
-        {transferPayees.map(item => (
-          <Fragment key={item.id}>
-            {renderPayeeItem({
-              ...(getItemProps ? getItemProps({ item }) : {}),
-              item,
-              highlighted: highlightedIndex === item.highlightedIndex,
-              embedded,
-            })}
-          </Fragment>
-        ))}
+        {transfersFirst ? renderCreatePayee() : renderTransferPayees()}
 
         {showSearchForMore && (
           <div
@@ -404,39 +509,16 @@ export function PayeeAutocomplete({
   }
 
   const [focusTransferPayees, setFocusTransferPayees] = useState(false);
+  // The phone's picker is a sheet with the whole list in it, and a footer
+  // there sits under every payee there is. The choice between a payee and a
+  // transfer goes above the search field instead, in sight before anything is
+  // typed.
+  const { isNarrowWidth } = useResponsive();
+  const showTransferTabs = showMakeTransfer && embedded && isNarrowWidth;
   const [rawPayee, setRawPayee] = useState('');
   const hasPayeeInput = !!rawPayee;
-  const payeeSuggestions: PayeeAutocompleteItem[] = useMemo(() => {
-    const suggestions = getPayeeSuggestions(commonPayees, payees);
-
-    let filteredSuggestions: PayeeAutocompleteItem[] = [...suggestions];
-
-    if (!showInactivePayees) {
-      filteredSuggestions = filterActivePayees(filteredSuggestions, accounts);
-    }
-
-    if (focusTransferPayees) {
-      filteredSuggestions = filterTransferPayees(filteredSuggestions);
-    }
-
-    if (!hasPayeeInput) {
-      return filteredSuggestions;
-    }
-
-    return [
-      { id: 'new', favorite: false, name: '' } as PayeeAutocompleteItem,
-      ...filteredSuggestions,
-    ];
-  }, [
-    commonPayees,
-    payees,
-    focusTransferPayees,
-    accounts,
-    hasPayeeInput,
-    showInactivePayees,
-  ]);
-
-  // Process nearby payees separately from suggestions
+  // Whoever is near, as an item of the list. One of them may be on the list
+  // twice: here, and again where their name would be anyway.
   const nearbyPayeesWithType: PayeeAutocompleteItem[] = useMemo(() => {
     if (!nearbyPayees?.length) {
       return [];
@@ -451,20 +533,41 @@ export function PayeeAutocomplete({
     return processed;
   }, [nearbyPayees]);
 
-  // Filter nearby payees based on input value (similar to regular payees)
-  const filteredNearbyPayees = useMemo(() => {
-    if (!nearbyPayeesWithType.length || !rawPayee) {
-      return nearbyPayeesWithType;
+  const payeeSuggestions: PayeeAutocompleteItem[] = useMemo(() => {
+    const suggestions = getPayeeSuggestions(commonPayees, payees);
+
+    let filteredSuggestions: PayeeAutocompleteItem[] = [...suggestions];
+
+    if (!showInactivePayees) {
+      filteredSuggestions = filterActivePayees(filteredSuggestions, accounts);
     }
 
-    return new Fzf(nearbyPayeesWithType, {
-      selector: item => item.name ?? '',
-      limit: 100,
-      casing: 'case-insensitive',
-    })
-      .find(rawPayee)
-      .map(result => result.item);
-  }, [nearbyPayeesWithType, rawPayee]);
+    if (focusTransferPayees) {
+      filteredSuggestions = filterTransferPayees(filteredSuggestions);
+    } else {
+      // Among the suggestions, not beside them: drawn from a list of its own,
+      // the nearby group took places on screen that the array did not have,
+      // and the keyboard saved a row other than the one it stood on.
+      filteredSuggestions = [...nearbyPayeesWithType, ...filteredSuggestions];
+    }
+
+    // Until something is typed the list is drawn from these as they are.
+    filteredSuggestions = inDrawnOrder(filteredSuggestions);
+
+    if (!hasPayeeInput) {
+      return filteredSuggestions;
+    }
+
+    return [NEW_PAYEE, ...filteredSuggestions];
+  }, [
+    commonPayees,
+    payees,
+    nearbyPayeesWithType,
+    focusTransferPayees,
+    accounts,
+    hasPayeeInput,
+    showInactivePayees,
+  ]);
 
   const handleForgetLocation = useCallback(
     async (locationId: string) => {
@@ -503,42 +606,72 @@ export function PayeeAutocomplete({
     suggestions: PayeeAutocompleteItem[],
     value: string,
   ) => {
-    // Separate the 'new' sentinel from real payees
-    const newItem = suggestions.find(s => s.id === 'new');
+    // The offer to create a payee does not wait for the suggestions to carry
+    // it. They gain it a render after the first letter is typed, and what that
+    // letter highlights is worked out before then: counted on a list one item
+    // short, the highlight was drawn one row above what would be saved.
+    const newItem = suggestions.find(s => s.id === 'new') ?? NEW_PAYEE;
     const realSuggestions = suggestions.filter(s => s.id !== 'new');
 
-    let filtered: PayeeAutocompleteItem[];
-    if (!value) {
-      filtered = realSuggestions.slice(0, 100);
-    } else {
-      filtered = new Fzf(realSuggestions, {
+    // Whoever is nearby is listed over and above the hundred the rest is cut
+    // to, as they were when their group was drawn from a list of its own. One
+    // of them is on the list twice on purpose — near, and again where their
+    // name would be anyway — so a count shared with the rest would cost the
+    // list a payee for each of them.
+    const isNearby = (item: PayeeAutocompleteItem) =>
+      item.itemType === 'nearby_payee';
+    const nearby = realSuggestions.filter(isNearby);
+    const others = realSuggestions.filter(item => !isNearby(item));
+    const search = (items: PayeeAutocompleteItem[]) =>
+      new Fzf(items, {
         selector: item => item.name ?? '',
         limit: 100,
         casing: 'case-insensitive',
       })
         .find(value)
         .map(result => result.item);
-    }
 
-    // Re-prepend 'new' when the user has typed something
-    const showNew = newItem && value && value !== '' && !focusTransferPayees;
-    const results = showNew ? [newItem, ...filtered] : filtered;
+    const filtered = value
+      ? [...search(nearby), ...search(others)]
+      : [...nearby, ...others.slice(0, 100)];
 
-    if (results.length >= 2 && results[0].id === 'new') {
-      const firstFiltered = results[1];
-      if (
-        getNormalisedString(firstFiltered.name) ===
-          getNormalisedString(value) &&
-        !firstFiltered.transfer_acct
-      ) {
-        // Exact match found, remove the 'Create payee' option.
-        return results.slice(1);
+    // Offer to create a payee once the user has typed something
+    const showNew = !!value && !focusTransferPayees;
+
+    if (showNew) {
+      const typedAccountFirst = putTypedAccountFirst(filtered, newItem, value);
+      if (typedAccountFirst) {
+        return typedAccountFirst;
       }
     }
-    return results;
+
+    // Somebody of exactly that name is on file: they are who was meant,
+    // whoever else the search ranks beside them — it ranks "Uber" and "Uber
+    // Eats" alike for "uber" — and there is nobody to create.
+    const typedName = getNormalisedString(value);
+    const exactMatch = value
+      ? filtered.find(
+          item =>
+            !item.transfer_acct && getNormalisedString(item.name) === typedName,
+        )
+      : undefined;
+
+    // The best match is what the keyboard picks, whichever group it is drawn
+    // in: it is marked here, while the ranking is still at hand, and found
+    // again by `getHighlightedIndex`.
+    const bestMatch = exactMatch ?? filtered[0];
+    const drawn = inDrawnOrder(
+      value && bestMatch
+        ? filtered.map(item =>
+            item === bestMatch ? { ...item, isBestMatch: true } : item,
+          )
+        : filtered,
+    );
+
+    return showNew && !exactMatch ? [newItem, ...drawn] : drawn;
   };
 
-  return (
+  const autocomplete = (
     <Autocomplete
       key={focusTransferPayees ? 'transfers' : 'all'}
       strict
@@ -570,14 +703,29 @@ export function PayeeAutocomplete({
       onUpdate={(id, inputValue) => onUpdate?.(id, makeNew(id, inputValue))}
       onSelect={handleSelect}
       getHighlightedIndex={suggestions => {
-        // If we have nearby payees, highlight the first nearby payee
-        if (filteredNearbyPayees.length > 0) {
-          return 0;
-        }
-
-        // Otherwise use original logic for suggestions
         if (suggestions.length === 0) {
           return null;
+        }
+
+        // An account asked for by its name is the transfer that was meant,
+        // whoever else is near or ranks beside it; see `putTypedAccountFirst`.
+        const typedAccount = suggestions.findIndex(item => item.isTypedName);
+        if (typedAccount !== -1) {
+          return typedAccount;
+        }
+
+        // If we have nearby payees, highlight the first nearby payee
+        const firstNearby = suggestions.findIndex(
+          item => item.itemType === 'nearby_payee',
+        );
+        if (firstNearby !== -1) {
+          return firstNearby;
+        }
+
+        // The best match of what was typed, wherever its group puts it.
+        const bestMatch = suggestions.findIndex(item => item.isBestMatch);
+        if (bestMatch !== -1) {
+          return bestMatch;
         } else if (suggestions[0].id === 'new') {
           // Highlight the first payee since the create payee option is at index 0.
           return suggestions.length > 1 ? 1 : 0;
@@ -587,7 +735,7 @@ export function PayeeAutocomplete({
       filterSuggestions={filterSuggestions}
       renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <PayeeList
-          items={[...filteredNearbyPayees, ...items]}
+          items={items}
           commonPayees={commonPayees}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
@@ -598,7 +746,7 @@ export function PayeeAutocomplete({
           renderPayeeItem={renderPayeeItem}
           footer={
             <AutocompleteFooter embedded={embedded}>
-              {showMakeTransfer && (
+              {showMakeTransfer && !showTransferTabs && (
                 <Button
                   variant={focusTransferPayees ? 'menuSelected' : 'menu'}
                   style={showManagePayees && { marginBottom: 5 }}
@@ -622,6 +770,23 @@ export function PayeeAutocomplete({
       )}
       {...props}
     />
+  );
+
+  if (!showTransferTabs) {
+    return autocomplete;
+  }
+
+  return (
+    <>
+      <PayeeTransferTabs
+        isTransfer={focusTransferPayees}
+        onChange={isTransfer => {
+          onUpdate?.(null, null);
+          setFocusTransferPayees(isTransfer);
+        }}
+      />
+      {autocomplete}
+    </>
   );
 }
 

@@ -13,6 +13,7 @@ import {
 } from '@actual-app/components/icons/v1';
 import {
   SvgNotesPaper,
+  SvgPencil1,
   SvgViewHide,
   SvgViewShow,
 } from '@actual-app/components/icons/v2';
@@ -24,12 +25,8 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
-import {
-  Modal,
-  ModalCloseButton,
-  ModalHeader,
-  ModalTitle,
-} from '#components/common/Modal';
+import { renamedRow } from '#budget/renamedRow';
+import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { CategoryGroupActionMenu } from '#components/mobile/budget/CategoryGroupActionMenu';
 import { Notes } from '#components/Notes';
 import { useCategories } from '#hooks/useCategories';
@@ -37,6 +34,11 @@ import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useNotes } from '#hooks/useNotes';
 import { useUndo } from '#hooks/useUndo';
 import type { Modal as ModalType } from '#modals/modalsSlice';
+
+import { RenameableModalTitle } from './RenameableModalTitle';
+
+/** A finger's height: the upstream buttons here are 40px, short of it. */
+const RENAME_BUTTON_HEIGHT = 44;
 
 type CategoryGroupMenuModalProps = Extract<
   ModalType,
@@ -63,12 +65,13 @@ export function CategoryGroupMenuModal({
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
   const { t } = useTranslation();
 
-  const onRename = newName => {
-    if (newName && newName !== group.name) {
-      onSave?.({
-        ...group,
-        name: newName,
-      });
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // Only the name changes; its categories stay in it.
+  const onRename = (typed: string) => {
+    const renamed = renamedRow(group, typed);
+    if (renamed) {
+      onSave?.(renamed);
     }
   };
 
@@ -153,10 +156,12 @@ export function CategoryGroupMenuModal({
               />
             }
             title={
-              <ModalTitle
-                isEditable
+              <RenameableModalTitle
                 title={group.name}
-                onTitleUpdate={onRename}
+                label={t('Rename group {{name}}', { name: group.name })}
+                isRenaming={isRenaming}
+                onRenamingChange={setIsRenaming}
+                onRename={onRename}
               />
             }
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
@@ -197,6 +202,21 @@ export function CategoryGroupMenuModal({
                 paddingTop: 10,
               }}
             >
+              <Button
+                style={{
+                  ...actionButtonStyle,
+                  height: RENAME_BUTTON_HEIGHT,
+                  marginBottom: 8,
+                }}
+                onPress={() => setIsRenaming(true)}
+              >
+                <SvgPencil1
+                  width={16}
+                  height={16}
+                  style={{ paddingRight: 5 }}
+                />
+                <Trans>Rename</Trans>
+              </Button>
               <Button style={buttonStyle} onPress={_onAddCategory}>
                 <SvgAdd width={17} height={17} style={{ paddingRight: 5 }} />
                 <Trans>Add category</Trans>

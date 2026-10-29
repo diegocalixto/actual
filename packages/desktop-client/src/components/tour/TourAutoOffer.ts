@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 
+import { forkConfig } from '#app/forkConfig';
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { addNotification } from '#notifications/notificationsSlice';
@@ -20,7 +21,13 @@ export function TourAutoOffer() {
   const hasOffered = useRef(false);
 
   useEffect(() => {
-    if (hasOffered.current || introSeen || isNarrowWidth || isTestEnv) {
+    if (
+      !forkConfig.offerOnboardingTour ||
+      hasOffered.current ||
+      introSeen ||
+      isNarrowWidth ||
+      isTestEnv
+    ) {
       return;
     }
     hasOffered.current = true;

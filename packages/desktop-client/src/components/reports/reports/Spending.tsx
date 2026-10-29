@@ -29,6 +29,7 @@ import { FilterButton } from '#components/filters/FiltersMenu';
 import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { localizeDefaultWidgetName } from '#components/reports/defaultDashboardText';
 import { SpendingGraph } from '#components/reports/graphs/SpendingGraph';
 import { LegendItem } from '#components/reports/LegendItem';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -56,12 +57,16 @@ import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
 
 export function Spending() {
   const params = useParams();
-  const { data: widget, isPending } = useDashboardWidget<SpendingWidget>({
+  const { data: widget, isLoading } = useDashboardWidget<SpendingWidget>({
     id: params.id,
     type: 'spending-card',
   });
 
-  if (isPending) {
+  // `isLoading`, not `isPending`: opened on its own address the report has no
+  // widget, the query for one is disabled, and a disabled query stays pending
+  // for good. Read as "pending", that was a spinner that never left for anyone
+  // who had not passed through the dashboard first.
+  if (isLoading) {
     return <LoadingIndicator />;
   }
 
@@ -246,7 +251,9 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
     }
   };
 
-  const title = widget?.meta?.name || t('Monthly Spending');
+  const title =
+    localizeDefaultWidgetName(widget?.meta?.name, 'spending-card', t) ||
+    t('Monthly Spending');
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');

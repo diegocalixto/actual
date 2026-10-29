@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { defineConfig } from '@playwright/test';
 
-const e2ePort = Number(process.env.E2E_PORT) || 3001;
+const e2ePort = Number(process.env.E2E_PORT) || 3002;
 
 export default defineConfig({
   timeout: 60000, // 60 seconds
@@ -42,7 +42,7 @@ export default defineConfig({
         cwd: path.join(__dirname, '..', '..'),
         command: process.env.E2E_USE_BUILD
           ? `PORT=${e2ePort} node packages/desktop-client/bin/serve-build.mjs`
-          : 'yarn start',
+          : `PORT=${e2ePort} yarn start`,
         url: `http://localhost:${e2ePort}`,
         reuseExistingServer: !process.env.CI,
         stdout: 'ignore',

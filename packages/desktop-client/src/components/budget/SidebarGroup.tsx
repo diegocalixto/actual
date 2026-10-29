@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React, { useRef } from 'react';
 import type { CSSProperties, RefCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd, SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -22,6 +22,8 @@ import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useGlobalPref } from '#hooks/useGlobalPref';
+
+import { getCategoryColumnWidth } from './util';
 
 type SidebarGroupProps = {
   group: CategoryGroupEntity;
@@ -147,7 +149,11 @@ export function SidebarGroup({
           minWidth: 0,
         }}
       >
-        {dragPreview && <Text style={{ fontWeight: 500 }}>Group: </Text>}
+        {dragPreview && (
+          <Text style={{ fontWeight: 500 }}>
+            <Trans>Group:</Trans>{' '}
+          </Text>
+        )}
         {group.name}
       </div>
       {!dragPreview && (
@@ -200,7 +206,7 @@ export function SidebarGroup({
       innerRef={innerRef}
       style={{
         ...style,
-        width: 200 + 100 * categoryExpandedState,
+        width: getCategoryColumnWidth(categoryExpandedState),
         backgroundColor: theme.budgetHeaderCurrentMonth,
         overflow: 'hidden',
         '& .hover-visible': {

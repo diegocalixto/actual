@@ -1,0 +1,70 @@
+# Diego Finance V2 — servidor de produção: o servidor de sincronização do Actual
+# servindo também o cliente V2 já compilado, em um único container.
+#
+# Não é o docker-compose.yml da raiz, que sobe o ambiente de desenvolvimento.
+#
+# Uso, a partir desta pasta, depois de copiar .env.example para .env:
+#   docker compose up -d --build
+#
+# Passo a passo, backup, restauração e atualização: README.md.
+
+name: diego-finance
+
+services:
+  diego-finance:
+    build:
+      # Por padrão compila o commit publicado, nunca a pasta de trabalho local
+      # (que pode ter alterações ainda não revisadas).
+      context: ${DF_BUILD_CONTEXT:-https://github.com/diegocalixto/actual.git#diego-v2}
+      dockerfile: sync-server.Dockerfile
+    image: diego-finance-v2:${DF_IMAGE_TAG:-local}
+    restart: unless-stopped
+    ports:
+      # Só na interface local desta máquina. O telefone chega por uma camada
+      # HTTPS privada na frente (README, "Acesso pelo iPhone"), nunca por esta
+      # porta aberta na rede.
+      - '127.0.0.1:${DF_PORT:-5006}:5006'
+    environment:
+      # Só login por senha; os outros métodos ficam desligados.
+      - ACTUAL_LOGIN_METHOD=password
+      - ACTUAL_ALLOWED_LOGIN_METHODS=password
+    volumes:
+      # Conta e orçamentos sincronizados ficam fora do container: recriar a
+      # imagem não toca neles. Caminho absoluto, fora do repositório.
+      - ${DF_DATA_DIR:?defina DF_DATA_DIR no arquivo .env}:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'node build/scripts/health-check.js']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Sincronização bancária diária, com o navegador fechado: a mesma imagem,
+  # outro comando. Só existe com o perfil `sincronizacao` (COMPOSE_PROFILES no
+  # .env); sem ele, nada muda. Ativar, verificar, pausar e reverter:
+  # sincronizacao-bancaria/README.md.
+  sincronizacao-bancaria:
+    image: diego-finance-v2:${DF_IMAGE_TAG:-local}
+    profiles: ['sincronizacao']
+    restart: unless-stopped
+    depends_on:
+      diego-finance:
+        condition: service_healthy
+    command: ['node', 'sincronizacao-bancaria/rotina.mjs']
+    environment:
+      - DF_BANCO_SERVIDOR=http://diego-finance:5006
+      - DF_BANCO_ORCAMENTO=${DF_BANCO_ORCAMENTO:-}
+      - DF_BANCO_ORCAMENTO_NOME=${DF_BANCO_ORCAMENTO_NOME:-}
+      - DF_BANCO_CONTAS=${DF_BANCO_CONTAS:-}
+      - DF_BANCO_HORARIO=${DF_BANCO_HORARIO:-07:00}
+      - DF_BANCO_FUSO=America/Sao_Paulo
+    volumes:
+      # Senha do servidor (gravada à mão), estado e registro da rotina. Fora do
+      # repositório; por padrão ao lado da pasta de dados.
+      - ${DF_BANCO_DIR:-${DF_DATA_DIR}-sincronizacao}:/sincronizacao
+    healthcheck:
+      test: ['CMD', 'node', 'sincronizacao-bancaria/rotina.mjs', 'saude']
+      interval: 5m
+      timeout: 20s
+      retries: 2
+      start_period: 5m

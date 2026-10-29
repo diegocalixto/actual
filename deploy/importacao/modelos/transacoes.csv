@@ -1,0 +1,11 @@
+conta;data;descricao;valor;categoria;favorecido;parcela;tipo;fatura;observacao
+Itaú Conta Corrente;2026-01-02;EXEMPLO RECEITA;1.000,00;Salário;EXEMPLO EMPRESA;;receita;;
+Itaú Conta Corrente;2026-01-03;EXEMPLO TARIFA;-10,00;Tarifas bancárias;;;tarifa;;
+Itaú Conta Corrente;2026-01-04;PIX EXEMPLO;-20,00;;;;pix;;preencher categoria ou deixar para revisão
+Itaú Conta Corrente;2026-01-05;EXEMPLO PAGTO FATURA;-100,00;;Itaú Personnalité Crédito;;pagamento_fatura;;nunca com categoria
+Itaú Conta Corrente;2026-01-06;EXEMPLO PIX CONTA PROPRIA;-50,00;;Nubank;;transferencia_propria;;
+Itaú Personnalité Crédito;2026-01-07;EXEMPLO MERCADO;-30,00;Mercado;;;compra;2026-02;
+Itaú Personnalité Crédito;2026-01-08;EXEMPLO LOJA;-40,00;Compras;;1/3;compra;2026-02;
+Itaú Personnalité Crédito;2026-01-09;EXEMPLO ESTORNO;10,00;Compras;;;estorno;2026-02;
+Itaú Personnalité Crédito;2026-01-05;PAGAMENTO EFETUADO;100,00;;;;pagamento_fatura;2026-02;lado do cartão - só conferência
+Itaú Personnalité Crédito;2026-03-08;EXEMPLO LOJA;-40,00;Compras;;3/3;parcela_futura;2026-04;projeção

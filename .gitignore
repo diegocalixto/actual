@@ -74,6 +74,7 @@ bundle.mobile.js.map
 .impeccable/config.local.json
 DESIGN.json
 **/skills/impeccable/
+.claude/agents/impeccable-*.md
 .cursor/agents/impeccable-*.md
 .github/agents/impeccable-*.agent.md
 
@@ -116,3 +117,20 @@ storybook-static
 .actualrc.yaml
 .actualrc.yml
 actual.config.js
+
+# Diego Finance V2 — artefatos locais da bancada: ficam no disco, nunca no Git.
+# Capturas, relatórios de sessão e pacotes de referência não são código e
+# somam centenas de MB. Dados financeiros reais vivem fora do repositório,
+# em C:\Users\diego\DiegoFinance\.
+/artefatos-locais/
+/referencias/
+/claude-v2.*.md
+/baseline-pre-grok.txt
+/qa-budget-mobile-playwright-report.md
+/2026-*-this-session-is-being-continued-from-a-previous-c.txt
+/git
+
+# Bancadas temporárias de QA da V2: cada arquivo se declara "TEMPORARY /
+# never staged" e são capturas de um estado transitório, não suíte de
+# regressão. A suíte permanente é *.test.ts. Ficam no disco, fora do Git.
+packages/desktop-client/e2e/qa-*.spec.ts

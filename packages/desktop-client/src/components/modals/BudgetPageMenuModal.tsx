@@ -18,6 +18,7 @@ type BudgetPageMenuModalProps = Extract<
 export function BudgetPageMenuModal({
   onAddCategoryGroup,
   onToggleHiddenCategories,
+  onToggleSpentColumn,
   onSwitchBudgetFile,
 }: BudgetPageMenuModalProps) {
   const defaultMenuItemStyle: CSSProperties = {
@@ -39,6 +40,7 @@ export function BudgetPageMenuModal({
             getItemStyle={() => defaultMenuItemStyle}
             onAddCategoryGroup={onAddCategoryGroup}
             onToggleHiddenCategories={onToggleHiddenCategories}
+            onToggleSpentColumn={onToggleSpentColumn}
             onSwitchBudgetFile={onSwitchBudgetFile}
           />
         </>
@@ -53,16 +55,23 @@ type BudgetPageMenuProps = Omit<
 > & {
   onAddCategoryGroup: () => void;
   onToggleHiddenCategories: () => void;
+  onToggleSpentColumn: () => void;
   onSwitchBudgetFile: () => void;
 };
 
 function BudgetPageMenu({
   onAddCategoryGroup,
   onToggleHiddenCategories,
+  onToggleSpentColumn,
   onSwitchBudgetFile,
   ...props
 }: BudgetPageMenuProps) {
   const [showHiddenCategories] = useLocalPref('budget.showHiddenCategories');
+  // The mobile Budget shows one of a category's two plan figures at a time.
+  // The upstream table let you swap them by tapping a column header; this
+  // composition has no column headers, so the switch lives here, beside the
+  // other preference that decides what the list shows.
+  const [showSpentColumn] = useLocalPref('mobile.showSpentColumn');
 
   const onMenuSelect = (name: string) => {
     switch (name) {
@@ -74,6 +83,9 @@ function BudgetPageMenu({
       //   break;
       case 'toggle-hidden-categories':
         onToggleHiddenCategories?.();
+        break;
+      case 'toggle-spent-column':
+        onToggleSpentColumn?.();
         break;
       case 'switch-budget-file':
         onSwitchBudgetFile?.();
@@ -96,6 +108,12 @@ function BudgetPageMenu({
         {
           name: 'toggle-hidden-categories',
           text: `${!showHiddenCategories ? t('Show hidden categories') : t('Hide hidden categories')}`,
+        },
+        {
+          name: 'toggle-spent-column',
+          text: !showSpentColumn
+            ? t('Show spent per category')
+            : t('Show budgeted per category'),
         },
         {
           name: 'switch-budget-file',

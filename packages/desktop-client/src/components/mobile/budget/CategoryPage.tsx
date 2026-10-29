@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router';
 
 import { TextOneLine } from '@actual-app/components/text-one-line';
@@ -12,11 +12,13 @@ import { MobilePageHeader, Page } from '#components/Page';
 import { useCategory } from '#hooks/useCategory';
 import { useLocale } from '#hooks/useLocale';
 import { useSyncedPref } from '#hooks/useSyncedPref';
+import { indicatorSliceFromParams } from '#reports/useOpenIndicatorTransactions';
 
 import { CategoryTransactions } from './CategoryTransactions';
 import { UncategorizedTransactions } from './UncategorizedTransactions';
 
 export function CategoryPage() {
+  const { t } = useTranslation();
   const locale = useLocale();
   const [_numberFormat] = useSyncedPref('numberFormat');
   const numberFormat = _numberFormat || 'comma-dot';
@@ -26,6 +28,10 @@ export function CategoryPage() {
   const [searchParams] = useSearchParams();
   const month = searchParams.get('month') || monthUtils.currentMonth();
   const { data: category } = useCategory(categoryIdParam);
+  // Opened from Início or Relatórios: the transactions one of their figures is
+  // made of, under the indicators' rules, rather than the budget's view.
+  const slice = indicatorSliceFromParams(categoryIdParam, searchParams);
+  const monthLabel = monthUtils.format(month, "MMMM ''yy", locale);
 
   return (
     <Page
@@ -35,9 +41,16 @@ export function CategoryPage() {
             category ? (
               <View>
                 <TextOneLine>{category.name}</TextOneLine>
+                <TextOneLine>({monthLabel})</TextOneLine>
+              </View>
+            ) : slice ? (
+              <View>
                 <TextOneLine>
-                  ({monthUtils.format(month, "MMMM ''yy", locale)})
+                  {slice.kind === 'pendingInflows'
+                    ? t('Inflows to review')
+                    : t('Uncategorized spending')}
                 </TextOneLine>
+                <TextOneLine>({monthLabel})</TextOneLine>
               </View>
             ) : (
               <TextOneLine>
@@ -54,9 +67,17 @@ export function CategoryPage() {
       {/* This key forces the whole table rerender when the number format changes */}
       <Fragment key={numberFormat + hideFraction}>
         {category ? (
-          <CategoryTransactions category={category} month={month} />
+          <CategoryTransactions
+            category={category}
+            month={month}
+            indicatorScope={slice?.kind === 'category'}
+          />
         ) : (
-          <UncategorizedTransactions />
+          <UncategorizedTransactions
+            indicatorSlice={
+              slice && slice.kind !== 'category' ? { month, slice } : undefined
+            }
+          />
         )}
       </Fragment>
     </Page>

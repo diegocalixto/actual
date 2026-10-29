@@ -55,7 +55,7 @@ export function ToBudgetAmount({
   const isPositive = num > 0;
 
   return (
-    <View style={{ alignItems: 'center', ...style }}>
+    <View style={{ alignItems: 'flex-start', ...style }}>
       <Block>{isNegative ? t('Overbudgeted:') : t('To Budget:')}</Block>
       <View>
         <Tooltip
@@ -73,7 +73,7 @@ export function ToBudgetAmount({
         >
           <PrivacyFilter
             style={{
-              textAlign: 'center',
+              textAlign: 'left',
             }}
           >
             <Block

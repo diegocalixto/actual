@@ -427,7 +427,14 @@ function OpenIdProviderSelector({
       <FormLabel title={t('OpenID provider')} htmlFor="provider-selector" />
       <Select
         options={openIdProviders.map(provider =>
-          provider === Menu.line ? Menu.line : [provider.value, provider.label],
+          provider === Menu.line
+            ? Menu.line
+            : [
+                provider.value,
+                // Every other label is a provider's own name, which stays
+                // untranslated.
+                provider.value === 'other' ? t('Other') : provider.label,
+              ],
         )}
         defaultLabel={t('Select Provider')}
         value={defaultValue}

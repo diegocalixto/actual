@@ -24,12 +24,16 @@ export function getPrettyPayee({
   }
 
   if (transferAccount) {
-    return t('Transfer {{direction}} {{accountName}}', {
-      direction: transaction?.amount > 0 ? t('from') : t('to'),
-      accountName: transferAccount.name,
-    });
+    return transaction?.amount > 0
+      ? t('Transfer from {{accountName}}', {
+          accountName: transferAccount.name,
+        })
+      : t('Transfer to {{accountName}}', { accountName: transferAccount.name });
   } else if (transaction.is_parent) {
-    return t('Split');
+    // Here "Split" names the transaction, where the button of the same word
+    // asks to split one. The context lets a language tell the two apart —
+    // "Transação dividida" and "Dividir" — and leaves English as it was.
+    return t('Split', { context: 'label' });
   } else if (payee) {
     return payee.name;
   }

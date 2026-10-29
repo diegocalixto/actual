@@ -13,6 +13,7 @@ import rehypeExternalLinks from 'rehype-external-links';
 import remarkGfm from 'remark-gfm';
 
 import { NON_DRAGGABLE_AREA_CLASS_NAME } from '#components/reports/constants';
+import { localizeDefaultMarkdown } from '#components/reports/defaultDashboardText';
 import { ReportCard } from '#components/reports/ReportCard';
 import { useContextMenu } from '#hooks/useContextMenu';
 import {
@@ -49,6 +50,12 @@ export function MarkdownCard({
   const { t } = useTranslation();
 
   const [isVisibleTextArea, setIsVisibleTextArea] = useState(false);
+
+  // Shown in both the rendered card and the editor, so the shipped tips card is
+  // not in English once it is opened for editing. The `onBlur` below always
+  // writes, so a value that comes back unchanged is saved as the raw stored
+  // content instead of the translation.
+  const displayContent = localizeDefaultMarkdown(meta.content, t);
 
   const contextMenuTriggerRef = useRef(null);
 
@@ -127,11 +134,13 @@ export function MarkdownCard({
             }}
             className={NON_DRAGGABLE_AREA_CLASS_NAME}
             autoFocus
-            defaultValue={meta.content}
+            defaultValue={displayContent}
             onBlur={event => {
+              const newContent = event.currentTarget.value;
               onMetaChange({
                 ...meta,
-                content: event.currentTarget.value,
+                content:
+                  newContent === displayContent ? meta.content : newContent,
               });
               setIsVisibleTextArea(false);
             }}
@@ -147,7 +156,7 @@ export function MarkdownCard({
                 ],
               ]}
             >
-              {meta.content}
+              {displayContent}
             </ReactMarkdown>
           </Text>
         )}

@@ -10,12 +10,20 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
 import { ReportCardValueSkeleton } from './ReportCardValueSkeleton';
 
 const FONT_SIZE_SCALE_FACTOR = 1.6;
 const CONTAINER_MARGIN = 8;
+/**
+ * The figure is sized to fill its widget, which on a phone means a full-width
+ * card turns one number into half a screen. Capping it keeps the number the
+ * loudest thing in its own card without letting it dominate the page; on a
+ * desktop dashboard the computed size lands below this anyway.
+ */
+const MAX_FONT_SIZE = 44;
 
 type SummaryNumberProps = {
   value: number;
@@ -41,6 +49,7 @@ export function SummaryNumber({
   const [hasSized, setHasSized] = useState(false);
   const refDiv = useRef<HTMLDivElement>(null);
   const format = useFormat();
+  const isPrivacyEnabled = usePrivacyMode();
   const isNumericValue = Number.isFinite(value);
 
   let displayAmount =
@@ -60,6 +69,7 @@ export function SummaryNumber({
     const calculatedFontSize = Math.min(
       (width * FONT_SIZE_SCALE_FACTOR) / displayAmount.toString().length,
       height, // Ensure the text fits vertically by using the height as the limiting factor
+      MAX_FONT_SIZE,
     );
 
     if (calculatedFontSize > 0) {
@@ -81,14 +91,23 @@ export function SummaryNumber({
       {!loading && (
         <View
           ref={mergedRef as Ref<HTMLDivElement>}
+          // The figure below is hidden from assistive technology and this
+          // label speaks for it, so under privacy mode the label must not
+          // spell out what the screen is hiding — zero included.
           aria-label={
             !isNumericValue
               ? t('Unknown amount')
-              : value === 0
-                ? t('Zero amount')
-                : value < 0
-                  ? t('Negative amount: {{amount}}', { amount: displayAmount })
-                  : t('Positive amount: {{amount}}', { amount: displayAmount })
+              : isPrivacyEnabled
+                ? t('Hidden amount')
+                : value === 0
+                  ? t('Zero amount')
+                  : value < 0
+                    ? t('Negative amount: {{amount}}', {
+                        amount: displayAmount,
+                      })
+                    : t('Positive amount: {{amount}}', {
+                        amount: displayAmount,
+                      })
           }
           style={{
             alignItems: 'center',

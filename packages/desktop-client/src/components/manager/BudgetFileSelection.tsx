@@ -49,6 +49,7 @@ import {
   loadAllFiles,
   loadBudget,
 } from '#budgetfiles/budgetfilesSlice';
+import { BrandMark } from '#components/appshell/BrandMark';
 import { useMultiuserEnabled } from '#components/ServerContext';
 import { useInitialMount } from '#hooks/useInitialMount';
 import { useMetadataPref } from '#hooks/useMetadataPref';
@@ -175,7 +176,7 @@ function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
       const userFound = file.usersWithAccess?.find(f => f.owner);
 
       if (userFound?.userName === '') {
-        return 'Server';
+        return t('Server');
       }
 
       return userFound?.displayName ?? userFound?.userName ?? t('Unassigned');
@@ -498,31 +499,36 @@ function BudgetFileSelectionHeader({
   onOpenSettings,
 }: BudgetFileSelectionHeaderProps) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        margin: 20,
-      }}
-    >
-      <Text
+    <View style={{ margin: 20, gap: 14 }}>
+      {/* The file list is an entry screen: the brand comes first, the files
+          are what it holds. The quick switcher inside the app already sits
+          under the app's own header, so it skips the mark. */}
+      {!quickSwitchMode && <BrandMark size={34} withWordmark />}
+      <View
         style={{
-          ...styles.veryLargeText,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
         }}
       >
-        <Trans>Files</Trans>
-      </Text>
-      {!quickSwitchMode && (
-        <View
+        <Text
           style={{
-            flexDirection: 'row',
-            gap: '0.2rem',
+            ...styles.veryLargeText,
           }}
         >
-          {onRefresh && <RefreshButton onRefresh={onRefresh} />}
-          {isElectron() && <SettingsButton onOpenSettings={onOpenSettings} />}
-        </View>
-      )}
+          <Trans>Files</Trans>
+        </Text>
+        {!quickSwitchMode && (
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: '0.2rem',
+            }}
+          >
+            {onRefresh && <RefreshButton onRefresh={onRefresh} />}
+            {isElectron() && <SettingsButton onOpenSettings={onOpenSettings} />}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -770,7 +776,7 @@ function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
                       color: theme.pageTextLight,
                     }}
                   >
-                    File shared with:
+                    <Trans>File shared with:</Trans>
                   </Text>
                   <View
                     style={{

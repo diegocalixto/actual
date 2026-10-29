@@ -1,0 +1,4 @@
+conta;data;descricao;valor;categoria;favorecido;parcela;tipo;fatura;observacao
+Itaú Personnalité Crédito;2026-07-05;EXEMPLO MERCADO;-150,00;Mercado;;;compra;2026-08;
+Itaú Personnalité Crédito;2026-07-10;EXEMPLO LOJA;-100,00;Compras;;1/3;compra;2026-08;compra de 300,00 em 3x
+Itaú Personnalité Crédito;2026-07-20;EXEMPLO RESTAURANTE;-150,00;Restaurantes;;;compra;2026-08;

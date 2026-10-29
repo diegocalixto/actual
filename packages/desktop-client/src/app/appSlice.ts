@@ -9,6 +9,8 @@ import { createAppAsyncThunk } from '#redux';
 import { getUploadError } from '#util/error';
 import { getIsOutdated, getLatestVersion } from '#util/versions';
 
+import { forkConfig } from './forkConfig';
+
 const sliceName = 'app';
 
 type AppState = {
@@ -108,7 +110,11 @@ export const getLatestAppVersion = createAppAsyncThunk(
   `${sliceName}/getLatestAppVersion`,
   async (_, { dispatch, getState }) => {
     const globalPrefs = getState().prefs.global;
-    if (globalPrefs && globalPrefs.notifyWhenUpdateIsAvailable) {
+    if (
+      forkConfig.announceUpstreamReleases &&
+      globalPrefs &&
+      globalPrefs.notifyWhenUpdateIsAvailable
+    ) {
       const theLatestVersion = await getLatestVersion();
       dispatch(
         setAppState({

@@ -1,0 +1,24 @@
+# Nada real entra no repositório. Só modelos/ e exemplo/ (fictícios) e o código.
+dados/
+entrada/
+saida/
+*.ofx
+*.OFX
+*.qfx
+*.pdf
+*.PDF
+*.png
+*.jpg
+*.jpeg
+*.heic
+*.HEIC
+*.xls
+*.xlsx
+*.zip
+*.log
+*.csv
+!modelos/*.csv
+!exemplo/*.csv
+*.json
+!modelos/*.json
+!exemplo/*.json

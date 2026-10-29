@@ -1,0 +1,6 @@
+conta;data;descricao;valor;categoria;favorecido;parcela;tipo;fatura;observacao
+Itaú Conta Corrente;2026-07-20;EXEMPLO SALARIO;3.000,00;Salário (exemplo);EXEMPLO EMPRESA;;receita;;fictício
+Itaú Conta Corrente;2026-07-25;EXEMPLO TARIFA PACOTE;-50,00;Tarifas bancárias;Itaú;;tarifa;;fictício
+Itaú Conta Corrente;2026-08-05;PIX ENVIADO EXEMPLO FULANO;-100,00;;;;pix;;sem classificação: vai para revisão
+Itaú Conta Corrente;2026-08-10;EXEMPLO PAGTO FATURA CARTAO;-400,00;;Itaú Personnalité Crédito;;pagamento_fatura;;paga a fatura 2026-08
+Itaú Conta Corrente;2026-08-12;PIX EXEMPLO CONTA PROPRIA;-200,00;;Nubank;;transferencia_propria;;Nubank ainda fora do orçamento

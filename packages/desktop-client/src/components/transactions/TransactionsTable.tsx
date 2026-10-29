@@ -1691,6 +1691,9 @@ const Transaction = memo(function Transaction({
             }) => (
               <AccountAutocomplete
                 includeClosedAccounts={false}
+                /* Filter out the other side of a transfer as moving the
+                   transaction there would transfer the account to itself */
+                hiddenAccounts={transferAcct ? [transferAcct.id] : undefined}
                 value={accountId}
                 shouldSaveFromKey={shouldSaveFromKey}
                 clearOnBlur={false}
